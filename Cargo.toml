@@ -1,0 +1,2 @@
+[workspace]
+members = ["ser_raw", "ser_raw_derive"]

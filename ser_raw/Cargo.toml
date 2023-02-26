@@ -1,0 +1,13 @@
+[package]
+name = "ser_raw"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+
+[dependencies]
+ser_raw_derive = { path = "../ser_raw_derive", optional = true }
+
+[features]
+default = ["derive"]
+derive = ["dep:ser_raw_derive"]
