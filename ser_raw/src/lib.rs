@@ -7,6 +7,7 @@ pub use serializer::Serializer;
 mod unaligned;
 pub use unaligned::UnalignedSerializer;
 
+mod other;
 mod primitives;
 mod ptrs;
 
