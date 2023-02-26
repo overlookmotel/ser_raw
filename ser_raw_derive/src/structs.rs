@@ -11,7 +11,7 @@ pub fn derive_struct(data: DataStruct, ident: Ident, generics: Generics) -> Toke
 	let field_stmts: Vec<TokenStream> = match data.fields {
 		Fields::Named(fields) => get_named_field_stmts(fields),
 		Fields::Unnamed(_fields) => todo!("Unnamed struct fields not supported yet"),
-		Fields::Unit => todo!("Unit struct fields not supported yet"),
+		Fields::Unit => vec![],
 	};
 
 	let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
