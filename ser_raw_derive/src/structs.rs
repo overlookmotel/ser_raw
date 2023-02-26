@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, quote_spanned};
 use syn::{
 	parse_macro_input, spanned::Spanned, Data, DataEnum, DataStruct, DeriveInput, Field, Fields,
 	FieldsNamed, Generics, Ident, Meta, MetaList, NestedMeta, Path,
@@ -17,6 +17,7 @@ pub fn derive_struct(data: DataStruct, ident: Ident, generics: Generics) -> Toke
 	let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
 
 	quote! {
+		#[automatically_derived]
 		impl #impl_generics ::ser_raw::Serialize for #ident #type_generics #where_clause {
 			fn serialize_data<S: ::ser_raw::Serializer>(&self, serializer: &mut S) {
 				#(#field_stmts)*
@@ -37,13 +38,13 @@ fn get_named_field_stmt(field: &Field) -> TokenStream {
 	let field_name = field.ident.as_ref().expect("Missing field name");
 	match get_with(field) {
 		Some(with) => {
-			quote! {
-				#with::serialize_data_with(&self.#field_name, serializer);
+			quote_spanned! {field.span()=>
+				<#with as ::ser_raw::SerializeWith::<_>>::serialize_data_with(&self.#field_name, serializer);
 			}
 		}
 		None => {
-			quote! {
-				self.#field_name.serialize_data(serializer);
+			quote_spanned! {field.span()=>
+					::ser_raw::Serialize::serialize_data(&self.#field_name, serializer);
 			}
 		}
 	}
