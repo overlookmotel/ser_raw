@@ -17,7 +17,6 @@ pub trait Serialize {
 }
 
 pub trait SerializeWith<T> {
-	#[allow(unused_variables)]
 	fn serialize_data_with<S: Serializer>(t: &T, serializer: &mut S) -> ();
 }
 
