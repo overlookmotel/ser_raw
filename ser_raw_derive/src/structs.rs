@@ -4,13 +4,13 @@ use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::{
 	parse_macro_input, spanned::Spanned, Data, DataEnum, DataStruct, DeriveInput, Field, Fields,
-	FieldsNamed, Generics, Ident, Meta, MetaList, NestedMeta, Path,
+	FieldsNamed, FieldsUnnamed, Generics, Ident, Index, Meta, MetaList, NestedMeta, Path,
 };
 
 pub fn derive_struct(data: DataStruct, ident: Ident, generics: Generics) -> TokenStream {
 	let field_stmts: Vec<TokenStream> = match data.fields {
 		Fields::Named(fields) => get_named_field_stmts(fields),
-		Fields::Unnamed(_fields) => todo!("Unnamed struct fields not supported yet"),
+		Fields::Unnamed(fields) => get_unnamed_field_stmts(fields),
 		Fields::Unit => vec![],
 	};
 
@@ -30,12 +30,26 @@ fn get_named_field_stmts(fields: FieldsNamed) -> Vec<TokenStream> {
 	fields
 		.named
 		.iter()
-		.map(|field| get_named_field_stmt(field))
+		.map(|field| {
+			let field_name = field.ident.as_ref().expect("Missing field name");
+			get_field_stmt(quote! {#field_name}, field)
+		})
 		.collect()
 }
 
-fn get_named_field_stmt(field: &Field) -> TokenStream {
-	let field_name = field.ident.as_ref().expect("Missing field name");
+fn get_unnamed_field_stmts(fields: FieldsUnnamed) -> Vec<TokenStream> {
+	fields
+		.unnamed
+		.iter()
+		.enumerate()
+		.map(|(index, field)| {
+			let index = Index::from(index);
+			get_field_stmt(quote! {#index}, field)
+		})
+		.collect()
+}
+
+fn get_field_stmt(field_name: TokenStream, field: &Field) -> TokenStream {
 	match get_with(field) {
 		Some(with) => {
 			quote_spanned! {field.span()=>
