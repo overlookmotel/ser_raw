@@ -18,7 +18,7 @@ pub trait Serialize {
 
 pub trait SerializeWith<T> {
 	#[allow(unused_variables)]
-	fn serialize_data<S: Serializer>(t: &T, serializer: &mut S) -> ();
+	fn serialize_data_with<S: Serializer>(t: &T, serializer: &mut S) -> ();
 }
 
 pub fn serialize_unaligned<T: Serialize>(src: &T) -> Vec<u8> {
