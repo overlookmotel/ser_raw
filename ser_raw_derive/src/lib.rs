@@ -15,7 +15,7 @@ pub fn serialize(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 fn serialize_impl(input: DeriveInput) -> proc_macro2::TokenStream {
 	match input.data {
 		Data::Struct(data) => derive_struct(data, input.ident, input.generics),
-		Data::Enum(data) => derive_enum(data, input.ident),
+		Data::Enum(data) => derive_enum(data, input.ident, input.generics),
 		Data::Union(_) => todo!("Deriving `Serialize` on Unions not supported"),
 	}
 }
