@@ -4,8 +4,8 @@ pub use ser_raw_derive::Serialize;
 mod serializer;
 pub use serializer::Serializer;
 
-mod unaligned;
-pub use unaligned::UnalignedSerializer;
+mod unaligned_serializer;
+pub use unaligned_serializer::UnalignedSerializer;
 
 mod other;
 mod primitives;
