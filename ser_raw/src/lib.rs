@@ -13,6 +13,7 @@ mod ptrs;
 
 pub trait Serialize {
 	#[allow(unused_variables)]
+	#[inline(always)]
 	fn serialize_data<S: Serializer>(&self, serializer: &mut S) {}
 }
 
