@@ -1,4 +1,4 @@
-use std::{mem, slice};
+use std::mem;
 
 use crate::{Serialize, Serializer};
 
@@ -10,9 +10,7 @@ impl<T: Serialize> Serialize for Box<T> {
 		}
 
 		// Write boxed value
-		let ptr = (&**self) as *const T as *const u8;
-		let bytes = unsafe { slice::from_raw_parts(ptr, mem::size_of::<T>()) };
-		serializer.push_bytes(bytes);
+		serializer.push(&**self);
 
 		// Serialize boxed value
 		(**self).serialize_data(serializer);
@@ -32,9 +30,7 @@ impl<T: Serialize> Serialize for Vec<T> {
 		}
 
 		// Write vec's contents
-		let ptr = self.as_ptr() as *const u8;
-		let bytes = unsafe { slice::from_raw_parts(ptr, self.len() * mem::size_of::<T>()) };
-		serializer.push_bytes(bytes);
+		serializer.push_slice(self.as_slice());
 
 		// Serialize vec's contents
 		for value in &**self {
@@ -51,6 +47,6 @@ impl Serialize for String {
 		}
 
 		// Write string's content
-		serializer.push_bytes(self.as_bytes());
+		serializer.push_slice(self.as_bytes());
 	}
 }

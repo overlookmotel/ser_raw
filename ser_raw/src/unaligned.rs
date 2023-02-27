@@ -24,15 +24,21 @@ impl UnalignedSerializer {
 
 impl Serializer for UnalignedSerializer {
 	fn serialize_value<T: Serialize>(&mut self, t: &T) {
-		let ptr = t as *const T as *const u8;
-		let bytes = unsafe { slice::from_raw_parts(ptr, mem::size_of::<T>()) };
-		self.push_bytes(bytes);
-
+		self.push(t);
 		t.serialize_data(self);
 	}
 
 	#[inline]
-	fn push_bytes(&mut self, bytes: &[u8]) {
+	fn push<T: Serialize>(&mut self, t: &T) {
+		let ptr = t as *const T as *const u8;
+		let bytes = unsafe { slice::from_raw_parts(ptr, mem::size_of::<T>()) };
+		self.buf.extend_from_slice(bytes);
+	}
+
+	#[inline]
+	fn push_slice<T: Serialize>(&mut self, slice: &[T]) {
+		let ptr = slice.as_ptr() as *const u8;
+		let bytes = unsafe { slice::from_raw_parts(ptr, slice.len() * mem::size_of::<T>()) };
 		self.buf.extend_from_slice(bytes);
 	}
 }
