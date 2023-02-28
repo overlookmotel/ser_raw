@@ -160,20 +160,22 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 		// TODO: Actually could remove this with a 3rd const param `MAX_VALUE_ALIGN`
 		// and constrain capacity so it's always a multiple of that.
 		if self.buf.capacity() < new_pos {
-			// This will grow buffer by at least enough.
-			// Separate function to hint to compiler that taking the branch is uncommon.
-			// TODO: Could make this faster - `reserve()` contains an addition op
-			// and a comparison which are not needed as we've done them already.
-			// But `AlignedByteVec` has no public API for that.
+			// This will grow buffer by at least enough
 			self.reserve_for_alignment(alignment);
 		}
 
 		self.buf.set_len(new_pos);
 	}
 
-	/// Reserve space in output buffer.
+	/// Reserve space in output buffer to satisfy alignment.
+	/// Not inlined into `align` to hint to compiler that taking the branch is
+	/// uncommon.
 	#[inline(never)]
+	#[cold]
 	fn reserve_for_alignment(&mut self, additional: usize) {
+		// TODO: Could make this faster - `reserve()` contains an addition op
+		// and a comparison which are not needed as we've done them already.
+		// But `AlignedByteVec` has no public API for that.
 		self.buf.reserve(additional);
 	}
 
