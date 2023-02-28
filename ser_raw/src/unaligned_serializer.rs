@@ -2,21 +2,32 @@ use std::{mem, slice};
 
 use crate::{Serialize, Serializer};
 
+/// Serializer which does not respect alignment in the output.
+/// Types may not be aligned as those types require.
 pub struct UnalignedSerializer {
 	buf: Vec<u8>,
 }
 
 impl UnalignedSerializer {
+	/// Create new Serializer without allocating any memory for output buffer.
+	/// Memory will be allocated when first object is serialized.
 	pub fn new() -> Self {
 		UnalignedSerializer { buf: Vec::new() }
 	}
 
+	/// Create new Serializer with buffer pre-allocated with capacity of
+	/// `capacity` bytes.
+	///
+	/// If you know, or can estimate, the amount of buffer space that's going to
+	/// be needed in advance, allocating upfront with `with_capacity` can
+	/// dramatically improve performance vs `new`.
 	pub fn with_capacity(capacity: usize) -> Self {
 		UnalignedSerializer {
 			buf: Vec::with_capacity(capacity),
 		}
 	}
 
+	/// Consume Serializer and return the output buffer as a `Vec<u8>`.
 	pub fn into_vec(self) -> Vec<u8> {
 		self.buf
 	}
