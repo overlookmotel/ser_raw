@@ -103,9 +103,9 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// * `capacity` is a multiple of `VALUE_ALIGNMENT`.
 	///
 	/// Failure to obey these constraints may not produce UB immediately,
-	/// but breaks assumptions other code here relies on, so could cause
-	/// arthmetic overflow or alignment problems later on.
-	unsafe fn with_capacity_unchecked(capacity: usize) -> Self {
+	/// but breaks assumptions the rest of the implementation relies on, so could
+	/// cause arithmetic overflow or alignment problems later on.
+	pub unsafe fn with_capacity_unchecked(capacity: usize) -> Self {
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
 		// TODO: Could be a little bit more efficient here.
