@@ -1,4 +1,4 @@
-use std::{mem, ptr};
+use std::{mem, ptr, slice};
 
 use crate::{AlignedByteVec, Serialize, Serializer};
 
@@ -218,30 +218,7 @@ impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
 
 	#[inline]
 	fn push<T: Serialize>(&mut self, t: &T) {
-		// Align position in buffer to alignment of `T`
-		// TODO: Combine this with reserving space for the `T` itself.
-		self.align_to::<T>();
-
-		// Write object to output
-		let size = mem::size_of::<T>();
-		self.buf.reserve(size);
-		unsafe {
-			let src = t as *const T;
-			let dst = self.buf.as_mut_ptr().add(self.buf.len()) as *mut T;
-			// `buf.reserve(size)` ensures there's enough allocated space in output buffer.
-			// `src` must be correctly aligned as derived from a valid `&T`.
-			// `dst` is aligned because of `self.align_to::<T>()` above.
-			ptr::copy_nonoverlapping(src, dst, 1);
-			self.buf.set_len(self.buf.len() + size);
-		}
-
-		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next object.
-		// This should be optimized away for types with alignment of `VALUE_ALIGNMENT`
-		// or greater. Ditto for types which have lower alignment, but happen to have
-		// size divisible by `VALUE_ALIGNMENT`. Hopefully this is the majority of types.
-		if mem::size_of::<T>() % Self::VALUE_ALIGNMENT > 0 {
-			self.align_to_value_alignment();
-		}
+		self.push_slice(slice::from_ref(t));
 	}
 
 	#[inline]
