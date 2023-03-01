@@ -1,4 +1,4 @@
-use std::{mem, slice};
+use std::{mem, ptr};
 
 use crate::{AlignedByteVec, Serialize, Serializer};
 
@@ -209,13 +209,21 @@ impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
 		// Or maybe a non-const `assert!()` would be optimized away anyway?
 
 		// Align position in buffer to alignment of `T`
+		// TODO: Combine this with reserving space for the `T` itself.
 		self.align_to::<T>();
 
 		// Write object to output
-		// TODO: Use typed copy instead
-		let ptr = t as *const T as *const u8;
-		let bytes = unsafe { slice::from_raw_parts(ptr, mem::size_of::<T>()) };
-		self.buf.extend_from_slice(bytes);
+		let size = mem::size_of::<T>();
+		self.buf.reserve(size);
+		unsafe {
+			let src = t as *const T;
+			let dst = self.buf.as_mut_ptr().add(self.buf.len()) as *mut T;
+			// `buf.reserve(size)` ensures there's enough allocated space in output buffer.
+			// `src` must be correctly aligned as derived from a valid `&T`.
+			// `dst` is aligned because of `self.align_to::<T>()` above.
+			ptr::copy_nonoverlapping(src, dst, 1);
+			self.buf.set_len(self.buf.len() + size);
+		}
 
 		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next object.
 		// This should be optimized away for types with alignment of `VALUE_ALIGNMENT`
@@ -233,18 +241,32 @@ impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
 		// Or maybe a non-const `assert!()` would be optimized away anyway?
 
 		// Align position in buffer to alignment of `T`
+		// TODO: Combine this with reserving space for the slice itself.
 		self.align_to::<T>();
 
-		// Write slice to output
-		// TODO: Use typed copy instead
-		let ptr = slice.as_ptr() as *const u8;
-		let bytes = unsafe { slice::from_raw_parts(ptr, slice.len() * mem::size_of::<T>()) };
-		self.push_bytes(bytes);
+		// Write slice to output.
+		// Assuming calculating `size` can't overflow as that would imply this is a
+		// slice of `usize::MAX + 1` or more bytes, which can't be possible.
+		let size = mem::size_of::<T>() * slice.len();
+		self.buf.reserve(size);
+		unsafe {
+			let src = slice.as_ptr();
+			let dst = self.buf.as_mut_ptr().add(self.buf.len()) as *mut T;
+			// `buf.reserve(size)` ensures there's enough allocated space in output buffer.
+			// `src` must be correctly aligned as derived from a valid `&[T]`.
+			// `dst` is aligned because of `self.align_to::<T>()` above.
+			ptr::copy_nonoverlapping(src, dst, slice.len());
+			self.buf.set_len(self.buf.len() + size);
+		}
 
 		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next object.
 		// This should be optimized away for types with alignment of `VALUE_ALIGNMENT`
 		// or greater. Ditto for types which have lower alignment, but happen to have
 		// size divisible by `VALUE_ALIGNMENT`. Hopefully this is the majority of types.
+		// NB: Even though `size % Self::VALUE_ALIGNMENT` might produce a result of `0`
+		// more often (e.g. if `VALUE_ALIGNMENT == 8`, `size_of::<T>() == 4` and
+		// `slice.len() == 2`), just using `size_of::<T>()` here so the condition can be
+		// statically evaluated and optimized out at compile time in most cases.
 		if mem::size_of::<T>() % Self::VALUE_ALIGNMENT > 0 {
 			self.align_to_value_alignment();
 		}
