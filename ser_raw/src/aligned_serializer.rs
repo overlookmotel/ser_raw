@@ -185,7 +185,6 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// Reserve space in output buffer to satisfy alignment.
 	/// Not inlined into `align` to hint to compiler that taking the branch is
 	/// uncommon.
-	#[inline(never)]
 	#[cold]
 	fn reserve_for_alignment(&mut self, additional: usize) {
 		// TODO: Could make this faster - `reserve()` contains an addition op
