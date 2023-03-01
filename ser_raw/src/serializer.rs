@@ -1,7 +1,7 @@
 use crate::Serialize;
 
 /// `ser_raw` Serializers implement this trait.
-pub trait Serializer: Sized {
+pub trait Serializer {
 	/// Serialize a value.
 	///
 	/// The entry point for serializing, which user will call.
