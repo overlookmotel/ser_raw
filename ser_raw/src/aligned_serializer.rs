@@ -130,12 +130,21 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// Align position in output buffer to alignment of `T`.
 	/// This should be optimized away for types with alignment of
 	/// `VALUE_ALIGNMENT` or less. Hopefully this is the majority of types.
+	/// Also bounds check alignment of `T`.
 	#[inline]
 	fn align_to<T>(&mut self) {
+		// Ensure `T`'s required alignment does not exceed alignment of output buffer.
+		// This assertion should be const-folded down to either a no-op, or a panic,
+		// so should have zero performance aspect.
+		// TODO: It'd be better if this triggered an error at compile time.
+		// Not sure if that can be achieved in stable Rust.
+		assert!(
+			mem::align_of::<T>() <= Self::OUTPUT_ALIGNMENT,
+			"Cannot serialize type. Type's alignment requirement exceeds OUTPUT_ALIGNMENT of Serializer."
+		);
+
 		if mem::align_of::<T>() > Self::VALUE_ALIGNMENT {
-			// Constraints of `align()` are satisfied if
-			// `align_of::<T>() <= OUTPUT_ALIGNMENT`.
-			// TODO: This isn't currently guaranteed, but it should be.
+			// Assertion above ensures `align()`'s constraints are satisfied
 			unsafe { self.align(mem::align_of::<T>()) }
 		}
 	}
@@ -210,10 +219,6 @@ impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
 
 	#[inline]
 	fn push<T: Serialize>(&mut self, t: &T) {
-		// TODO: Add const assertion that `align_of::<T>() <= `OUTPUT_ALIGNMENT`.
-		// Not sure how to make it a const assert.
-		// Or maybe a non-const `assert!()` would be optimized away anyway?
-
 		// Align position in buffer to alignment of `T`
 		// TODO: Combine this with reserving space for the `T` itself.
 		self.align_to::<T>();
@@ -242,10 +247,6 @@ impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
 
 	#[inline]
 	fn push_slice<T: Serialize>(&mut self, slice: &[T]) {
-		// TODO: Add const assertion that `align_of::<T>() <= `OUTPUT_ALIGNMENT`.
-		// Not sure how to make it a const assert.
-		// Or maybe a non-const `assert!()` would be optimized away anyway?
-
 		// Align position in buffer to alignment of `T`
 		// TODO: Combine this with reserving space for the slice itself.
 		self.align_to::<T>();
