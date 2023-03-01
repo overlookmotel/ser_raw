@@ -28,6 +28,10 @@ pub struct AlignedSerializer<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMEN
 impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	AlignedSerializer<OUTPUT_ALIGNMENT, VALUE_ALIGNMENT>
 {
+	/// Assertions for validity of alignment consts.
+	/// These assertions are not evaluated here.
+	/// `ASSERT_ALIGNMENTS_VALID` must be referenced in all code paths creating an
+	/// `AlignedSerializer`, to ensure compile-time error if assertions fail.
 	const ASSERT_ALIGNMENTS_VALID: () = {
 		assert!(OUTPUT_ALIGNMENT > 0, "OUTPUT_ALIGNMENT must be 1 or more");
 		assert!(
@@ -55,7 +59,9 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// overflow `isize` (i.e. the rounded value must be less than or equal to
 	/// `isize::MAX`)".
 	pub const MAX_CAPACITY: usize = isize::MAX as usize - (Self::OUTPUT_ALIGNMENT - 1);
+	/// Alignment of output buffer
 	pub const OUTPUT_ALIGNMENT: usize = OUTPUT_ALIGNMENT;
+	/// Typical alignment of values being serialized
 	pub const VALUE_ALIGNMENT: usize = VALUE_ALIGNMENT;
 
 	/// Create new Serializer with minimal memory pre-allocated.
