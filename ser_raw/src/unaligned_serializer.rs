@@ -3,9 +3,12 @@ use std::{mem, slice};
 use crate::{Serialize, Serializer};
 
 /// Serializer which does not respect alignment in the output.
-/// Values may not be aligned as their types require.
 ///
-/// It is NOT recommended to use this. Mainly for testing.
+/// Values are likely not be aligned as their types require.
+///
+/// If most of the allocated types you're serializing share the
+/// same alignment, performance of `BaseSerializer`, which
+/// does respect alignment, is likely to be almost exactly the same.
 pub struct UnalignedSerializer {
 	buf: Vec<u8>,
 }
