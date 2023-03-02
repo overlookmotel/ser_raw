@@ -31,12 +31,12 @@ use crate::{AlignedByteVec, Serialize, Serializer};
 /// The higher `VALUE_ALIGNMENT` is, the more padding bytes will end up in
 /// output, potentially increasing output size, depending on the types being
 /// serialized.
-pub struct AlignedSerializer<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize> {
+pub struct BaseSerializer<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize> {
 	buf: AlignedByteVec<OUTPUT_ALIGNMENT>,
 }
 
 impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
-	AlignedSerializer<OUTPUT_ALIGNMENT, VALUE_ALIGNMENT>
+	BaseSerializer<OUTPUT_ALIGNMENT, VALUE_ALIGNMENT>
 {
 	/// Alignment of output buffer
 	pub const OUTPUT_ALIGNMENT: usize = OUTPUT_ALIGNMENT;
@@ -55,7 +55,7 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// Assertions for validity of alignment const params.
 	/// These assertions are not evaluated here.
 	/// `Self::ASSERT_ALIGNMENTS_VALID` must be referenced in all code paths
-	/// creating an `AlignedSerializer`, to ensure compile-time error if
+	/// creating a `BaseSerializer`, to ensure compile-time error if
 	/// assertions fail.
 	const ASSERT_ALIGNMENTS_VALID: () = {
 		assert!(OUTPUT_ALIGNMENT > 0, "OUTPUT_ALIGNMENT must be 1 or more");
@@ -221,8 +221,8 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	}
 }
 
-impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
-	/// Entry point to `AlignedSerializer`.
+impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
+	/// Entry point to serializer.
 	fn serialize_value<T: Serialize>(&mut self, t: &T) {
 		self.push(t);
 		t.serialize_data(self);
@@ -289,7 +289,7 @@ impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
 ///
 /// Breaking these conditions will yield an incorrect result which could
 /// cause UB later on due to mis-aligned data.
-const fn align_up_to(pos: usize, alignment: usize) -> usize {
+pub const fn align_up_to(pos: usize, alignment: usize) -> usize {
 	(pos + alignment - 1) & !(alignment - 1)
 }
 
