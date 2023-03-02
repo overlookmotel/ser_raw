@@ -1,4 +1,4 @@
-use std::{mem, ptr, slice};
+use std::{marker::PhantomData, mem, ptr, slice};
 
 use crate::{AlignedByteVec, Serialize, Serializer};
 
@@ -129,18 +129,11 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	}
 
 	/// Align position in output buffer to alignment of `T`.
-	/// Also bounds check alignment of `T`.
 	#[inline]
 	fn align_to<T>(&mut self) {
-		// Ensure `T`'s required alignment does not exceed alignment of output buffer.
-		// This assertion should be const-folded down to either a no-op, or a panic,
-		// so should have zero performance aspect.
-		// TODO: It'd be better if this triggered an error at compile time.
-		// Not sure if that can be achieved in stable Rust.
-		assert!(
-			mem::align_of::<T>() <= Self::OUTPUT_ALIGNMENT,
-			"Cannot serialize type. Type's alignment requirement exceeds OUTPUT_ALIGNMENT of Serializer."
-		);
+		// Ensure `T`'s alignment does not exceed alignment of output buffer
+		// (at compile time)
+		let _ = AlignmentCheck::<T, OUTPUT_ALIGNMENT>::ASSERT_ALIGNMENT_DOES_NOT_EXCEED;
 
 		// Align position in output buffer to alignment of `T`.
 		// If `T`'s alignment requirement is less than or equal to `VALUE_ALIGNMENT`,
@@ -282,4 +275,14 @@ impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
 /// cause UB later on due to mis-aligned data.
 const fn align_up_to(pos: usize, alignment: usize) -> usize {
 	(pos + alignment - 1) & !(alignment - 1)
+}
+
+/// Type for static assertion that types being serialized do not have a higher
+/// alignment requirement than the alignment of the output buffer
+struct AlignmentCheck<T, const OUTPUT_ALIGNMENT: usize> {
+	_marker: PhantomData<T>,
+}
+
+impl<T, const OUTPUT_ALIGNMENT: usize> AlignmentCheck<T, OUTPUT_ALIGNMENT> {
+	const ASSERT_ALIGNMENT_DOES_NOT_EXCEED: () = assert!(mem::align_of::<T>() <= OUTPUT_ALIGNMENT);
 }
