@@ -112,6 +112,7 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// but breaks assumptions the rest of the implementation relies on, so could
 	/// cause arithmetic overflow or alignment problems later on.
 	pub unsafe fn with_capacity_unchecked(capacity: usize) -> Self {
+		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
 		// TODO: Could be a little bit more efficient here.
@@ -128,8 +129,6 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	}
 
 	/// Align position in output buffer to alignment of `T`.
-	/// This should be optimized away for types with alignment of
-	/// `VALUE_ALIGNMENT` or less. Hopefully this is the majority of types.
 	/// Also bounds check alignment of `T`.
 	#[inline]
 	fn align_to<T>(&mut self) {
@@ -143,6 +142,13 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 			"Cannot serialize type. Type's alignment requirement exceeds OUTPUT_ALIGNMENT of Serializer."
 		);
 
+		// Align position in output buffer to alignment of `T`.
+		// If `T`'s alignment requirement is less than or equal to `VALUE_ALIGNMENT`,
+		// this can be skipped, as position is always aligned to `VALUE_ALIGNMENT` after
+		// each push.
+		// This should be optimized away for types with alignment of `VALUE_ALIGNMENT`
+		// or less, in which case this function becomes a no-op.
+		// Hopefully this is the majority of types.
 		if mem::align_of::<T>() > Self::VALUE_ALIGNMENT {
 			// Assertion above ensures `align()`'s constraints are satisfied
 			unsafe { self.align(mem::align_of::<T>()) }
