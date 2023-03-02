@@ -3,7 +3,9 @@ use std::{mem, slice};
 use crate::{Serialize, Serializer};
 
 /// Serializer which does not respect alignment in the output.
-/// Types may not be aligned as those types require.
+/// Values may not be aligned as their types require.
+///
+/// It is NOT recommended to use this. Mainly for testing.
 pub struct UnalignedSerializer {
 	buf: Vec<u8>,
 }
