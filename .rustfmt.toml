@@ -5,7 +5,6 @@ format_strings = true
 group_imports = "StdExternalCrate"
 hex_literal_case = "Lower"
 imports_granularity = "Crate"
-reorder_impl_items = true
 use_field_init_shorthand = true
 where_single_line = true
 force_multiline_blocks = true
