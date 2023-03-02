@@ -2,7 +2,7 @@ use std::{marker::PhantomData, mem, ptr, slice};
 
 use crate::{AlignedByteVec, Serialize, Serializer};
 
-/// Serializer that ensures objects are correctly aligned in output buffer.
+/// Serializer that ensures values are correctly aligned in output buffer.
 ///
 /// `OUTPUT_ALIGNMENT` is the alignment of the output buffer.
 /// Types with alignment greater than `OUTPUT_ALIGNMENT` cannot be serialized
