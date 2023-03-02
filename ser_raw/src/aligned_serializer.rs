@@ -8,19 +8,29 @@ use crate::{AlignedByteVec, Serialize, Serializer};
 /// Types with alignment greater than `OUTPUT_ALIGNMENT` cannot be serialized
 /// with this serializer.
 ///
-/// `VALUE_ALIGNMENT` is minimum alignment all values will have in output
-/// buffer. This doesn't affect the "legality" of the output, but if most types
-/// being serialized have same alignment, setting `VALUE_ALIGNMENT`
-/// to that alignment may improve performance, as alignment arithmetic
-/// calculations can be skipped in most cases.
+/// `VALUE_ALIGNMENT` is minimum alignment all allocated values will have in
+/// output buffer. Types with alignment higher than `VALUE_ALIGNMENT` will have
+/// padding inserted before them if required. Types with alignment lower than
+/// `VALUE_ALIGNMENT` will have padding inserted after to leave the buffer
+/// aligned on `VALUE_ALIGNMENT` for the next insertion.
+///
+/// This doesn't affect the "legality" of the output, but if most allocated
+/// types being serialized have the same alignment, setting `VALUE_ALIGNMENT` to
+/// that alignment may significantly improve performance, as alignment
+/// calculations can be skipped when serializing those types.
+///
+/// NB: The word "allocated" in "allocated types" is key here. `ser_raw` deals
+/// in allocations, not individual types. So this means that only types which
+/// are pointed to by a `Box<T>` or `Vec<T>` count as "allocated types"
+/// for the purposes of calculating an optimal value for `VALUE_ALIGNMENT`.
 ///
 /// e.g. If all (or almost all) types contain pointers (`Box`, `Vec` etc),
 /// setting `VALUE_ALIGNMENT = std::mem::size_of::<usize>()`
 /// will be the best value for fast serialization.
 ///
-/// The higher `VALUE_ALIGNMENT` is, the more padding bytes will end up on
-/// output, potentially increasing output size significantly, depending on the
-/// types being serialized.
+/// The higher `VALUE_ALIGNMENT` is, the more padding bytes will end up in
+/// output, potentially increasing output size, depending on the types being
+/// serialized.
 pub struct AlignedSerializer<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize> {
 	buf: AlignedByteVec<OUTPUT_ALIGNMENT>,
 }
@@ -69,7 +79,6 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	};
 
 	/// Create new Serializer with minimal memory pre-allocated.
-	/// without allocating any memory for output buffer.
 	/// Memory will be allocated when first object is serialized.
 	pub fn new() -> Self {
 		// `VALUE_ALIGNMENT` trivially fulfills `with_capacity_unchecked`'s contract
@@ -105,16 +114,15 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// Create new Serializer with buffer pre-allocated with capacity of
 	/// exactly `capacity` bytes.
 	///
-	/// Safety:
+	/// # Safety
 	///
-	/// Caller must ensure:
-	/// * `capacity` is not 0.
-	/// * `capacity <= MAX_CAPACITY`.
-	/// * `capacity` is a multiple of `VALUE_ALIGNMENT`.
+	/// * `capacity` cannot be 0.
+	/// * `capacity` must be `<= MAX_CAPACITY`.
+	/// * `capacity` must be a multiple of `VALUE_ALIGNMENT`.
 	///
 	/// Failure to obey these constraints may not produce UB immediately,
-	/// but breaks assumptions the rest of the implementation relies on, so could
-	/// cause arithmetic overflow or alignment problems later on.
+	/// but breaks assumptions the rest of the implementation relies on,
+	/// so could cause arithmetic overflow or misaligned writes later on.
 	pub unsafe fn with_capacity_unchecked(capacity: usize) -> Self {
 		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
@@ -135,30 +143,29 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// Align position in output buffer to alignment of `T`.
 	#[inline]
 	fn align_to<T>(&mut self) {
-		// Ensure `T`'s alignment does not exceed alignment of output buffer
-		// (at compile time)
+		// Ensure (at compile time) that `T`'s alignment does not exceed alignment of
+		// output buffer
 		let _ = AlignmentCheck::<T, OUTPUT_ALIGNMENT>::ASSERT_ALIGNMENT_DOES_NOT_EXCEED;
 
 		// Align position in output buffer to alignment of `T`.
 		// If `T`'s alignment requirement is less than or equal to `VALUE_ALIGNMENT`,
-		// this can be skipped, as position is always aligned to `VALUE_ALIGNMENT` after
-		// each push.
+		// this can be skipped, as position is always left aligned to `VALUE_ALIGNMENT`
+		// after each push.
 		// This should be optimized away for types with alignment of `VALUE_ALIGNMENT`
 		// or less, in which case this function becomes a no-op.
 		// Hopefully this is the majority of types.
 		if mem::align_of::<T>() > Self::VALUE_ALIGNMENT {
-			// Assertion above ensures `align()`'s constraints are satisfied
+			// Static assertion above ensures `align()`'s constraints are satisfied
 			unsafe { self.align(mem::align_of::<T>()) }
 		}
 	}
 
 	/// Align position in output buffer to `alignment`.
 	///
-	/// Safety:
+	/// # Safety
 	///
-	/// Caller must ensure:
-	/// * `alignment <= OUTPUT_ALIGNMENT`
-	/// * `alignment` is a power of 2
+	/// * `alignment` must be `<= OUTPUT_ALIGNMENT`
+	/// * `alignment` must be a power of 2
 	#[inline]
 	unsafe fn align(&mut self, alignment: usize) {
 		// Round up buffer position to multiple of `alignment`.
@@ -171,12 +178,14 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 
 		// Ensure `len > capacity` can't happen.
 		// This check is unavoidable as we only guarantee that capacity is a multiple of
-		// `VALUE_ALIGNMENT`, and `OUTPUT_ALIGNMENT` can be higher.
+		// `VALUE_ALIGNMENT`, and alignment of serialized types can be higher.
+		// So when aligning for a higher-alignment type, we can't assume there's already
+		// sufficient capacity.
 		// No point gating this with a static check for
 		// `OUTPUT_ALIGNMENT > VALUE_ALIGNMENT` as this function is only called when
 		// `alignment > VALUE_ALIGNMENT` anyway.
 		// TODO: Actually could remove this with a 3rd const param `MAX_VALUE_ALIGN`
-		// and constrain capacity so it's always a multiple of that.
+		// and constrain capacity to always be a multiple of `MAX_VALUE_ALIGN`.
 		if self.buf.capacity() < new_pos {
 			// This will grow buffer by at least enough
 			self.reserve_for_alignment(alignment);
@@ -186,7 +195,7 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	}
 
 	/// Reserve space in output buffer to satisfy alignment.
-	/// Not inlined into `align` to hint to compiler that taking the branch is
+	/// Not inlined into `align` to hint to compiler that taking this branch is
 	/// uncommon.
 	#[cold]
 	fn reserve_for_alignment(&mut self, additional: usize) {
@@ -214,16 +223,19 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 }
 
 impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
+	/// Entry point to `AlignedSerializer`.
 	fn serialize_value<T: Serialize>(&mut self, t: &T) {
 		self.push(t);
 		t.serialize_data(self);
 	}
 
+	/// Push a value into output buffer.
 	#[inline]
 	fn push<T: Serialize>(&mut self, t: &T) {
 		self.push_slice(slice::from_ref(t));
 	}
 
+	/// Push a slice of values into output buffer.
 	#[inline]
 	fn push_slice<T: Serialize>(&mut self, slice: &[T]) {
 		// Align position in buffer to alignment of `T`
@@ -231,8 +243,8 @@ impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
 		self.align_to::<T>();
 
 		// Write slice to output.
-		// Assuming calculating `size` can't overflow as that would imply this is a
-		// slice of `usize::MAX + 1` or more bytes, which can't be possible.
+		// Calculating `size` can't overflow as that would imply this is a slice of
+		// `usize::MAX + 1` or more bytes, which can't be possible.
 		let size = mem::size_of::<T>() * slice.len();
 		self.buf.reserve(size);
 		unsafe {
@@ -245,7 +257,7 @@ impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
 			self.buf.set_len(self.buf.len() + size);
 		}
 
-		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next object.
+		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value.
 		// This should be optimized away for types with alignment of `VALUE_ALIGNMENT`
 		// or greater. Ditto for types which have lower alignment, but happen to have
 		// size divisible by `VALUE_ALIGNMENT`. Hopefully this is the majority of types.
@@ -258,12 +270,13 @@ impl<const O: usize, const V: usize> Serializer for AlignedSerializer<O, V> {
 		}
 	}
 
+	/// Push raw bytes to output buffer.
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) {
 		// Push bytes to buffer
 		self.buf.extend_from_slice(bytes);
 
-		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next object
+		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value
 		self.align_to_value_alignment();
 	}
 }
