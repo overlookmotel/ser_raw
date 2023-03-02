@@ -23,11 +23,3 @@ pub trait Serialize {
 pub trait SerializeWith<T> {
 	fn serialize_data_with<S: Serializer>(t: &T, serializer: &mut S) -> ();
 }
-
-pub fn serialize_unaligned<T: Serialize>(src: &T) -> Vec<u8> {
-	let mut serializer = UnalignedSerializer::new();
-	serializer.serialize_value(src);
-	let mut vec = serializer.into_vec();
-	vec.shrink_to_fit();
-	vec
-}
