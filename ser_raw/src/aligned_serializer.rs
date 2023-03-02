@@ -79,7 +79,6 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	};
 
 	/// Create new Serializer with minimal memory pre-allocated.
-	/// Memory will be allocated when first object is serialized.
 	pub fn new() -> Self {
 		// `VALUE_ALIGNMENT` trivially fulfills `with_capacity_unchecked`'s contract
 		unsafe { Self::with_capacity_unchecked(Self::VALUE_ALIGNMENT) }
