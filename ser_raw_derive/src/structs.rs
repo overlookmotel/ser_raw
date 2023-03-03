@@ -58,7 +58,7 @@ fn get_field_stmt(field_name: TokenStream, field: &Field) -> TokenStream {
 		}
 		None => {
 			quote_spanned! {field.span()=>
-					::ser_raw::Serialize::serialize_data(&self.#field_name, serializer);
+				::ser_raw::Serialize::serialize_data(&self.#field_name, serializer);
 			}
 		}
 	}
