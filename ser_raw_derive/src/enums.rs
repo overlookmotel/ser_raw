@@ -1,6 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
-use syn::{DataEnum, Fields, FieldsNamed, FieldsUnnamed, Generics, Ident};
+use syn::{
+	parse_quote, DataEnum, Fields, FieldsNamed, FieldsUnnamed, GenericParam, Generics, Ident,
+};
 
 // TODO: Handle `ser_with` attribute
 
@@ -35,12 +37,18 @@ pub fn derive_enum(data: DataEnum, ident: Ident, generics: Generics) -> TokenStr
 		}
 	};
 
-	let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
+	// Add `__S: ::ser_raw::Serializer` bound to impl
+	let (_, type_generics, where_clause) = generics.split_for_impl();
+	let mut generics_for_impl = generics.clone();
+	generics_for_impl
+		.params
+		.push(GenericParam::Type(parse_quote!(__S: ::ser_raw::Serializer)));
+	let (impl_generics, _, _) = generics_for_impl.split_for_impl();
 
 	quote! {
 		#[automatically_derived]
-		impl #impl_generics ::ser_raw::Serialize for #ident #type_generics #where_clause {
-			fn serialize_data<S: ::ser_raw::Serializer>(&self, serializer: &mut S) {
+		impl #impl_generics ::ser_raw::Serialize<__S> for #ident #type_generics #where_clause {
+			fn serialize_data(&self, serializer: &mut __S) {
 				#match_stmt
 			}
 		}
@@ -102,7 +110,7 @@ fn get_field_stmts(idents: &Vec<Ident>) -> Vec<TokenStream> {
 		.iter()
 		.map(|ident| {
 			quote! {
-				::ser_raw::Serialize::serialize_data(#ident, serializer);
+				::ser_raw::Serialize::<__S>::serialize_data(#ident, serializer);
 			}
 		})
 		.collect::<Vec<_>>()

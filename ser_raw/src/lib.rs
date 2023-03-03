@@ -14,12 +14,12 @@ mod other;
 mod primitives;
 mod ptrs;
 
-pub trait Serialize {
+pub trait Serialize<S: Serializer> {
 	#[allow(unused_variables)]
 	#[inline(always)]
-	fn serialize_data<S: Serializer>(&self, serializer: &mut S) {}
+	fn serialize_data(&self, serializer: &mut S) {}
 }
 
-pub trait SerializeWith<T> {
-	fn serialize_data_with<S: Serializer>(t: &T, serializer: &mut S) -> ();
+pub trait SerializeWith<T, S: Serializer> {
+	fn serialize_data_with(t: &T, serializer: &mut S) -> ();
 }

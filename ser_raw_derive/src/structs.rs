@@ -3,8 +3,9 @@
 use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::{
-	parse_macro_input, spanned::Spanned, Data, DataEnum, DataStruct, DeriveInput, Field, Fields,
-	FieldsNamed, FieldsUnnamed, Generics, Ident, Index, Meta, MetaList, NestedMeta, Path,
+	parse_macro_input, parse_quote, spanned::Spanned, Data, DataEnum, DataStruct, DeriveInput, Field,
+	Fields, FieldsNamed, FieldsUnnamed, GenericParam, Generics, Ident, Index, Meta, MetaList,
+	NestedMeta, Path, TypeParam,
 };
 
 pub fn derive_struct(data: DataStruct, ident: Ident, generics: Generics) -> TokenStream {
@@ -14,12 +15,18 @@ pub fn derive_struct(data: DataStruct, ident: Ident, generics: Generics) -> Toke
 		Fields::Unit => vec![],
 	};
 
-	let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
+	// Add `__S: ::ser_raw::Serializer` bound to impl
+	let (_, type_generics, where_clause) = generics.split_for_impl();
+	let mut generics_for_impl = generics.clone();
+	generics_for_impl
+		.params
+		.push(GenericParam::Type(parse_quote!(__S: ::ser_raw::Serializer)));
+	let (impl_generics, _, _) = generics_for_impl.split_for_impl();
 
 	quote! {
 		#[automatically_derived]
-		impl #impl_generics ::ser_raw::Serialize for #ident #type_generics #where_clause {
-			fn serialize_data<S: ::ser_raw::Serializer>(&self, serializer: &mut S) {
+		impl #impl_generics ::ser_raw::Serialize<__S> for #ident #type_generics #where_clause {
+			fn serialize_data(&self, serializer: &mut __S) {
 				#(#field_stmts)*
 			}
 		}
@@ -53,12 +60,12 @@ fn get_field_stmt(field_name: TokenStream, field: &Field) -> TokenStream {
 	match get_with(field) {
 		Some(with) => {
 			quote_spanned! {field.span()=>
-				<#with as ::ser_raw::SerializeWith::<_>>::serialize_data_with(&self.#field_name, serializer);
+				<#with as ::ser_raw::SerializeWith::<_, __S>>::serialize_data_with(&self.#field_name, serializer);
 			}
 		}
 		None => {
 			quote_spanned! {field.span()=>
-				::ser_raw::Serialize::serialize_data(&self.#field_name, serializer);
+				::ser_raw::Serialize::<__S>::serialize_data(&self.#field_name, serializer);
 			}
 		}
 	}

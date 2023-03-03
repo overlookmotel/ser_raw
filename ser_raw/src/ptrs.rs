@@ -2,8 +2,8 @@ use std::mem;
 
 use crate::{Serialize, Serializer};
 
-impl<T: Serialize> Serialize for Box<T> {
-	fn serialize_data<S: Serializer>(&self, serializer: &mut S) {
+impl<T: Serialize<S>, S: Serializer> Serialize<S> for Box<T> {
+	fn serialize_data(&self, serializer: &mut S) {
 		// No need to do anything if box contains ZST
 		if mem::size_of::<T>() == 0 {
 			return;
@@ -17,8 +17,8 @@ impl<T: Serialize> Serialize for Box<T> {
 	}
 }
 
-impl<T: Serialize> Serialize for Vec<T> {
-	fn serialize_data<S: Serializer>(&self, serializer: &mut S) {
+impl<T: Serialize<S>, S: Serializer> Serialize<S> for Vec<T> {
+	fn serialize_data(&self, serializer: &mut S) {
 		// No need to do anything if vec contains ZSTs
 		if mem::size_of::<T>() == 0 {
 			return;
@@ -39,8 +39,8 @@ impl<T: Serialize> Serialize for Vec<T> {
 	}
 }
 
-impl Serialize for String {
-	fn serialize_data<S: Serializer>(&self, serializer: &mut S) {
+impl<S: Serializer> Serialize<S> for String {
+	fn serialize_data(&self, serializer: &mut S) {
 		// No need to write contents if string is empty
 		if self.len() == 0 {
 			return;
