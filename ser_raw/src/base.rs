@@ -225,12 +225,7 @@ impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
 	/// Push a slice of values into output buffer.
 	#[inline]
 	fn push_slice<T>(&mut self, slice: &[T]) {
-		// Align position in buffer to alignment of `T`
-		// TODO: Combine this with reserving space for the slice itself.
-		self.align_to::<T>();
-
-		// Write slice to output
-		unsafe { self.push_slice_raw(slice) };
+		self.push_slice_raw(slice);
 	}
 
 	/// Push raw bytes to output buffer.
@@ -243,25 +238,27 @@ impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
 		self.align_to_value_alignment();
 	}
 
-	/// Write slice to output without aligning buffer position first.
-	///
-	/// # Safety
-	///
-	/// Caller must ensure buffer position is aligned for this type.
+	/// Push a slice of values into output buffer.
 	#[inline]
-	unsafe fn push_slice_raw<T>(&mut self, slice: &[T]) {
+	fn push_slice_raw<T>(&mut self, slice: &[T]) {
+		// Align position in buffer to alignment of `T`
+		// TODO: Combine this with reserving space for the slice itself.
+		self.align_to::<T>();
+
 		// Calculating `size` can't overflow as that would imply this is a slice of
 		// `usize::MAX + 1` or more bytes, which can't be possible.
 		let size = mem::size_of::<T>() * slice.len();
 		self.buf.reserve(size);
 
-		let src = slice.as_ptr();
-		let dst = self.buf.as_mut_ptr().add(self.buf.len()) as *mut T;
-		// `buf.reserve(size)` ensures there's enough allocated space in output buffer.
-		// `src` must be correctly aligned as derived from a valid `&[T]`.
-		// `dst` is aligned because of `self.align_to::<T>()` above.
-		ptr::copy_nonoverlapping(src, dst, slice.len());
-		self.buf.set_len(self.buf.len() + size);
+		unsafe {
+			let src = slice.as_ptr();
+			let dst = self.buf.as_mut_ptr().add(self.buf.len()) as *mut T;
+			// `buf.reserve(size)` ensures there's enough allocated space in output buffer.
+			// `src` must be correctly aligned as derived from a valid `&[T]`.
+			// `dst` is aligned because of `self.align_to::<T>()` above.
+			ptr::copy_nonoverlapping(src, dst, slice.len());
+			self.buf.set_len(self.buf.len() + size);
+		}
 
 		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value.
 		// This should be optimized away for types with alignment of `VALUE_ALIGNMENT`

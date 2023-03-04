@@ -8,9 +8,7 @@ pub trait Serializer: Sized {
 	///
 	/// The entry point for serializing, which user will call.
 	fn serialize_value<T: Serialize>(&mut self, t: &T) {
-		// Assume buffer starts out aligned
-		// TODO: Maybe should force alignment? Otherwise this method should be unsafe.
-		unsafe { self.push_slice_raw(slice::from_ref(t)) };
+		self.push_slice_raw(slice::from_ref(t));
 		t.serialize_data(self);
 	}
 
@@ -57,11 +55,5 @@ pub trait Serializer: Sized {
 	///
 	/// Unlike `push` and `push_slice`, this is not for values for which a
 	/// Serializer may need to record a pointer address.
-	///
-	/// # Safety
-	///
-	/// For Serializers which respect alignment, alignment must be ensured by
-	/// caller prior to calling this method. For this reason this method is
-	/// unsafe.
-	unsafe fn push_slice_raw<T>(&mut self, slice: &[T]) -> ();
+	fn push_slice_raw<T>(&mut self, slice: &[T]) -> ();
 }
