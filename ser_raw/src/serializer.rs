@@ -8,7 +8,7 @@ pub trait Serializer: Sized {
 	///
 	/// The entry point for serializing, which user will call.
 	fn serialize_value<T: Serialize>(&mut self, t: &T) {
-		self.push_slice_raw(slice::from_ref(t));
+		self.push_raw(t);
 		t.serialize_data(self);
 	}
 
@@ -51,9 +51,18 @@ pub trait Serializer: Sized {
 	/// ```
 	fn push_bytes(&mut self, bytes: &[u8]) -> ();
 
+	/// Push a value to output.
+	///
+	/// Unlike `push`, this is not for values for which a Serializer may need to
+	/// record a pointer address.
+	#[inline]
+	fn push_raw<T>(&mut self, t: &T) {
+		self.push_slice_raw(slice::from_ref(t));
+	}
+
 	/// Push a slice of values to output.
 	///
-	/// Unlike `push` and `push_slice`, this is not for values for which a
-	/// Serializer may need to record a pointer address.
+	/// Unlike `push_slice`, this is not for values for which a Serializer may
+	/// need to record a pointer address.
 	fn push_slice_raw<T>(&mut self, slice: &[T]) -> ();
 }
