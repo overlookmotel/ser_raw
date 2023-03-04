@@ -53,13 +53,18 @@ impl Serializer for UnalignedSerializer {
 
 	#[inline]
 	fn push_slice<T: Serialize>(&mut self, slice: &[T]) {
-		let ptr = slice.as_ptr() as *const u8;
-		let bytes = unsafe { slice::from_raw_parts(ptr, slice.len() * mem::size_of::<T>()) };
-		self.push_bytes(bytes);
+		unsafe { self.push_slice_raw(slice) };
 	}
 
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) {
 		self.buf.extend_from_slice(bytes);
+	}
+
+	#[inline]
+	unsafe fn push_slice_raw<T>(&mut self, slice: &[T]) {
+		let ptr = slice.as_ptr() as *const u8;
+		let bytes = slice::from_raw_parts(ptr, slice.len() * mem::size_of::<T>());
+		self.push_bytes(bytes);
 	}
 }

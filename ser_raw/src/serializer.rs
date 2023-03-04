@@ -42,4 +42,18 @@ pub trait Serializer {
 	/// }
 	/// ```
 	fn push_bytes(&mut self, bytes: &[u8]) -> ();
+
+	/// Push a slice of values to output.
+	///
+	/// Unlike `push` and `push_slice`, this is not for values for which a
+	/// Serializer may need to record a pointer address.
+	///
+	/// Accepts any type, not only types which implement `Serialize`.
+	///
+	/// # Safety
+	///
+	/// For Serializers which respect alignment, alignment must be ensured by
+	/// caller prior to calling this method. For this reason this method is
+	/// unsafe.
+	unsafe fn push_slice_raw<T>(&mut self, slice: &[T]) -> ();
 }

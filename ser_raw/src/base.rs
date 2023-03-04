@@ -241,20 +241,39 @@ impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
 		// TODO: Combine this with reserving space for the slice itself.
 		self.align_to::<T>();
 
-		// Write slice to output.
+		// Write slice to output
+		unsafe { self.push_slice_raw(slice) };
+	}
+
+	/// Push raw bytes to output buffer.
+	#[inline]
+	fn push_bytes(&mut self, bytes: &[u8]) {
+		// Push bytes to buffer
+		self.buf.extend_from_slice(bytes);
+
+		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value
+		self.align_to_value_alignment();
+	}
+
+	/// Write slice to output without aligning buffer position first.
+	///
+	/// # Safety
+	///
+	/// Caller must ensure buffer position is aligned for this type.
+	#[inline]
+	unsafe fn push_slice_raw<T>(&mut self, slice: &[T]) {
 		// Calculating `size` can't overflow as that would imply this is a slice of
 		// `usize::MAX + 1` or more bytes, which can't be possible.
 		let size = mem::size_of::<T>() * slice.len();
 		self.buf.reserve(size);
-		unsafe {
-			let src = slice.as_ptr();
-			let dst = self.buf.as_mut_ptr().add(self.buf.len()) as *mut T;
-			// `buf.reserve(size)` ensures there's enough allocated space in output buffer.
-			// `src` must be correctly aligned as derived from a valid `&[T]`.
-			// `dst` is aligned because of `self.align_to::<T>()` above.
-			ptr::copy_nonoverlapping(src, dst, slice.len());
-			self.buf.set_len(self.buf.len() + size);
-		}
+
+		let src = slice.as_ptr();
+		let dst = self.buf.as_mut_ptr().add(self.buf.len()) as *mut T;
+		// `buf.reserve(size)` ensures there's enough allocated space in output buffer.
+		// `src` must be correctly aligned as derived from a valid `&[T]`.
+		// `dst` is aligned because of `self.align_to::<T>()` above.
+		ptr::copy_nonoverlapping(src, dst, slice.len());
+		self.buf.set_len(self.buf.len() + size);
 
 		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value.
 		// This should be optimized away for types with alignment of `VALUE_ALIGNMENT`
@@ -267,16 +286,6 @@ impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
 		if mem::size_of::<T>() % Self::VALUE_ALIGNMENT > 0 {
 			self.align_to_value_alignment();
 		}
-	}
-
-	/// Push raw bytes to output buffer.
-	#[inline]
-	fn push_bytes(&mut self, bytes: &[u8]) {
-		// Push bytes to buffer
-		self.buf.extend_from_slice(bytes);
-
-		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value
-		self.align_to_value_alignment();
 	}
 }
 
