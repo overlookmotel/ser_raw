@@ -1,3 +1,5 @@
+use std::slice;
+
 use crate::Serialize;
 
 /// `ser_raw` Serializers implement this trait.
@@ -12,7 +14,10 @@ pub trait Serializer {
 	/// This is a value in a separate allocation, reached by a pointer
 	/// (e.g. `Box<T>`).
 	/// Some Serializers may record/overwrite the pointer address.
-	fn push<T: Serialize>(&mut self, t: &T) -> ();
+	#[inline]
+	fn push<T: Serialize>(&mut self, t: &T) {
+		self.push_slice(slice::from_ref(t));
+	}
 
 	/// Push a slice of values to output.
 	///

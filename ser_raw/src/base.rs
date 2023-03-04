@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, mem, ptr, slice};
+use std::{marker::PhantomData, mem, ptr};
 
 use crate::{AlignedByteVec, Serialize, Serializer};
 
@@ -226,12 +226,6 @@ impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
 	fn serialize_value<T: Serialize>(&mut self, t: &T) {
 		self.push(t);
 		t.serialize_data(self);
-	}
-
-	/// Push a value into output buffer.
-	#[inline]
-	fn push<T: Serialize>(&mut self, t: &T) {
-		self.push_slice(slice::from_ref(t));
 	}
 
 	/// Push a slice of values into output buffer.
