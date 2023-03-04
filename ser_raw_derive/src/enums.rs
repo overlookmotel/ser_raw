@@ -1,12 +1,16 @@
 use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
-use syn::{
-	parse_quote, DataEnum, Fields, FieldsNamed, FieldsUnnamed, GenericParam, Generics, Ident,
-};
+use syn::{DataEnum, Fields, FieldsNamed, FieldsUnnamed, Generics, Ident};
 
 // TODO: Handle `ser_with` attribute
 
-pub fn derive_enum(data: DataEnum, ident: Ident, generics: Generics) -> TokenStream {
+pub fn derive_enum(
+	data: DataEnum,
+	ident: Ident,
+	ser_type: Ident,
+	generics: Generics,
+	generics_for_impl: Generics,
+) -> TokenStream {
 	let num_variants = data.variants.len();
 
 	let mut matches = data
@@ -15,8 +19,8 @@ pub fn derive_enum(data: DataEnum, ident: Ident, generics: Generics) -> TokenStr
 		.filter_map(|variant| {
 			match variant.fields {
 				Fields::Unit => None,
-				Fields::Unnamed(fields) => get_match_for_unnamed_fields(variant.ident, fields),
-				Fields::Named(fields) => get_match_for_named_fields(variant.ident, fields),
+				Fields::Unnamed(fields) => get_match_for_unnamed_fields(variant.ident, fields, &ser_type),
+				Fields::Named(fields) => get_match_for_named_fields(variant.ident, fields, &ser_type),
 			}
 		})
 		.collect::<Vec<_>>();
@@ -37,25 +41,24 @@ pub fn derive_enum(data: DataEnum, ident: Ident, generics: Generics) -> TokenStr
 		}
 	};
 
-	// Add `__S: ::ser_raw::Serializer` bound to impl
-	let (_, type_generics, where_clause) = generics.split_for_impl();
-	let mut generics_for_impl = generics.clone();
-	generics_for_impl
-		.params
-		.push(GenericParam::Type(parse_quote!(__S: ::ser_raw::Serializer)));
 	let (impl_generics, _, _) = generics_for_impl.split_for_impl();
+	let (_, type_generics, where_clause) = generics.split_for_impl();
 
 	quote! {
 		#[automatically_derived]
-		impl #impl_generics ::ser_raw::Serialize<__S> for #ident #type_generics #where_clause {
-			fn serialize_data(&self, serializer: &mut __S) {
+		impl #impl_generics ::ser_raw::Serialize<#ser_type> for #ident #type_generics #where_clause {
+			fn serialize_data(&self, serializer: &mut #ser_type) {
 				#match_stmt
 			}
 		}
 	}
 }
 
-fn get_match_for_unnamed_fields(ident: Ident, fields: FieldsUnnamed) -> Option<TokenStream> {
+fn get_match_for_unnamed_fields(
+	ident: Ident,
+	fields: FieldsUnnamed,
+	ser_type: &Ident,
+) -> Option<TokenStream> {
 	let fields = fields.unnamed;
 	if fields.len() == 0 {
 		return None;
@@ -65,7 +68,7 @@ fn get_match_for_unnamed_fields(ident: Ident, fields: FieldsUnnamed) -> Option<T
 		.into_iter()
 		.map(|index| Ident::new(&("val_".to_string() + &index.to_string()), ident.span()))
 		.collect::<Vec<_>>();
-	let stmts = get_field_stmts(&field_idents);
+	let stmts = get_field_stmts(&field_idents, ser_type);
 
 	Some(quote_spanned! {ident.span()=>
 		Self::#ident(#(#field_idents),*) => {
@@ -74,7 +77,11 @@ fn get_match_for_unnamed_fields(ident: Ident, fields: FieldsUnnamed) -> Option<T
 	})
 }
 
-fn get_match_for_named_fields(ident: Ident, fields: FieldsNamed) -> Option<TokenStream> {
+fn get_match_for_named_fields(
+	ident: Ident,
+	fields: FieldsNamed,
+	ser_type: &Ident,
+) -> Option<TokenStream> {
 	let fields = fields.named;
 	if fields.len() == 0 {
 		return None;
@@ -96,7 +103,7 @@ fn get_match_for_named_fields(ident: Ident, fields: FieldsNamed) -> Option<Token
 		.map(|(ident, alias)| quote! { #ident: #alias })
 		.collect::<Vec<_>>();
 
-	let stmts = get_field_stmts(&field_aliases);
+	let stmts = get_field_stmts(&field_aliases, ser_type);
 
 	Some(quote_spanned! {ident.span()=>
 		Self::#ident{#(#var_mappings),*} => {
@@ -105,12 +112,12 @@ fn get_match_for_named_fields(ident: Ident, fields: FieldsNamed) -> Option<Token
 	})
 }
 
-fn get_field_stmts(idents: &Vec<Ident>) -> Vec<TokenStream> {
+fn get_field_stmts(idents: &Vec<Ident>, ser_type: &Ident) -> Vec<TokenStream> {
 	idents
 		.iter()
 		.map(|ident| {
 			quote! {
-				::ser_raw::Serialize::<__S>::serialize_data(#ident, serializer);
+				::ser_raw::Serialize::<#ser_type>::serialize_data(#ident, serializer);
 			}
 		})
 		.collect::<Vec<_>>()
