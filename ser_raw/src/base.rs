@@ -365,6 +365,32 @@ impl<
 			self.align_to_value_alignment();
 		}
 	}
+
+	/// Get current capacity of output.
+	#[inline]
+	fn capacity(&self) -> usize {
+		self.buf.borrow().capacity()
+	}
+
+	/// Get current position in output.
+	#[inline]
+	fn pos(&self) -> usize {
+		self.buf.borrow().len()
+	}
+
+	/// Move current position in output buffer.
+	///
+	/// # Safety
+	///
+	/// * `pos` must be less than or equal to `self.capacity()`.
+	/// * `pos` must be a multiple of `VALUE_ALIGNMENT`.
+	#[inline]
+	unsafe fn set_pos(&mut self, pos: usize) {
+		debug_assert!(pos <= self.buf.borrow().capacity());
+		debug_assert!(is_aligned_to(pos, Self::VALUE_ALIGNMENT));
+
+		self.buf.borrow_mut().set_len(pos);
+	}
 }
 
 /// Round up `pos` to alignment of `alignment`.

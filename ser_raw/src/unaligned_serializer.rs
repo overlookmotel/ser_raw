@@ -65,4 +65,26 @@ impl<Buf: Borrow<Vec<u8>> + BorrowMut<Vec<u8>>> Serializer for UnalignedSerializ
 		let bytes = unsafe { slice::from_raw_parts(ptr, slice.len() * mem::size_of::<T>()) };
 		self.push_bytes(bytes);
 	}
+
+	/// Get current capacity of output.
+	#[inline]
+	fn capacity(&self) -> usize {
+		self.buf.borrow().capacity()
+	}
+
+	/// Get current position in output.
+	#[inline]
+	fn pos(&self) -> usize {
+		self.buf.borrow().len()
+	}
+
+	/// Move current position in output buffer.
+	///
+	/// # Safety
+	///
+	/// * `pos` must be less than or equal to `self.capacity()`.
+	#[inline]
+	unsafe fn set_pos(&mut self, pos: usize) {
+		self.buf.borrow_mut().set_len(pos);
+	}
 }

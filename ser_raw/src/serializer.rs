@@ -65,4 +65,19 @@ pub trait Serializer: Sized {
 	/// Unlike `push_slice`, this is not for values for which a Serializer may
 	/// need to record a pointer address.
 	fn push_slice_raw<T>(&mut self, slice: &[T]) -> ();
+
+	/// Get current capacity of output.
+	fn capacity(&self) -> usize;
+
+	/// Get current position in output.
+	fn pos(&self) -> usize;
+
+	/// Move current position in output buffer.
+	///
+	/// # Safety
+	///
+	/// * `pos` must be less than or equal to `self.capacity()`.
+	///
+	/// Serializers may impose further safety contraints.
+	unsafe fn set_pos(&mut self, pos: usize) -> ();
 }
