@@ -20,7 +20,7 @@ pub trait Serializer: Sized {
 	/// (e.g. `Box<T>`).
 	/// Some Serializers may record/overwrite the pointer address.
 	#[inline]
-	fn push<T: Serialize>(&mut self, t: &T) {
+	fn push<T>(&mut self, t: &T) {
 		self.push_slice(slice::from_ref(t));
 	}
 
@@ -29,7 +29,7 @@ pub trait Serializer: Sized {
 	/// This is a slice in a separate allocation, reached by a pointer
 	/// (e.g. `Vec<T>`).
 	/// Some Serializers may record/overwrite the pointer address.
-	fn push_slice<T: Serialize>(&mut self, slice: &[T]) -> ();
+	fn push_slice<T>(&mut self, slice: &[T]) -> ();
 
 	/// Push raw bytes to output.
 	///
@@ -57,8 +57,6 @@ pub trait Serializer: Sized {
 	///
 	/// Unlike `push` and `push_slice`, this is not for values for which a
 	/// Serializer may need to record a pointer address.
-	///
-	/// Accepts any type, not only types which implement `Serialize`.
 	///
 	/// # Safety
 	///

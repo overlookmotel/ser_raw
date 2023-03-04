@@ -40,7 +40,7 @@ impl UnalignedSerializer {
 
 impl Serializer for UnalignedSerializer {
 	#[inline]
-	fn push_slice<T: Serialize>(&mut self, slice: &[T]) {
+	fn push_slice<T>(&mut self, slice: &[T]) {
 		unsafe { self.push_slice_raw(slice) };
 	}
 

@@ -224,7 +224,7 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
 	/// Push a slice of values into output buffer.
 	#[inline]
-	fn push_slice<T: Serialize>(&mut self, slice: &[T]) {
+	fn push_slice<T>(&mut self, slice: &[T]) {
 		// Align position in buffer to alignment of `T`
 		// TODO: Combine this with reserving space for the slice itself.
 		self.align_to::<T>();
