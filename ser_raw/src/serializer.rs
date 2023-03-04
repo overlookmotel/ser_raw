@@ -3,11 +3,16 @@ use std::slice;
 use crate::Serialize;
 
 /// `ser_raw` Serializers implement this trait.
-pub trait Serializer {
-	/// Serialize a value.
+pub trait Serializer: Sized {
+	/// Serialize a value and all its dependencies.
 	///
 	/// The entry point for serializing, which user will call.
-	fn serialize_value<T: Serialize>(&mut self, t: &T) -> ();
+	fn serialize_value<T: Serialize>(&mut self, t: &T) {
+		// Assume buffer starts out aligned
+		// TODO: Maybe should force alignment? Otherwise this method should be unsafe.
+		unsafe { self.push_slice_raw(slice::from_ref(t)) };
+		t.serialize_data(self);
+	}
 
 	/// Push a value to output.
 	///

@@ -1,6 +1,6 @@
 use std::{marker::PhantomData, mem, ptr};
 
-use crate::{AlignedByteVec, Serialize, Serializer};
+use crate::{AlignedByteVec, Serializer};
 
 /// Serializer that ensures values are correctly aligned in output buffer.
 ///
@@ -222,12 +222,6 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 }
 
 impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
-	/// Entry point to serializer.
-	fn serialize_value<T: Serialize>(&mut self, t: &T) {
-		self.push(t);
-		t.serialize_data(self);
-	}
-
 	/// Push a slice of values into output buffer.
 	#[inline]
 	fn push_slice<T: Serialize>(&mut self, slice: &[T]) {

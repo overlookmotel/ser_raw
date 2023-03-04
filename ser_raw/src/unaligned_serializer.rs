@@ -1,6 +1,6 @@
 use std::{mem, slice};
 
-use crate::{Serialize, Serializer};
+use crate::Serializer;
 
 /// Serializer which does not respect alignment in the output.
 ///
@@ -39,11 +39,6 @@ impl UnalignedSerializer {
 }
 
 impl Serializer for UnalignedSerializer {
-	fn serialize_value<T: Serialize>(&mut self, t: &T) {
-		self.push(t);
-		t.serialize_data(self);
-	}
-
 	#[inline]
 	fn push_slice<T: Serialize>(&mut self, slice: &[T]) {
 		unsafe { self.push_slice_raw(slice) };
