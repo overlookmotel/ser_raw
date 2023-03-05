@@ -70,7 +70,7 @@ fn get_with(field: &Field) -> Option<Path> {
 		.iter()
 		.map(|attr| attr.parse_meta())
 		.filter_map(Result::ok)
-		.filter(|attr| attr.path().is_ident("ser_raw_with"))
+		.filter(|attr| attr.path().is_ident("ser_with"))
 		.collect::<Vec<_>>();
 
 	if attrs.len() == 0 {
@@ -78,7 +78,7 @@ fn get_with(field: &Field) -> Option<Path> {
 	}
 
 	if attrs.len() != 1 {
-		panic!("Cannot have more than 1 `#[ser_raw_with]` attribute on a field");
+		panic!("Cannot have more than 1 `#[ser_with]` attribute on a field");
 	}
 
 	let attr = attrs.into_iter().nth(0).unwrap();
@@ -91,5 +91,5 @@ fn get_with(field: &Field) -> Option<Path> {
 			}
 		}
 	}
-	panic!("`#[ser_raw_with]` needs a path e.g. `#[ser_raw_with(ForeignTypeProxy)]`");
+	panic!("`#[ser_with]` needs a path e.g. `#[ser_with(ForeignTypeProxy)]`");
 }

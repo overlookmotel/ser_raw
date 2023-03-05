@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::{DataEnum, Fields, FieldsNamed, FieldsUnnamed, Generics, Ident};
 
-// TODO: Handle `ser_raw_with` attribute
+// TODO: Handle `ser_with` attribute
 
 pub fn derive_enum(data: DataEnum, ident: Ident, generics: Generics) -> TokenStream {
 	let num_variants = data.variants.len();
