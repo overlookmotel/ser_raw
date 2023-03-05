@@ -58,22 +58,20 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// creating a `BaseSerializer`, to ensure compile-time error if
 	/// assertions fail.
 	const ASSERT_ALIGNMENTS_VALID: () = {
-		assert!(OUTPUT_ALIGNMENT > 0, "OUTPUT_ALIGNMENT must be 1 or more");
 		assert!(
 			OUTPUT_ALIGNMENT < isize::MAX as usize,
 			"OUTPUT_ALIGNMENT must be less than isize::MAX"
 		);
 		assert!(
-			OUTPUT_ALIGNMENT == OUTPUT_ALIGNMENT.next_power_of_two(),
+			OUTPUT_ALIGNMENT.is_power_of_two(), // false if 0
 			"OUTPUT_ALIGNMENT must be a power of 2"
 		);
-		assert!(VALUE_ALIGNMENT > 0, "VALUE_ALIGNMENT must be 1 or more");
 		assert!(
 			VALUE_ALIGNMENT <= OUTPUT_ALIGNMENT,
 			"VALUE_ALIGNMENT must be less than or equal to OUTPUT_ALIGNMENT",
 		);
 		assert!(
-			VALUE_ALIGNMENT == VALUE_ALIGNMENT.next_power_of_two(),
+			VALUE_ALIGNMENT.is_power_of_two(), // false if 0
 			"VALUE_ALIGNMENT must be a power of 2"
 		);
 	};
@@ -126,6 +124,10 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
+		debug_assert!(capacity > 0);
+		debug_assert!(capacity <= Self::MAX_CAPACITY);
+		debug_assert!(is_aligned_to(capacity, Self::VALUE_ALIGNMENT));
+
 		// TODO: Could be a little bit more efficient here.
 		// `AlignedByteVec::with_capacity` repeats some of the checks already conducted.
 		// But this function isn't called often, so probably not worth worrying about.
@@ -167,6 +169,9 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// * `alignment` must be a power of 2
 	#[inline]
 	unsafe fn align(&mut self, alignment: usize) {
+		debug_assert!(alignment <= Self::OUTPUT_ALIGNMENT);
+		debug_assert!(alignment.is_power_of_two());
+
 		// Round up buffer position to multiple of `alignment`.
 		// `align_up_to`'s constraints are satisfied by:
 		// * `buf.len()` is always less than `MAX_CAPACITY`, which is `< isize::MAX`.
@@ -284,7 +289,16 @@ impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
 /// Breaking these conditions will yield an incorrect result which could
 /// cause UB later on due to mis-aligned data.
 pub const fn align_up_to(pos: usize, alignment: usize) -> usize {
+	debug_assert!(alignment.is_power_of_two());
 	(pos + alignment - 1) & !(alignment - 1)
+}
+
+/// Check if `pos` is a multiple of `alignment`.
+///
+/// `alignment` must be a power of 2.
+pub const fn is_aligned_to(pos: usize, alignment: usize) -> bool {
+	debug_assert!(alignment.is_power_of_two());
+	pos & (alignment - 1) == 0
 }
 
 /// Type for static assertion that types being serialized do not have a higher

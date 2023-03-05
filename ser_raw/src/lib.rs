@@ -4,7 +4,7 @@ pub use ser_raw_derive::Serialize;
 mod serializer;
 pub use serializer::Serializer;
 mod base;
-pub use base::{align_up_to, BaseSerializer};
+pub use base::{align_up_to, is_aligned_to, BaseSerializer};
 mod aligned_vec;
 pub use aligned_vec::AlignedByteVec;
 mod unaligned_serializer;
