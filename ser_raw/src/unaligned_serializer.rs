@@ -17,7 +17,7 @@ impl UnalignedSerializer {
 	/// Create new Serializer without allocating any memory for output buffer.
 	/// Memory will be allocated when first object is serialized.
 	pub fn new() -> Self {
-		UnalignedSerializer { buf: Vec::new() }
+		Self { buf: Vec::new() }
 	}
 
 	/// Create new Serializer with buffer pre-allocated with capacity of
@@ -27,7 +27,7 @@ impl UnalignedSerializer {
 	/// be needed in advance, allocating upfront with `with_capacity` can
 	/// dramatically improve performance vs `new`.
 	pub fn with_capacity(capacity: usize) -> Self {
-		UnalignedSerializer {
+		Self {
 			buf: Vec::with_capacity(capacity),
 		}
 	}
