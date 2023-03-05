@@ -132,7 +132,7 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 		// `AlignedByteVec::with_capacity` repeats some of the checks already conducted.
 		// But this function isn't called often, so probably not worth worrying about.
 		Self {
-			buf: AlignedByteVec::<OUTPUT_ALIGNMENT>::with_capacity(capacity),
+			buf: AlignedByteVec::with_capacity(capacity),
 		}
 	}
 
