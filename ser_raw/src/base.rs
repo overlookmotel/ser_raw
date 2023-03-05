@@ -78,6 +78,19 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 
 	/// Create new Serializer with minimal memory pre-allocated.
 	pub fn new() -> Self {
+		// Cannot start with 0 capacity as need to maintain invariant
+		// `capacity % VALUE_ALIGNMENT == 0` throughout.
+		// `align()` and `align_to_value_alignment()` rely on this invariant to prevent
+		// setting `len` to more than `capacity`, without having to check each time.
+		//
+		// If capacity started at 0, this invariant could be broken as follows:
+		// * `capacity = 0`
+		// * `VALUE_ALIGNMENT = 8`
+		// * 1st call to `push_slice_raw()` is with `&[0u8; 1]` (size 1, alignment 1)
+		// * `push_slice_raw()` calls `AlignedByteVec::reserve(1)`.
+		// * `push_slice_raw()` aligns position to `VALUE_ALIGNMENT` (8)
+		// * Now `capacity = 1` and `len = 8`
+
 		// `VALUE_ALIGNMENT` trivially fulfills `with_capacity_unchecked`'s contract
 		unsafe { Self::with_capacity_unchecked(Self::VALUE_ALIGNMENT) }
 	}
@@ -86,11 +99,15 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// at least `capacity` bytes.
 	///
 	/// `capacity` will be rounded up to a multiple of `VALUE_ALIGNMENT`.
-	/// `capacity` cannot be 0. Panics if so.
+	/// `capacity` cannot be 0.
 	///
 	/// If you know, or can estimate, the amount of buffer space that's going to
 	/// be needed in advance, allocating upfront with `with_capacity` can
 	/// dramatically improve performance vs using `new`.
+	///
+	/// # Panics
+	///
+	/// Panics if `capacity` is 0, or exceeds `MAX_CAPACITY`.
 	pub fn with_capacity(capacity: usize) -> Self {
 		// Bounds check `capacity`
 		assert!(capacity != 0, "`capacity` must be at least VALUE_ALIGNMENT");
@@ -100,8 +117,11 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 		);
 
 		// Round up capacity to multiple of `VALUE_ALIGNMENT`.
-		// Above assertions + static assertions for allowable values of
-		// `VALUE_ALIGNMENT` satisify constraints of `align_up_to`.
+		// `AlignedByteVec`'s growth strategy is to double in size, so the invariant
+		// that `capacity % VALUE_ALIGNMENT == 0` will always be maintained after
+		// this starting point.
+		// Above assertions + static assertions for allowable values
+		// of `VALUE_ALIGNMENT` satisify constraints of `align_up_to`.
 		let capacity = align_up_to(capacity, Self::VALUE_ALIGNMENT);
 
 		// Above ensures compliance with `with_capacity_unchecked`'s contract
@@ -111,10 +131,13 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// Create new Serializer with buffer pre-allocated with capacity of
 	/// exactly `capacity` bytes.
 	///
+	/// # Panics
+	///
+	/// Panics if `capacity` exceeds `MAX_CAPACITY`.
+	///
 	/// # Safety
 	///
 	/// * `capacity` cannot be 0.
-	/// * `capacity` must be `<= MAX_CAPACITY`.
 	/// * `capacity` must be a multiple of `VALUE_ALIGNMENT`.
 	///
 	/// Failure to obey these constraints may not produce UB immediately,
@@ -131,6 +154,7 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 		// TODO: Could be a little bit more efficient here.
 		// `AlignedByteVec::with_capacity` repeats some of the checks already conducted.
 		// But this function isn't called often, so probably not worth worrying about.
+		// `AlignedByteVec::with_capacity` panics if `capacity > MAX_CAPACITY`.
 		Self {
 			buf: AlignedByteVec::with_capacity(capacity),
 		}
@@ -177,7 +201,7 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 		// * `buf.len()` is always less than `MAX_CAPACITY`, which is `< isize::MAX`.
 		// * `alignment <= OUTPUT_ALIGNMENT` satisfies `alignment < isize::MAX` because
 		//   `OUTPUT_ALIGNMENT < isize::MAX`.
-		// * `alignment` is a power of 2 is part of this function's contract.
+		// * `alignment` being a power of 2 is part of this function's contract.
 		let new_pos = align_up_to(self.buf.len(), alignment);
 
 		// Ensure `len > capacity` can't happen.
