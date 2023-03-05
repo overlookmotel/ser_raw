@@ -110,7 +110,7 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// Panics if `capacity` is 0, or exceeds `MAX_CAPACITY`.
 	pub fn with_capacity(capacity: usize) -> Self {
 		// Bounds check `capacity`
-		assert!(capacity != 0, "`capacity` must be at least VALUE_ALIGNMENT");
+		assert!(capacity != 0, "`capacity` cannot be 0");
 		assert!(
 			capacity <= Self::MAX_CAPACITY,
 			"`capacity` cannot exceed `isize::MAX + 1 - OUTPUT_ALIGNMENT`"
