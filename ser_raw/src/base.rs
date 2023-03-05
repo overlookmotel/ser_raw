@@ -214,15 +214,14 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 	/// we can exceed capacity.
 	#[inline]
 	fn align_to_value_alignment(&mut self) {
-		unsafe {
-			// `align_up_to`'s contract is easily fulfilled.
-			// `buf.len()` is always `<= MAX_CAPACITY`.
-			// `MAX_CAPACITY` and `VALUE_ALIGNMENT` are both `< isize::MAX`.
-			let new_pos = align_up_to(self.buf.len(), Self::VALUE_ALIGNMENT);
-			// Cannot result in `len > capacity` because we're only aligning to
-			// `VALUE_ALIGNMENT` and `capacity` is always a multiple of this.
-			self.buf.set_len(new_pos);
-		};
+		// `align_up_to`'s contract is easily fulfilled.
+		// `buf.len()` is always `<= MAX_CAPACITY`.
+		// `MAX_CAPACITY` and `VALUE_ALIGNMENT` are both `< isize::MAX`.
+		let new_pos = align_up_to(self.buf.len(), Self::VALUE_ALIGNMENT);
+
+		// Cannot result in `len > capacity` because we're only aligning to
+		// `VALUE_ALIGNMENT` and `capacity` is always a multiple of this.
+		unsafe { self.buf.set_len(new_pos) };
 	}
 }
 
