@@ -1,4 +1,8 @@
-use std::{marker::PhantomData, mem, ptr};
+use std::{
+	borrow::{Borrow, BorrowMut},
+	marker::PhantomData,
+	mem, ptr,
+};
 
 use crate::{AlignedByteVec, Serializer};
 
@@ -31,51 +35,17 @@ use crate::{AlignedByteVec, Serializer};
 /// The higher `VALUE_ALIGNMENT` is, the more padding bytes will end up in
 /// output, potentially increasing output size, depending on the types being
 /// serialized.
-pub struct BaseSerializer<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize> {
-	buf: AlignedByteVec<OUTPUT_ALIGNMENT>,
+pub struct BaseSerializer<
+	Buf: Borrow<AlignedByteVec<OUTPUT_ALIGNMENT>> + BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
+	const OUTPUT_ALIGNMENT: usize,
+	const VALUE_ALIGNMENT: usize,
+> {
+	buf: Buf,
 }
 
 impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
-	BaseSerializer<OUTPUT_ALIGNMENT, VALUE_ALIGNMENT>
+	BaseSerializer<AlignedByteVec<OUTPUT_ALIGNMENT>, OUTPUT_ALIGNMENT, VALUE_ALIGNMENT>
 {
-	/// Alignment of output buffer
-	pub const OUTPUT_ALIGNMENT: usize = OUTPUT_ALIGNMENT;
-
-	/// Typical alignment of values being serialized
-	pub const VALUE_ALIGNMENT: usize = VALUE_ALIGNMENT;
-
-	/// Maximum capacity of output buffer.
-	/// Dictated by the requirements of
-	/// [`alloc::Layout`](https://doc.rust-lang.org/alloc/alloc/struct.Layout.html).
-	/// "`size`, when rounded up to the nearest multiple of `align`, must not
-	/// overflow `isize` (i.e. the rounded value must be less than or equal to
-	/// `isize::MAX`)".
-	pub const MAX_CAPACITY: usize = isize::MAX as usize - (Self::OUTPUT_ALIGNMENT - 1);
-
-	/// Assertions for validity of alignment const params.
-	/// These assertions are not evaluated here.
-	/// `Self::ASSERT_ALIGNMENTS_VALID` must be referenced in all code paths
-	/// creating a `BaseSerializer`, to ensure compile-time error if
-	/// assertions fail.
-	const ASSERT_ALIGNMENTS_VALID: () = {
-		assert!(
-			OUTPUT_ALIGNMENT < isize::MAX as usize,
-			"OUTPUT_ALIGNMENT must be less than isize::MAX"
-		);
-		assert!(
-			OUTPUT_ALIGNMENT.is_power_of_two(), // false if 0
-			"OUTPUT_ALIGNMENT must be a power of 2"
-		);
-		assert!(
-			VALUE_ALIGNMENT <= OUTPUT_ALIGNMENT,
-			"VALUE_ALIGNMENT must be less than or equal to OUTPUT_ALIGNMENT",
-		);
-		assert!(
-			VALUE_ALIGNMENT.is_power_of_two(), // false if 0
-			"VALUE_ALIGNMENT must be a power of 2"
-		);
-	};
-
 	/// Create new Serializer with minimal memory pre-allocated.
 	pub fn new() -> Self {
 		// Cannot start with 0 capacity as need to maintain invariant
@@ -159,9 +129,97 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 			buf: AlignedByteVec::with_capacity(capacity),
 		}
 	}
+}
+
+impl<
+		Buf: Borrow<AlignedByteVec<OUTPUT_ALIGNMENT>> + BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
+		const OUTPUT_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+	> BaseSerializer<Buf, OUTPUT_ALIGNMENT, VALUE_ALIGNMENT>
+{
+	/// Alignment of output buffer
+	pub const OUTPUT_ALIGNMENT: usize = OUTPUT_ALIGNMENT;
+
+	/// Typical alignment of values being serialized
+	pub const VALUE_ALIGNMENT: usize = VALUE_ALIGNMENT;
+
+	/// Maximum capacity of output buffer.
+	/// Dictated by the requirements of
+	/// [`alloc::Layout`](https://doc.rust-lang.org/alloc/alloc/struct.Layout.html).
+	/// "`size`, when rounded up to the nearest multiple of `align`, must not
+	/// overflow `isize` (i.e. the rounded value must be less than or equal to
+	/// `isize::MAX`)".
+	pub const MAX_CAPACITY: usize = isize::MAX as usize - (Self::OUTPUT_ALIGNMENT - 1);
+
+	/// Assertions for validity of alignment const params.
+	/// These assertions are not evaluated here.
+	/// `Self::ASSERT_ALIGNMENTS_VALID` must be referenced in all code paths
+	/// creating a `BaseSerializer`, to ensure compile-time error if
+	/// assertions fail.
+	const ASSERT_ALIGNMENTS_VALID: () = {
+		assert!(
+			OUTPUT_ALIGNMENT < isize::MAX as usize,
+			"OUTPUT_ALIGNMENT must be less than isize::MAX"
+		);
+		assert!(
+			OUTPUT_ALIGNMENT.is_power_of_two(), // false if 0
+			"OUTPUT_ALIGNMENT must be a power of 2"
+		);
+		assert!(
+			VALUE_ALIGNMENT <= OUTPUT_ALIGNMENT,
+			"VALUE_ALIGNMENT must be less than or equal to OUTPUT_ALIGNMENT",
+		);
+		assert!(
+			VALUE_ALIGNMENT.is_power_of_two(), // false if 0
+			"VALUE_ALIGNMENT must be a power of 2"
+		);
+	};
+
+	/// Create new Serializer from an existing `AlignedByteVec`
+	/// or `&mut AlignedByteVec`.
+	///
+	/// # Panics
+	///
+	/// * If `buf` has 0 capacity
+	/// * If `buf.capacity()` is not a multiple of `VALUE_ALIGNMENT`
+	/// * If `buf.len()` is not a multiple of `VALUE_ALIGNMENT`
+	pub fn from_vec(buf: Buf) -> Self {
+		// Ensure (at compile time) that const params for alignment are valid
+		let _ = Self::ASSERT_ALIGNMENTS_VALID;
+
+		assert!(
+			buf.borrow().capacity() > 0,
+			"`buf.capacity()` must not be 0"
+		);
+		assert!(
+			is_aligned_to(buf.borrow().capacity(), Self::VALUE_ALIGNMENT),
+			"`buf.capacity()` must be a multiple of `VALUE_ALIGNMENT`"
+		);
+		assert!(
+			is_aligned_to(buf.borrow().len(), Self::VALUE_ALIGNMENT),
+			"`buf.len()` must be a multiple of `VALUE_ALIGNMENT`"
+		);
+
+		Self { buf }
+	}
+
+	/// Create new Serializer from an existing `AlignedByteVec`
+	/// or `&mut AlignedByteVec` without checking invariants.
+	///
+	/// # Safety
+	///
+	/// * `buf` must have capacity greater than 0
+	/// * `buf.capacity()` must be a multiple of `VALUE_ALIGNMENT`
+	/// * `buf.len()` must be a multiple of `VALUE_ALIGNMENT`
+	pub unsafe fn from_vec_unchecked(buf: Buf) -> Self {
+		// Ensure (at compile time) that const params for alignment are valid
+		let _ = Self::ASSERT_ALIGNMENTS_VALID;
+
+		Self { buf }
+	}
 
 	/// Consume Serializer and return the output buffer as an `AlignedByteVec`.
-	pub fn into_vec(self) -> AlignedByteVec<OUTPUT_ALIGNMENT> {
+	pub fn into_vec(self) -> Buf {
 		self.buf
 	}
 
@@ -202,7 +260,7 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 		// * `alignment <= OUTPUT_ALIGNMENT` satisfies `alignment < isize::MAX` because
 		//   `OUTPUT_ALIGNMENT < isize::MAX`.
 		// * `alignment` being a power of 2 is part of this function's contract.
-		let new_pos = align_up_to(self.buf.len(), alignment);
+		let new_pos = align_up_to(self.buf.borrow().len(), alignment);
 
 		// Ensure `len > capacity` can't happen.
 		// This check is unavoidable as we only guarantee that capacity is a multiple of
@@ -214,12 +272,12 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 		// `alignment > VALUE_ALIGNMENT` anyway.
 		// TODO: Actually could remove this with a 3rd const param `MAX_VALUE_ALIGN`
 		// and constrain capacity to always be a multiple of `MAX_VALUE_ALIGN`.
-		if self.buf.capacity() < new_pos {
+		if self.buf.borrow().capacity() < new_pos {
 			// This will grow buffer by at least enough
 			self.reserve_for_alignment(alignment);
 		}
 
-		self.buf.set_len(new_pos);
+		self.buf.borrow_mut().set_len(new_pos);
 	}
 
 	/// Reserve space in output buffer to satisfy alignment.
@@ -230,7 +288,7 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 		// TODO: Could make this faster - `reserve()` contains an addition op
 		// and a comparison which are not needed as we've done them already.
 		// But `AlignedByteVec` has no public API for that.
-		self.buf.reserve(additional);
+		self.buf.borrow_mut().reserve(additional);
 	}
 
 	/// Align position in output buffer to `VALUE_ALIGNMENT`.
@@ -241,15 +299,20 @@ impl<const OUTPUT_ALIGNMENT: usize, const VALUE_ALIGNMENT: usize>
 		// `align_up_to`'s contract is easily fulfilled.
 		// `buf.len()` is always `<= MAX_CAPACITY`.
 		// `MAX_CAPACITY` and `VALUE_ALIGNMENT` are both `< isize::MAX`.
-		let new_pos = align_up_to(self.buf.len(), Self::VALUE_ALIGNMENT);
+		let new_pos = align_up_to(self.buf.borrow().len(), Self::VALUE_ALIGNMENT);
 
 		// Cannot result in `len > capacity` because we're only aligning to
 		// `VALUE_ALIGNMENT` and `capacity` is always a multiple of this.
-		unsafe { self.buf.set_len(new_pos) };
+		unsafe { self.buf.borrow_mut().set_len(new_pos) };
 	}
 }
 
-impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
+impl<
+		Buf: Borrow<AlignedByteVec<OUTPUT_ALIGNMENT>> + BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
+		const OUTPUT_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+	> Serializer for BaseSerializer<Buf, OUTPUT_ALIGNMENT, VALUE_ALIGNMENT>
+{
 	/// Push a slice of values into output buffer.
 	#[inline]
 	fn push_slice<T>(&mut self, slice: &[T]) {
@@ -260,7 +323,7 @@ impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) {
 		// Push bytes to buffer
-		self.buf.extend_from_slice(bytes);
+		self.buf.borrow_mut().extend_from_slice(bytes);
 
 		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value
 		self.align_to_value_alignment();
@@ -276,16 +339,18 @@ impl<const O: usize, const V: usize> Serializer for BaseSerializer<O, V> {
 		// Calculating `size` can't overflow as that would imply this is a slice of
 		// `usize::MAX + 1` or more bytes, which can't be possible.
 		let size = mem::size_of::<T>() * slice.len();
-		self.buf.reserve(size);
+
+		let buf = self.buf.borrow_mut();
+		buf.reserve(size);
 
 		unsafe {
 			let src = slice.as_ptr();
-			let dst = self.buf.as_mut_ptr().add(self.buf.len()) as *mut T;
+			let dst = buf.as_mut_ptr().add(buf.len()) as *mut T;
 			// `buf.reserve(size)` ensures there's enough allocated space in output buffer.
 			// `src` must be correctly aligned as derived from a valid `&[T]`.
 			// `dst` is aligned because of `self.align_to::<T>()` above.
 			ptr::copy_nonoverlapping(src, dst, slice.len());
-			self.buf.set_len(self.buf.len() + size);
+			buf.set_len(buf.len() + size);
 		}
 
 		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value.

@@ -1,4 +1,7 @@
-use std::{mem, slice};
+use std::{
+	borrow::{Borrow, BorrowMut},
+	mem, slice,
+};
 
 use crate::Serializer;
 
@@ -9,11 +12,11 @@ use crate::Serializer;
 /// If most of the allocated types you're serializing share the
 /// same alignment, performance of `BaseSerializer`, which
 /// does respect alignment, is likely to be almost exactly the same.
-pub struct UnalignedSerializer {
-	buf: Vec<u8>,
+pub struct UnalignedSerializer<Buf: Borrow<Vec<u8>> + BorrowMut<Vec<u8>>> {
+	buf: Buf,
 }
 
-impl UnalignedSerializer {
+impl UnalignedSerializer<Vec<u8>> {
 	/// Create new Serializer without allocating any memory for output buffer.
 	/// Memory will be allocated when first object is serialized.
 	pub fn new() -> Self {
@@ -31,14 +34,21 @@ impl UnalignedSerializer {
 			buf: Vec::with_capacity(capacity),
 		}
 	}
+}
 
-	/// Consume Serializer and return the output buffer as a `Vec<u8>`.
-	pub fn into_vec(self) -> Vec<u8> {
+impl<Buf: Borrow<Vec<u8>> + BorrowMut<Vec<u8>>> UnalignedSerializer<Buf> {
+	/// Create new Serializer from an existing `Vec<u8>` or `&mut Vec<u8>`.
+	pub fn from_vec(buf: Buf) -> Self {
+		Self { buf }
+	}
+
+	/// Consume Serializer and return the output buffer as an `AlignedByteVec`.
+	pub fn into_vec(self) -> Buf {
 		self.buf
 	}
 }
 
-impl Serializer for UnalignedSerializer {
+impl<Buf: Borrow<Vec<u8>> + BorrowMut<Vec<u8>>> Serializer for UnalignedSerializer<Buf> {
 	#[inline]
 	fn push_slice<T>(&mut self, slice: &[T]) {
 		self.push_slice_raw(slice);
@@ -46,7 +56,7 @@ impl Serializer for UnalignedSerializer {
 
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) {
-		self.buf.extend_from_slice(bytes);
+		self.buf.borrow_mut().extend_from_slice(bytes);
 	}
 
 	#[inline]
