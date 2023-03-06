@@ -5,6 +5,9 @@ use std::{
 
 use crate::Serializer;
 
+// TODO: Should use `Vec<MaybeUninit<u8>>` not `Vec<u8>` as output likely
+// includes uninitialized padding bytes
+
 /// Serializer which does not respect alignment in the output.
 ///
 /// Values are likely not be aligned as their types require.
