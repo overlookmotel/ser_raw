@@ -1,8 +1,4 @@
-use std::{
-	borrow::{Borrow, BorrowMut},
-	marker::PhantomData,
-	mem, ptr,
-};
+use std::{borrow::BorrowMut, marker::PhantomData, mem, ptr};
 
 use crate::{AlignedByteVec, Serializer};
 
@@ -36,7 +32,7 @@ use crate::{AlignedByteVec, Serializer};
 /// output, potentially increasing output size, depending on the types being
 /// serialized.
 pub struct BaseSerializer<
-	Buf: Borrow<AlignedByteVec<OUTPUT_ALIGNMENT>> + BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
+	Buf: BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
 	const OUTPUT_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
@@ -140,7 +136,7 @@ impl<
 }
 
 impl<
-		Buf: Borrow<AlignedByteVec<OUTPUT_ALIGNMENT>> + BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
+		Buf: BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
 		const OUTPUT_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
@@ -306,7 +302,7 @@ impl<
 }
 
 impl<
-		Buf: Borrow<AlignedByteVec<OUTPUT_ALIGNMENT>> + BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
+		Buf: BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
 		const OUTPUT_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,

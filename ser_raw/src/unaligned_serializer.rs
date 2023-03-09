@@ -1,7 +1,4 @@
-use std::{
-	borrow::{Borrow, BorrowMut},
-	mem, slice,
-};
+use std::{borrow::BorrowMut, mem, slice};
 
 use crate::Serializer;
 
@@ -15,7 +12,7 @@ use crate::Serializer;
 /// If most of the allocated types you're serializing share the
 /// same alignment, performance of `BaseSerializer`, which
 /// does respect alignment, is likely to be almost exactly the same.
-pub struct UnalignedSerializer<Buf: Borrow<Vec<u8>> + BorrowMut<Vec<u8>>> {
+pub struct UnalignedSerializer<Buf: BorrowMut<Vec<u8>>> {
 	buf: Buf,
 }
 
@@ -39,7 +36,7 @@ impl UnalignedSerializer<Vec<u8>> {
 	}
 }
 
-impl<Buf: Borrow<Vec<u8>> + BorrowMut<Vec<u8>>> UnalignedSerializer<Buf> {
+impl<Buf: BorrowMut<Vec<u8>>> UnalignedSerializer<Buf> {
 	/// Create new Serializer from an existing `Vec<u8>` or `&mut Vec<u8>`.
 	pub fn from_vec(buf: Buf) -> Self {
 		Self { buf }
@@ -52,7 +49,7 @@ impl<Buf: Borrow<Vec<u8>> + BorrowMut<Vec<u8>>> UnalignedSerializer<Buf> {
 	}
 }
 
-impl<Buf: Borrow<Vec<u8>> + BorrowMut<Vec<u8>>> Serializer for UnalignedSerializer<Buf> {
+impl<Buf: BorrowMut<Vec<u8>>> Serializer for UnalignedSerializer<Buf> {
 	#[inline]
 	fn push_slice<T>(&mut self, slice: &[T]) {
 		self.push_slice_raw(slice);
