@@ -321,7 +321,9 @@ impl<
 		self.buf.borrow_mut().extend_from_slice(bytes);
 
 		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value
-		self.align_to_value_alignment();
+		if Self::VALUE_ALIGNMENT > 1 {
+			self.align_to_value_alignment();
+		}
 	}
 
 	/// Push a slice of values into output buffer.
