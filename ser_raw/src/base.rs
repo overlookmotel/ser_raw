@@ -411,7 +411,7 @@ pub const fn is_aligned_to(pos: usize, alignment: usize) -> bool {
 
 /// Type for static assertion that types being serialized do not have a higher
 /// alignment requirement than the alignment of the output buffer
-struct AlignmentCheck<T, const OUTPUT_ALIGNMENT: usize> {
+struct AlignmentCheck<T, const MAX_VALUE_ALIGNMENT: usize> {
 	_marker: PhantomData<T>,
 }
 
