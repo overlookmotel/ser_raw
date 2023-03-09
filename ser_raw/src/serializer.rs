@@ -40,8 +40,8 @@ pub trait Serializer: Sized {
 	///
 	/// ```
 	/// struct MyStringProxy;
-	/// impl SerializeWith<MyString> for MyStringProxy {
-	///   fn serialize_data_with<S: Serializer>(my_str: &MyString, serializer: &mut S) {
+	/// impl SerializeWith<MyString, S: Serializer> for MyStringProxy {
+	///   fn serialize_data_with(my_str: &MyString, serializer: &mut S) {
 	///     // Serializer may record pointer to this
 	///     serializer.push(&my_str.len());
 	///     // No need to record pointer to this, as it's deductible from pointer to `len`
