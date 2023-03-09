@@ -238,7 +238,8 @@ impl<
 		Self { buf }
 	}
 
-	/// Consume Serializer and return the output buffer as an `AlignedByteVec`.
+	/// Consume Serializer and return the output buffer as an `AlignedByteVec`
+	/// or `&mut AlignedByteVec`.
 	pub fn into_vec(self) -> Buf {
 		self.buf
 	}

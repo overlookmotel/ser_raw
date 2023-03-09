@@ -45,7 +45,8 @@ impl<Buf: Borrow<Vec<u8>> + BorrowMut<Vec<u8>>> UnalignedSerializer<Buf> {
 		Self { buf }
 	}
 
-	/// Consume Serializer and return the output buffer as an `AlignedByteVec`.
+	/// Consume Serializer and return the output buffer as a `Vec<u8>`
+	/// or `&mut Vec<u8>`.
 	pub fn into_vec(self) -> Buf {
 		self.buf
 	}
