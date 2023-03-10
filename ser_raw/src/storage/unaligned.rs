@@ -76,6 +76,7 @@ impl Storage for UnalignedVec {
 	/// * `new_len` must be less than or equal `capacity()`.
 	#[inline]
 	unsafe fn set_len(&mut self, new_len: usize) {
+		debug_assert!(new_len <= self.capacity());
 		self.inner.set_len(new_len);
 	}
 

@@ -1,7 +1,7 @@
 use std::cmp;
 
 use super::{AlignedByteVec, ContiguousStorage, Storage};
-use crate::util::align_up_to;
+use crate::util::{align_up_to, is_aligned_to};
 
 /// Trait for storage used by Serializers which has a specified alignment in
 /// memory.
@@ -115,6 +115,8 @@ impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize> Storage
 		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
+		debug_assert!(is_aligned_to(capacity, CAPACITY_ALIGNMENT));
+
 		// `AlignedByteVec::with_capacity` panics if capacity exceeds max
 		Self {
 			inner: AlignedByteVec::with_capacity(capacity),
@@ -143,6 +145,7 @@ impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize> Storage
 	/// `new_len` must be a multiple of serializer's `VALUE_ALIGNMENT`.
 	#[inline]
 	unsafe fn set_len(&mut self, new_len: usize) {
+		debug_assert!(new_len <= self.capacity());
 		self.inner.set_len(new_len);
 	}
 
