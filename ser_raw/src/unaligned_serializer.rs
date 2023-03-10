@@ -17,20 +17,20 @@ pub struct UnalignedSerializer<Store: BorrowMut<UnalignedVec>> {
 }
 
 impl UnalignedSerializer<UnalignedVec> {
-	/// Create new Serializer without allocating any memory for output buffer.
-	/// Memory will be allocated when first object is serialized.
+	/// Create new `UnalignedSerializer` without allocating any memory for output
+	/// buffer. Memory will be allocated when first value is serialized.
+	///
+	/// If you know, or can estimate, the amount of buffer space that's going to
+	/// be needed in advance, allocating upfront with `with_capacity` can
+	/// dramatically improve performance vs `new`.
 	pub fn new() -> Self {
 		Self {
 			storage: UnalignedVec::new(),
 		}
 	}
 
-	/// Create new Serializer with buffer pre-allocated with capacity of
-	/// `capacity` bytes.
-	///
-	/// If you know, or can estimate, the amount of buffer space that's going to
-	/// be needed in advance, allocating upfront with `with_capacity` can
-	/// dramatically improve performance vs `new`.
+	/// Create new `UnalignedSerializer` with buffer pre-allocated with capacity
+	/// of `capacity` bytes.
 	pub fn with_capacity(capacity: usize) -> Self {
 		Self {
 			storage: UnalignedVec::with_capacity(capacity),
@@ -39,7 +39,7 @@ impl UnalignedSerializer<UnalignedVec> {
 }
 
 impl<Store: BorrowMut<UnalignedVec>> UnalignedSerializer<Store> {
-	/// Create new Serializer from an existing `UnalignedVec`
+	/// Create new `UnalignedSerializer` from an existing `UnalignedVec`
 	/// or `&mut UnalignedVec`.
 	pub fn from_storage(storage: Store) -> Self {
 		Self { storage }
@@ -53,16 +53,21 @@ impl<Store: BorrowMut<UnalignedVec>> UnalignedSerializer<Store> {
 }
 
 impl<Store: BorrowMut<UnalignedVec>> Serializer for UnalignedSerializer<Store> {
+	/// Push a slice of values into output buffer.
 	#[inline]
 	fn push_slice<T>(&mut self, slice: &[T]) {
 		self.push_raw_slice(slice);
 	}
 
+	/// Push raw bytes to output.
+	/// Slightly optimized implementation which uses
+	/// `Vec<u8>::extend_from_slice()`.
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) {
 		self.storage.borrow_mut().extend_from_slice(bytes);
 	}
 
+	/// Push a slice of values to output.
 	#[inline]
 	fn push_raw_slice<T>(&mut self, slice: &[T]) {
 		let ptr = slice.as_ptr() as *const u8;

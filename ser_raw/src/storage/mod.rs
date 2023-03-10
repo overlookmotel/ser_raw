@@ -13,10 +13,10 @@ pub(crate) use aligned_vec::AlignedByteVec;
 /// structure (e.g. `Vec<u8>`), but `Storage` provides a more constrained API,
 /// so `Storage` types can enforce invariants about how storage is structured.
 pub trait Storage {
-	/// Create new `Storage` instance
+	/// Create new `Storage` instance.
 	fn new() -> Self;
 
-	/// Create new `Storage` instance with pre-allocated capacity
+	/// Create new `Storage` instance with pre-allocated capacity.
 	fn with_capacity(capacity: usize) -> Self;
 
 	/// Create new `Storage` instance with pre-allocated capacity,
@@ -24,8 +24,8 @@ pub trait Storage {
 	///
 	/// # Safety
 	///
-	/// This trait imposes no constraints of its own, but individual `Storage`
-	/// types may do.
+	/// This trait imposes no safety requirements of its own, but individual
+	/// `Storage` types may do.
 	unsafe fn with_capacity_unchecked(capacity: usize) -> Self;
 
 	/// Returns current capacity of storage in bytes.
@@ -38,9 +38,9 @@ pub trait Storage {
 	///
 	/// # Safety
 	///
-	/// * `new_len` must be equal or less than `capacity()`.
+	/// * `new_len` must be less than or equal `capacity()`.
 	///
-	/// Storage types may impose additional safety invariants.
+	/// Storage types may impose additional safety requirements.
 	unsafe fn set_len(&mut self, new_len: usize) -> ();
 
 	/// Reserve space in storage for `additional` bytes, growing capacity if
@@ -49,7 +49,7 @@ pub trait Storage {
 
 	/// Clear contents of storage.
 	///
-	/// Does not reduce the storage's capacity, just resets `length` back to 0.
+	/// Does not reduce the storage's capacity, just resets `len` back to 0.
 	fn clear(&mut self) -> ();
 
 	/// Shrink the capacity of the storage as much as possible.

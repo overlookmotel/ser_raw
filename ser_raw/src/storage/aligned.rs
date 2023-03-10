@@ -63,6 +63,7 @@ pub struct AlignedVec<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize> {
 impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize> Storage
 	for AlignedVec<ALIGNMENT, CAPACITY_ALIGNMENT>
 {
+	/// Create new `AlignedVec`.
 	#[inline]
 	fn new() -> Self {
 		// Ensure (at compile time) that const params for alignment are valid
@@ -73,6 +74,7 @@ impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize> Storage
 		}
 	}
 
+	/// Create new `AlignedVec` with pre-allocated capacity.
 	#[inline]
 	fn with_capacity(capacity: usize) -> Self {
 		// Ensure (at compile time) that const params for alignment are valid
@@ -119,11 +121,13 @@ impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize> Storage
 		}
 	}
 
+	/// Returns current capacity of storage in bytes.
 	#[inline]
 	fn capacity(&self) -> usize {
 		self.inner.capacity()
 	}
 
+	/// Returns amount of storage currently used in bytes.
 	#[inline]
 	fn len(&self) -> usize {
 		self.inner.len()
@@ -133,7 +137,7 @@ impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize> Storage
 	///
 	/// # Safety
 	///
-	/// * `new_len` must be equal or less to `capacity()`
+	/// * `new_len` must be less than or equal to `capacity()`.
 	///
 	/// If this storage instance is being used with `BaseSerializer`, additionally
 	/// `new_len` must be a multiple of serializer's `VALUE_ALIGNMENT`.
@@ -161,6 +165,9 @@ impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize> Storage
 		}
 	}
 
+	/// Clear contents of storage.
+	///
+	/// Does not reduce the storage's capacity, just resets `len` back to 0.
 	#[inline]
 	fn clear(&mut self) {
 		self.inner.clear();
@@ -216,6 +223,7 @@ impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize>
 			cmp::max(new_cap.next_power_of_two(), CAPACITY_ALIGNMENT)
 		};
 
+		// Above calculation ensures `change_capacity`'s requirements are met
 		unsafe { self.inner.change_capacity(new_cap) };
 	}
 }
@@ -223,21 +231,37 @@ impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize>
 impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize> ContiguousStorage
 	for AlignedVec<ALIGNMENT, CAPACITY_ALIGNMENT>
 {
+	/// Returns a raw pointer to the storage's buffer, or a dangling raw pointer
+	/// valid for zero sized reads if the storage didn't allocate.
+	///
+	/// The caller must ensure that the storage outlives the pointer this function
+	/// returns, or else it will end up pointing to garbage. Modifying the storage
+	/// may cause its buffer to be reallocated, which would also make any pointers
+	/// to it invalid.
 	#[inline]
 	fn as_ptr(&self) -> *const u8 {
 		self.inner.as_ptr()
 	}
 
+	/// Returns an unsafe mutable pointer to the storage's buffer, or a dangling
+	/// raw pointer valid for zero sized reads if the storage didn't allocate.
+	///
+	/// The caller must ensure that the storage outlives the pointer this function
+	/// returns, or else it will end up pointing to garbage. Modifying the storage
+	/// may cause its buffer to be reallocated, which would also make any pointers
+	/// to it invalid.
 	#[inline]
 	fn as_mut_ptr(&mut self) -> *mut u8 {
 		self.inner.as_mut_ptr()
 	}
 
+	/// Extracts a slice containing the entire storage buffer.
 	#[inline]
 	fn as_slice(&self) -> &[u8] {
 		self.inner.as_slice()
 	}
 
+	/// Extracts a mutable slice of the entire storage buffer.
 	#[inline]
 	fn as_mut_slice(&mut self) -> &mut [u8] {
 		self.inner.as_mut_slice()
