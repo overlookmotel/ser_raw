@@ -8,9 +8,13 @@ use crate::{
 
 /// Serializer that ensures values are correctly aligned in output buffer.
 ///
+/// # Const parameters
+///
 /// `STORAGE_ALIGNMENT` is the alignment of the output buffer.
-/// Types with alignment greater than `STORAGE_ALIGNMENT` cannot be serialized
-/// with this serializer.
+///
+/// `MAX_VALUE_ALIGNMENT` is maximum alignment of types which will be
+/// serialized. Types with alignment greater than `MAX_VALUE_ALIGNMENT` cannot
+/// be serialized with this serializer.
 ///
 /// `VALUE_ALIGNMENT` is minimum alignment all allocated values will have in
 /// output buffer. Types with alignment higher than `VALUE_ALIGNMENT` will have
