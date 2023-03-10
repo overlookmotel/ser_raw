@@ -56,7 +56,7 @@ pub trait Storage {
 	fn shrink_to_fit(&mut self) -> ();
 }
 
-/// Trait for storage used by Serializers which stores data in a contiguous
+/// Trait for storage used by Serializers which store data in a contiguous
 /// memory region.
 pub trait ContiguousStorage: Storage {
 	/// Returns a raw pointer to the storage's buffer, or a dangling raw pointer
