@@ -60,7 +60,7 @@ impl<
 		MAX_VALUE_ALIGNMENT,
 	>
 {
-	/// Create new Serializer with no memory pre-allocated.
+	/// Create new `BaseSerializer` with no memory pre-allocated.
 	///
 	/// If you know, or can estimate, the amount of buffer space that's going to
 	/// be needed in advance, allocating upfront with `with_capacity` can
@@ -71,7 +71,7 @@ impl<
 		}
 	}
 
-	/// Create new Serializer with buffer pre-allocated with capacity of
+	/// Create new `BaseSerializer` with buffer pre-allocated with capacity of
 	/// at least `capacity` bytes.
 	///
 	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
