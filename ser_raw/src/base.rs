@@ -8,8 +8,8 @@ use crate::{
 
 /// Serializer that ensures values are correctly aligned in output buffer.
 ///
-/// `OUTPUT_ALIGNMENT` is the alignment of the output buffer.
-/// Types with alignment greater than `OUTPUT_ALIGNMENT` cannot be serialized
+/// `STORAGE_ALIGNMENT` is the alignment of the output buffer.
+/// Types with alignment greater than `STORAGE_ALIGNMENT` cannot be serialized
 /// with this serializer.
 ///
 /// `VALUE_ALIGNMENT` is minimum alignment all allocated values will have in
@@ -36,8 +36,8 @@ use crate::{
 /// output, potentially increasing output size, depending on the types being
 /// serialized.
 pub struct BaseSerializer<
-	Store: BorrowMut<AlignedVec<OUTPUT_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
-	const OUTPUT_ALIGNMENT: usize,
+	Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
+	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
 > {
@@ -45,13 +45,13 @@ pub struct BaseSerializer<
 }
 
 impl<
-		const OUTPUT_ALIGNMENT: usize,
+		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
 	>
 	BaseSerializer<
-		AlignedVec<OUTPUT_ALIGNMENT, MAX_VALUE_ALIGNMENT>,
-		OUTPUT_ALIGNMENT,
+		AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT>,
+		STORAGE_ALIGNMENT,
 		VALUE_ALIGNMENT,
 		MAX_VALUE_ALIGNMENT,
 	>
@@ -85,14 +85,14 @@ impl<
 }
 
 impl<
-		Store: BorrowMut<AlignedVec<OUTPUT_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
-		const OUTPUT_ALIGNMENT: usize,
+		Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
+		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
-	> BaseSerializer<Store, OUTPUT_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
+	> BaseSerializer<Store, STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
 {
 	/// Alignment of output buffer
-	pub const OUTPUT_ALIGNMENT: usize = OUTPUT_ALIGNMENT;
+	pub const STORAGE_ALIGNMENT: usize = STORAGE_ALIGNMENT;
 
 	/// Typical alignment of values being serialized
 	pub const VALUE_ALIGNMENT: usize = VALUE_ALIGNMENT;
@@ -106,7 +106,7 @@ impl<
 	/// "`size`, when rounded up to the nearest multiple of `align`, must not
 	/// overflow `isize` (i.e. the rounded value must be less than or equal to
 	/// `isize::MAX`)".
-	pub const MAX_CAPACITY: usize = isize::MAX as usize - (Self::OUTPUT_ALIGNMENT - 1);
+	pub const MAX_CAPACITY: usize = isize::MAX as usize - (Self::STORAGE_ALIGNMENT - 1);
 
 	/// Assertions for validity of alignment const params.
 	/// These assertions are not evaluated here.
@@ -115,16 +115,16 @@ impl<
 	/// assertions fail.
 	const ASSERT_ALIGNMENTS_VALID: () = {
 		assert!(
-			OUTPUT_ALIGNMENT < isize::MAX as usize,
-			"OUTPUT_ALIGNMENT must be less than isize::MAX"
+			STORAGE_ALIGNMENT < isize::MAX as usize,
+			"STORAGE_ALIGNMENT must be less than isize::MAX"
 		);
 		assert!(
-			OUTPUT_ALIGNMENT.is_power_of_two(), // false if 0
-			"OUTPUT_ALIGNMENT must be a power of 2"
+			STORAGE_ALIGNMENT.is_power_of_two(), // false if 0
+			"STORAGE_ALIGNMENT must be a power of 2"
 		);
 		assert!(
-			MAX_VALUE_ALIGNMENT <= OUTPUT_ALIGNMENT,
-			"MAX_VALUE_ALIGNMENT must be less than or equal to OUTPUT_ALIGNMENT",
+			MAX_VALUE_ALIGNMENT <= STORAGE_ALIGNMENT,
+			"MAX_VALUE_ALIGNMENT must be less than or equal to STORAGE_ALIGNMENT",
 		);
 		assert!(
 			MAX_VALUE_ALIGNMENT.is_power_of_two(), // false if 0
@@ -251,11 +251,11 @@ impl<
 }
 
 impl<
-		Store: BorrowMut<AlignedVec<OUTPUT_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
-		const OUTPUT_ALIGNMENT: usize,
+		Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
+		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
-	> Serializer for BaseSerializer<Store, OUTPUT_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
+	> Serializer for BaseSerializer<Store, STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
 {
 	/// Push a slice of values into output buffer.
 	#[inline]
