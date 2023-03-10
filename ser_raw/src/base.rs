@@ -146,7 +146,7 @@ impl<
 	/// # Panics
 	///
 	/// Panics if `storage.len()` is not a multiple of `VALUE_ALIGNMENT`.
-	pub fn from_store(storage: Store) -> Self {
+	pub fn from_storage(storage: Store) -> Self {
 		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
@@ -167,7 +167,7 @@ impl<
 	/// # Safety
 	///
 	/// * `storage.len()` must be a multiple of `VALUE_ALIGNMENT`
-	pub unsafe fn from_store_unchecked(storage: Store) -> Self {
+	pub unsafe fn from_storage_unchecked(storage: Store) -> Self {
 		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
@@ -184,7 +184,7 @@ impl<
 
 	/// Consume Serializer and return the output buffer as an `AlignedVec`
 	/// or `&mut AlignedVec`.
-	pub fn into_vec(self) -> Store {
+	pub fn into_storage(self) -> Store {
 		self.storage
 	}
 

@@ -41,13 +41,13 @@ impl UnalignedSerializer<UnalignedVec> {
 impl<Store: BorrowMut<UnalignedVec>> UnalignedSerializer<Store> {
 	/// Create new Serializer from an existing `UnalignedVec`
 	/// or `&mut UnalignedVec`.
-	pub fn from_store(storage: Store) -> Self {
+	pub fn from_storage(storage: Store) -> Self {
 		Self { storage }
 	}
 
 	/// Consume Serializer and return the output buffer as an `UnalignedVec`
 	/// or `&mut UnalignedVec`.
-	pub fn into_store(self) -> Store {
+	pub fn into_storage(self) -> Store {
 		self.storage
 	}
 }
