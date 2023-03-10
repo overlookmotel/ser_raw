@@ -13,7 +13,7 @@ use crate::{
 /// same alignment, performance of `BaseSerializer`, which
 /// does respect alignment, is likely to be almost exactly the same.
 pub struct UnalignedSerializer<Store: BorrowMut<UnalignedVec>> {
-	store: Store,
+	storage: Store,
 }
 
 impl UnalignedSerializer<UnalignedVec> {
@@ -21,7 +21,7 @@ impl UnalignedSerializer<UnalignedVec> {
 	/// Memory will be allocated when first object is serialized.
 	pub fn new() -> Self {
 		Self {
-			store: UnalignedVec::new(),
+			storage: UnalignedVec::new(),
 		}
 	}
 
@@ -33,7 +33,7 @@ impl UnalignedSerializer<UnalignedVec> {
 	/// dramatically improve performance vs `new`.
 	pub fn with_capacity(capacity: usize) -> Self {
 		Self {
-			store: UnalignedVec::with_capacity(capacity),
+			storage: UnalignedVec::with_capacity(capacity),
 		}
 	}
 }
@@ -41,14 +41,14 @@ impl UnalignedSerializer<UnalignedVec> {
 impl<Store: BorrowMut<UnalignedVec>> UnalignedSerializer<Store> {
 	/// Create new Serializer from an existing `UnalignedVec`
 	/// or `&mut UnalignedVec`.
-	pub fn from_store(store: Store) -> Self {
-		Self { store }
+	pub fn from_store(storage: Store) -> Self {
+		Self { storage }
 	}
 
 	/// Consume Serializer and return the output buffer as an `UnalignedVec`
 	/// or `&mut UnalignedVec`.
 	pub fn into_store(self) -> Store {
-		self.store
+		self.storage
 	}
 }
 
@@ -60,7 +60,7 @@ impl<Store: BorrowMut<UnalignedVec>> Serializer for UnalignedSerializer<Store> {
 
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) {
-		self.store.borrow_mut().extend_from_slice(bytes);
+		self.storage.borrow_mut().extend_from_slice(bytes);
 	}
 
 	#[inline]
@@ -73,13 +73,13 @@ impl<Store: BorrowMut<UnalignedVec>> Serializer for UnalignedSerializer<Store> {
 	/// Get current capacity of output.
 	#[inline]
 	fn capacity(&self) -> usize {
-		self.store.borrow().capacity()
+		self.storage.borrow().capacity()
 	}
 
 	/// Get current position in output.
 	#[inline]
 	fn pos(&self) -> usize {
-		self.store.borrow().len()
+		self.storage.borrow().len()
 	}
 
 	/// Move current position in output buffer.
@@ -89,6 +89,6 @@ impl<Store: BorrowMut<UnalignedVec>> Serializer for UnalignedSerializer<Store> {
 	/// * `pos` must be less than or equal to `self.capacity()`.
 	#[inline]
 	unsafe fn set_pos(&mut self, pos: usize) {
-		self.store.borrow_mut().set_len(pos);
+		self.storage.borrow_mut().set_len(pos);
 	}
 }
