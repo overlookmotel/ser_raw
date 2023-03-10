@@ -82,5 +82,6 @@ pub trait Serializer: Sized {
 	/// * `pos` must be less than or equal to `self.capacity()`.
 	///
 	/// Serializers may impose further safety contraints.
+	// TODO: Remove this method
 	unsafe fn set_pos(&mut self, pos: usize) -> ();
 }
