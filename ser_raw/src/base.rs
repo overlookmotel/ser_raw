@@ -57,6 +57,10 @@ impl<
 	>
 {
 	/// Create new Serializer with no memory pre-allocated.
+	///
+	/// If you know, or can estimate, the amount of buffer space that's going to
+	/// be needed in advance, allocating upfront with `with_capacity` can
+	/// dramatically improve performance vs using `new`.
 	pub fn new() -> Self {
 		Self {
 			storage: AlignedVec::new(),
@@ -67,10 +71,6 @@ impl<
 	/// at least `capacity` bytes.
 	///
 	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
-	///
-	/// If you know, or can estimate, the amount of buffer space that's going to
-	/// be needed in advance, allocating upfront with `with_capacity` can
-	/// dramatically improve performance vs using `new`.
 	///
 	/// # Panics
 	///
