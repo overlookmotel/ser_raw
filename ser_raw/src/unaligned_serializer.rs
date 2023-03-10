@@ -64,7 +64,7 @@ impl<Store: BorrowMut<UnalignedVec>> Serializer for UnalignedSerializer<Store> {
 	/// `Vec<u8>::extend_from_slice()`.
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) {
-		self.storage.borrow_mut().extend_from_slice(bytes);
+		self.storage.borrow_mut().push_bytes(bytes);
 	}
 
 	/// Push a slice of values to output.

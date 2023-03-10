@@ -1,3 +1,5 @@
+use std::{mem, slice};
+
 mod aligned;
 pub use aligned::{AlignedStorage, AlignedVec};
 
@@ -6,6 +8,9 @@ pub use unaligned::{UnalignedStorage, UnalignedVec};
 
 mod aligned_vec;
 pub(crate) use aligned_vec::AlignedByteVec;
+
+// TODO: Add `MAX_CAPACITY` const param
+// TODO: Add `push_empty` method
 
 /// Trait for storage used by Serializers.
 ///
@@ -43,9 +48,101 @@ pub trait Storage {
 	/// Storage types may impose additional safety requirements.
 	unsafe fn set_len(&mut self, new_len: usize) -> ();
 
+	/// Push a value of type `T` to storage.
+	#[inline]
+	fn push<T>(&mut self, value: &T) {
+		self.push_slice(slice::from_ref(value));
+	}
+
+	/// Push a slice of values `&T` to storage.
+	#[inline]
+	fn push_slice<T>(&mut self, slice: &[T]) {
+		self.align_for::<T>();
+		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
+		// `align_after::<T>()`
+		unsafe { self.push_slice_unaligned(slice) };
+		self.align_after::<T>();
+	}
+
+	/// Push a slice of raw bytes to storage.
+	#[inline]
+	fn push_bytes(&mut self, bytes: &[u8]) {
+		self.push_slice(bytes);
+	}
+
+	/// Push a slice of values `&T` to storage, without ensuring alignment first.
+	///
+	/// # Safety
+	///
+	/// Some `Storage` types may impose requirements concerning alignment which
+	/// caller must satisfy.
+	///
+	/// Implementations must ensure that to satisfy these requirements, it's
+	/// sufficient to:
+	///
+	/// * call `align_for::<T>()` before and
+	/// * call `align_after::<T>()` after.
+	#[inline]
+	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) {
+		// Calculating `size` can't overflow as that would imply this is a slice of
+		// `usize::MAX + 1` or more bytes, which can't be possible.
+		let size = mem::size_of::<T>() * slice.len();
+		self.reserve(size);
+
+		// `reserve()` ensures sufficient capacity.
+		// `size` is calculated correctly above.
+		// Ensuring alignment is a requirment of this method.
+		self.push_slice_unchecked(slice, size);
+	}
+
+	/// Push a slice of values `&T` to storage, without alignment checks and
+	/// without reserving capacity for it.
+	///
+	/// # Safety
+	///
+	/// Caller must ensure `Storage` has sufficient capacity.
+	///
+	/// `size` must be total size in bytes of `&[T]`.
+	/// i.e. `size = mem::size_of::<T>() * slice.len()`.
+	///
+	/// Some `Storage` types may impose requirements concerning alignment which
+	/// caller must satisfy.
+	///
+	/// Implementations must ensure that to satisfy any alignment requirements,
+	/// it's sufficient to:
+	///
+	/// * call `align_for::<T>()` before and
+	/// * call `align_after::<T>()` after.
+	unsafe fn push_slice_unchecked<T>(&mut self, slice: &[T], size: usize) -> ();
+
 	/// Reserve space in storage for `additional` bytes, growing capacity if
 	/// required.
 	fn reserve(&mut self, additional: usize) -> ();
+
+	/// Align position in storage to alignment of `T`.
+	/// Should be called before calling `push_slice_unaligned`.
+	fn align_for<T>(&mut self) -> ();
+
+	/// Align position in storage after pushing a `T` or slice `&[T]` with
+	/// `push_slice_unaligned`.
+	fn align_after<T>(&mut self) -> ();
+
+	/// Align position in storage after pushing values of any type with
+	/// `push_slice_unaligned`.
+	///
+	/// `align_after<T>` is often more efficient and can often be compiled down to
+	/// a no-op, so is preferred.
+	fn align_after_any(&mut self) -> ();
+
+	/// Align position in storage to `alignment`.
+	///
+	/// # Safety
+	///
+	/// * `alignment` must be less than `isize::MAX`.
+	/// * `alignment` must be a power of 2.
+	///
+	/// Some `Storage` types may impose additional safety requirements.
+	unsafe fn align(&mut self, alignment: usize) -> ();
 
 	/// Clear contents of storage.
 	///
@@ -55,6 +152,8 @@ pub trait Storage {
 	/// Shrink the capacity of the storage as much as possible.
 	fn shrink_to_fit(&mut self) -> ();
 }
+
+// TODO: Add `write` + `write_unchecked` methods to `ContiguousStorage`
 
 /// Trait for storage used by Serializers which store data in a contiguous
 /// memory region.

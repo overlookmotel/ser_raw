@@ -1,3 +1,5 @@
+use std::{mem, slice};
+
 use super::{ContiguousStorage, Storage};
 
 /// Trait for storage used by Serializers which has no specified alignment in
@@ -12,17 +14,6 @@ pub trait UnalignedStorage: Storage {}
 /// Just a wrapper around `Vec<u8>`.
 pub struct UnalignedVec {
 	inner: Vec<u8>,
-}
-
-impl UnalignedVec {
-	/// Push bytes to storage.
-	/// Not exposed in public API, but included for use in `UnalignedVec`.
-	/// It's slightly faster than a hand-rolled `ptr::copy_nonoverlapping`-based
-	/// version.
-	#[inline]
-	pub(crate) fn extend_from_slice(&mut self, bytes: &[u8]) {
-		self.inner.extend_from_slice(bytes);
-	}
 }
 
 impl Storage for UnalignedVec {
@@ -80,11 +71,90 @@ impl Storage for UnalignedVec {
 		self.inner.set_len(new_len);
 	}
 
+	/// Push a slice of values `&T` to storage.
+	///
+	/// For `UnalignedVec`, there is no advantage to this method over the safe
+	/// method `push_slice`. They both do exactly the same thing.
+	///
+	/// Prefer `push_slice`.
+	///
+	/// Despite being an unsafe method, there are no invariants which must be
+	/// satisfied. Method is unsafe purely because the trait method is unsafe,
+	/// because other `Storage` types may impose safety requirements.
+	#[inline]
+	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) {
+		let ptr = slice.as_ptr() as *const u8;
+		let bytes = slice::from_raw_parts(ptr, slice.len() * mem::size_of::<T>());
+		self.push_bytes(bytes);
+	}
+
+	/// Push a slice of values `&T` to storage.
+	///
+	/// For `UnalignedVec`, there is no advantage to this method over `push_slice`
+	/// or `push_slice_unaligned`. They all do exactly the same thing.
+	/// Prefer `push_slice`.
+	///
+	/// # Safety
+	///
+	/// `size` must be total size in bytes of `&[T]`.
+	/// i.e. `size = mem::size_of::<T>() * slice.len()`.
+	///
+	/// This invariant doesn't actually matter for `UnalignedVec` since `size` is
+	/// not used.
+	#[inline]
+	unsafe fn push_slice_unchecked<T>(&mut self, slice: &[T], size: usize) {
+		debug_assert_eq!(size, mem::size_of::<T>() * slice.len());
+
+		self.push_slice_unaligned(slice);
+	}
+
+	/// Push a slice of raw bytes to storage.
+	///
+	/// Slightly more performant than `push_slice` or `push_slice_unaligned`.
+	#[inline]
+	fn push_bytes(&mut self, bytes: &[u8]) {
+		self.inner.extend_from_slice(bytes);
+	}
+
 	/// Reserve space in storage for `additional` bytes, growing capacity if
 	/// required.
 	#[inline]
 	fn reserve(&mut self, additional: usize) {
 		self.inner.reserve(additional);
+	}
+
+	/// Align position in storage to alignment of `T`.
+	/// `UnalignedVec` does not maintain alignment, so this is a no-op.
+	#[inline]
+	fn align_for<T>(&mut self) {}
+
+	/// Align position in storage after pushing a `T` or slice `&[T]` with
+	/// `push_slice_unaligned`.
+	/// `UnalignedVec` does not maintain alignment, so this is a no-op.
+	#[inline]
+	fn align_after<T>(&mut self) {}
+
+	/// Align position in storage after pushing values of any type with
+	/// `push_slice_unaligned`.
+	///	`UnalignedVec` does not maintain alignment, so this is a no-op.
+	#[inline]
+	fn align_after_any(&mut self) {}
+
+	/// Align position in storage to `alignment`.
+	///
+	/// `UnalignedVec` does not maintain alignment, so this is a no-op.
+	///
+	/// # Safety
+	///
+	/// * `alignment` must be less than `isize::MAX`.
+	/// * `alignment` must be a power of 2.
+	///
+	/// These invariants don't actually matter for `UnalignedVec` since `align` is
+	/// a no-op.
+	#[inline]
+	unsafe fn align(&mut self, alignment: usize) {
+		debug_assert!(alignment <= isize::MAX as usize);
+		debug_assert!(alignment.is_power_of_two());
 	}
 
 	/// Clear contents of storage.
