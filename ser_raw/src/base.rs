@@ -1,6 +1,10 @@
 use std::{borrow::BorrowMut, marker::PhantomData, mem, ptr};
 
-use crate::{AlignedByteVec, Serializer};
+use crate::{
+	storage::{AlignedVec, ContiguousStorage, Storage},
+	util::{align_up_to, is_aligned_to},
+	Serializer,
+};
 
 /// Serializer that ensures values are correctly aligned in output buffer.
 ///
@@ -32,12 +36,12 @@ use crate::{AlignedByteVec, Serializer};
 /// output, potentially increasing output size, depending on the types being
 /// serialized.
 pub struct BaseSerializer<
-	Buf: BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
+	Store: BorrowMut<AlignedVec<OUTPUT_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
 	const OUTPUT_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
 > {
-	buf: Buf,
+	store: Store,
 }
 
 impl<
@@ -46,37 +50,23 @@ impl<
 		const MAX_VALUE_ALIGNMENT: usize,
 	>
 	BaseSerializer<
-		AlignedByteVec<OUTPUT_ALIGNMENT>,
+		AlignedVec<OUTPUT_ALIGNMENT, MAX_VALUE_ALIGNMENT>,
 		OUTPUT_ALIGNMENT,
 		VALUE_ALIGNMENT,
 		MAX_VALUE_ALIGNMENT,
 	>
 {
-	/// Create new Serializer with minimal memory pre-allocated.
+	/// Create new Serializer with no memory pre-allocated.
 	pub fn new() -> Self {
-		// Cannot start with 0 capacity as need to maintain invariant
-		// `capacity % MAX_VALUE_ALIGNMENT == 0` throughout.
-		// `align()` and `align_to_value_alignment()` rely on this invariant to prevent
-		// setting `len` to more than `capacity`, without having to check each time.
-		//
-		// If capacity started at 0, this invariant could be broken as follows:
-		// * `capacity = 0`
-		// * `VALUE_ALIGNMENT = 8`
-		// * `MAX_VALUE_ALIGNMENT = 8`
-		// * 1st call to `push_slice_raw()` is with `&[0u8; 1]` (size 1, alignment 1)
-		// * `push_slice_raw()` calls `AlignedByteVec::reserve(1)`.
-		// * `push_slice_raw()` aligns position to `VALUE_ALIGNMENT` (8)
-		// * Now `capacity = 1` and `len = 8`
-
-		// `MAX_VALUE_ALIGNMENT` trivially fulfills `with_capacity_unchecked`'s contract
-		unsafe { Self::with_capacity_unchecked(Self::MAX_VALUE_ALIGNMENT) }
+		Self {
+			store: AlignedVec::new(),
+		}
 	}
 
 	/// Create new Serializer with buffer pre-allocated with capacity of
 	/// at least `capacity` bytes.
 	///
 	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
-	/// `capacity` cannot be 0.
 	///
 	/// If you know, or can estimate, the amount of buffer space that's going to
 	/// be needed in advance, allocating upfront with `with_capacity` can
@@ -84,63 +74,22 @@ impl<
 	///
 	/// # Panics
 	///
-	/// Panics if `capacity` is 0, or exceeds `MAX_CAPACITY`.
-	pub fn with_capacity(capacity: usize) -> Self {
-		// Bounds check `capacity`
-		assert!(capacity != 0, "`capacity` cannot be 0");
-		assert!(
-			capacity <= Self::MAX_CAPACITY,
-			"`capacity` cannot exceed `isize::MAX + 1 - OUTPUT_ALIGNMENT`"
-		);
-
-		// Round up capacity to multiple of `MAX_VALUE_ALIGNMENT`.
-		// `AlignedByteVec`'s growth strategy is to double in size, so the invariant
-		// that `capacity % MAX_VALUE_ALIGNMENT == 0` will always be maintained after
-		// this starting point.
-		// Above assertions + static assertions for allowable values
-		// of `MAX_VALUE_ALIGNMENT` satisify constraints of `align_up_to`.
-		let capacity = align_up_to(capacity, Self::MAX_VALUE_ALIGNMENT);
-
-		// Above ensures compliance with `with_capacity_unchecked`'s contract
-		unsafe { Self::with_capacity_unchecked(capacity) }
-	}
-
-	/// Create new Serializer with buffer pre-allocated with capacity of
-	/// exactly `capacity` bytes.
-	///
-	/// # Panics
-	///
 	/// Panics if `capacity` exceeds `MAX_CAPACITY`.
-	///
-	/// # Safety
-	///
-	/// * `capacity` cannot be 0.
-	/// * `capacity` must be a multiple of `MAX_VALUE_ALIGNMENT`.
-	///
-	/// Failure to obey these constraints may not produce UB immediately,
-	/// but breaks assumptions the rest of the implementation relies on,
-	/// so could cause arithmetic overflow or misaligned writes later on.
-	pub unsafe fn with_capacity_unchecked(capacity: usize) -> Self {
-		// Ensure (at compile time) that const params for alignment are valid
-		let _ = Self::ASSERT_ALIGNMENTS_VALID;
-
-		debug_assert!(capacity > 0);
-		debug_assert!(capacity <= Self::MAX_CAPACITY);
-		debug_assert!(is_aligned_to(capacity, Self::MAX_VALUE_ALIGNMENT));
-
-		// `AlignedByteVec::with_capacity` panics if `capacity > MAX_CAPACITY`
+	pub fn with_capacity(capacity: usize) -> Self {
+		// `AlignedVec::with_capacity()` ensures capacity is `< MAX_CAPACITY`
+		// and rounds up capacity to a multiple of `MAX_VALUE_ALIGNMENT`
 		Self {
-			buf: AlignedByteVec::with_capacity(capacity),
+			store: AlignedVec::with_capacity(capacity),
 		}
 	}
 }
 
 impl<
-		Buf: BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
+		Store: BorrowMut<AlignedVec<OUTPUT_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
 		const OUTPUT_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
-	> BaseSerializer<Buf, OUTPUT_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
+	> BaseSerializer<Store, OUTPUT_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
 {
 	/// Alignment of output buffer
 	pub const OUTPUT_ALIGNMENT: usize = OUTPUT_ALIGNMENT;
@@ -191,53 +140,52 @@ impl<
 		);
 	};
 
-	/// Create new Serializer from an existing `AlignedByteVec`
-	/// or `&mut AlignedByteVec`.
+	/// Create new `BaseSerializer` from an existing `AlignedVec`
+	/// or `&mut AlignedVec`.
 	///
 	/// # Panics
 	///
-	/// * If `buf` has 0 capacity
-	/// * If `buf.capacity()` is not a multiple of `MAX_VALUE_ALIGNMENT`
-	/// * If `buf.len()` is not a multiple of `VALUE_ALIGNMENT`
-	pub fn from_vec(buf: Buf) -> Self {
+	/// Panics if `store.len()` is not a multiple of `VALUE_ALIGNMENT`.
+	pub fn from_store(store: Store) -> Self {
 		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
+		// `AlignedVec` enforces the other constraints we require:
+		// * `capacity` does not exceed `MAX_CAPACITY`
+		// * `capacity` is a multiple of `MAX_VALUE_ALIGNMENT`
 		assert!(
-			buf.borrow().capacity() > 0,
-			"`buf.capacity()` must not be 0"
-		);
-		assert!(
-			is_aligned_to(buf.borrow().capacity(), Self::MAX_VALUE_ALIGNMENT),
-			"`buf.capacity()` must be a multiple of `MAX_VALUE_ALIGNMENT`"
-		);
-		assert!(
-			is_aligned_to(buf.borrow().len(), Self::VALUE_ALIGNMENT),
-			"`buf.len()` must be a multiple of `VALUE_ALIGNMENT`"
+			is_aligned_to(store.borrow().len(), Self::VALUE_ALIGNMENT),
+			"`store.len()` must be a multiple of `VALUE_ALIGNMENT`"
 		);
 
-		Self { buf }
+		Self { store }
 	}
 
-	/// Create new Serializer from an existing `AlignedByteVec`
-	/// or `&mut AlignedByteVec` without checking invariants.
+	/// Create new `BaseSerializer` from an existing `AlignedVec`
+	/// or `&mut AlignedVec`, without checking invariants.
 	///
 	/// # Safety
 	///
-	/// * `buf` must have capacity greater than 0
-	/// * `buf.capacity()` must be a multiple of `MAX_VALUE_ALIGNMENT`
-	/// * `buf.len()` must be a multiple of `VALUE_ALIGNMENT`
-	pub unsafe fn from_vec_unchecked(buf: Buf) -> Self {
+	/// * `store.len()` must be a multiple of `VALUE_ALIGNMENT`
+	pub unsafe fn from_store_unchecked(store: Store) -> Self {
 		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
-		Self { buf }
+		// `AlignedVec` enforces the other constraints we require:
+		// * `capacity` does not exceed `MAX_CAPACITY`
+		// * `capacity` is a multiple of `MAX_VALUE_ALIGNMENT`
+		debug_assert!(
+			is_aligned_to(store.borrow().len(), Self::VALUE_ALIGNMENT),
+			"`store.len()` must be a multiple of `VALUE_ALIGNMENT`"
+		);
+
+		Self { store }
 	}
 
-	/// Consume Serializer and return the output buffer as an `AlignedByteVec`
-	/// or `&mut AlignedByteVec`.
-	pub fn into_vec(self) -> Buf {
-		self.buf
+	/// Consume Serializer and return the output buffer as an `AlignedVec`
+	/// or `&mut AlignedVec`.
+	pub fn into_vec(self) -> Store {
+		self.store
 	}
 
 	/// Align position in output buffer to alignment of `T`.
@@ -273,16 +221,16 @@ impl<
 
 		// Round up buffer position to multiple of `alignment`.
 		// `align_up_to`'s constraints are satisfied by:
-		// * `buf.len()` is always less than `MAX_CAPACITY`, which is `< isize::MAX`.
+		// * `store.len()` is always less than `MAX_CAPACITY`, which is `< isize::MAX`.
 		// * `alignment <= MAX_VALUE_ALIGNMENT` satisfies `alignment < isize::MAX`
 		//   because `MAX_VALUE_ALIGNMENT < isize::MAX`.
 		// * `alignment` being a power of 2 is part of this function's contract.
-		let new_pos = align_up_to(self.buf.borrow().len(), alignment);
+		let new_pos = align_up_to(self.store.borrow().len(), alignment);
 
 		// `new_pos > capacity` can't happen because of 2 guarantees:
 		// 1. `alignment <= MAX_VALUE_ALIGNMENT`
 		// 2. `capacity` is a multiple of `MAX_VALUE_ALIGNMENT`
-		self.buf.borrow_mut().set_len(new_pos);
+		self.store.borrow_mut().set_len(new_pos);
 	}
 
 	/// Align position in output buffer to `VALUE_ALIGNMENT`.
@@ -291,39 +239,27 @@ impl<
 	#[inline]
 	fn align_to_value_alignment(&mut self) {
 		// `align_up_to`'s contract is easily fulfilled.
-		// `buf.len()` is always `<= MAX_CAPACITY`.
+		// `store.len()` is always `<= MAX_CAPACITY`.
 		// `MAX_CAPACITY` and `VALUE_ALIGNMENT` are both `< isize::MAX`.
-		let new_pos = align_up_to(self.buf.borrow().len(), Self::VALUE_ALIGNMENT);
+		let new_pos = align_up_to(self.store.borrow().len(), Self::VALUE_ALIGNMENT);
 
 		// Cannot result in `len > capacity` because we're only aligning to
 		// `VALUE_ALIGNMENT` and `capacity` is always a multiple of this.
-		unsafe { self.buf.borrow_mut().set_len(new_pos) };
+		unsafe { self.store.borrow_mut().set_len(new_pos) };
 	}
 }
 
 impl<
-		Buf: BorrowMut<AlignedByteVec<OUTPUT_ALIGNMENT>>,
+		Store: BorrowMut<AlignedVec<OUTPUT_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
 		const OUTPUT_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
-	> Serializer for BaseSerializer<Buf, OUTPUT_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
+	> Serializer for BaseSerializer<Store, OUTPUT_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
 {
 	/// Push a slice of values into output buffer.
 	#[inline]
 	fn push_slice<T>(&mut self, slice: &[T]) {
 		self.push_slice_raw(slice);
-	}
-
-	/// Push raw bytes to output buffer.
-	#[inline]
-	fn push_bytes(&mut self, bytes: &[u8]) {
-		// Push bytes to buffer
-		self.buf.borrow_mut().extend_from_slice(bytes);
-
-		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value
-		if Self::VALUE_ALIGNMENT > 1 {
-			self.align_to_value_alignment();
-		}
 	}
 
 	/// Push a slice of values into output buffer.
@@ -336,17 +272,17 @@ impl<
 		// `usize::MAX + 1` or more bytes, which can't be possible.
 		let size = mem::size_of::<T>() * slice.len();
 
-		let buf = self.buf.borrow_mut();
-		buf.reserve(size);
+		let store = self.store.borrow_mut();
+		store.reserve(size);
 
 		unsafe {
 			let src = slice.as_ptr();
-			let dst = buf.as_mut_ptr().add(buf.len()) as *mut T;
-			// `buf.reserve(size)` ensures there's enough allocated space in output buffer.
+			let dst = store.as_mut_ptr().add(store.len()) as *mut T;
+			// `store.reserve(size)` ensures there's enough allocated space in output.
 			// `src` must be correctly aligned as derived from a valid `&[T]`.
 			// `dst` is aligned because of `self.align_to::<T>()` above.
 			ptr::copy_nonoverlapping(src, dst, slice.len());
-			buf.set_len(buf.len() + size);
+			store.set_len(store.len() + size);
 		}
 
 		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value.
@@ -365,13 +301,13 @@ impl<
 	/// Get current capacity of output.
 	#[inline]
 	fn capacity(&self) -> usize {
-		self.buf.borrow().capacity()
+		self.store.borrow().capacity()
 	}
 
 	/// Get current position in output.
 	#[inline]
 	fn pos(&self) -> usize {
-		self.buf.borrow().len()
+		self.store.borrow().len()
 	}
 
 	/// Move current position in output buffer.
@@ -382,33 +318,11 @@ impl<
 	/// * `pos` must be a multiple of `VALUE_ALIGNMENT`.
 	#[inline]
 	unsafe fn set_pos(&mut self, pos: usize) {
-		debug_assert!(pos <= self.buf.borrow().capacity());
+		debug_assert!(pos <= self.store.borrow().capacity());
 		debug_assert!(is_aligned_to(pos, Self::VALUE_ALIGNMENT));
 
-		self.buf.borrow_mut().set_len(pos);
+		self.store.borrow_mut().set_len(pos);
 	}
-}
-
-/// Round up `pos` to alignment of `alignment`.
-///
-/// `alignment` must be a power of 2.
-///
-/// Caller must ensure `pos + alignment` cannot overflow `usize`.
-/// This is satisfied if both `pos` and `alignment` are less than `isize::MAX`.
-///
-/// Breaking these conditions will yield an incorrect result which could
-/// cause UB later on due to mis-aligned data.
-pub const fn align_up_to(pos: usize, alignment: usize) -> usize {
-	debug_assert!(alignment.is_power_of_two());
-	(pos + alignment - 1) & !(alignment - 1)
-}
-
-/// Check if `pos` is a multiple of `alignment`.
-///
-/// `alignment` must be a power of 2.
-pub const fn is_aligned_to(pos: usize, alignment: usize) -> bool {
-	debug_assert!(alignment.is_power_of_two());
-	pos & (alignment - 1) == 0
 }
 
 /// Type for static assertion that types being serialized do not have a higher

@@ -1,9 +1,9 @@
 use std::{borrow::BorrowMut, mem, slice};
 
-use crate::Serializer;
-
-// TODO: Should use `Vec<MaybeUninit<u8>>` not `Vec<u8>` as output likely
-// includes uninitialized padding bytes
+use crate::{
+	storage::{Storage, UnalignedVec},
+	Serializer,
+};
 
 /// Serializer which does not respect alignment in the output.
 ///
@@ -12,15 +12,17 @@ use crate::Serializer;
 /// If most of the allocated types you're serializing share the
 /// same alignment, performance of `BaseSerializer`, which
 /// does respect alignment, is likely to be almost exactly the same.
-pub struct UnalignedSerializer<Buf: BorrowMut<Vec<u8>>> {
-	buf: Buf,
+pub struct UnalignedSerializer<Store: BorrowMut<UnalignedVec>> {
+	store: Store,
 }
 
-impl UnalignedSerializer<Vec<u8>> {
+impl UnalignedSerializer<UnalignedVec> {
 	/// Create new Serializer without allocating any memory for output buffer.
 	/// Memory will be allocated when first object is serialized.
 	pub fn new() -> Self {
-		Self { buf: Vec::new() }
+		Self {
+			store: UnalignedVec::new(),
+		}
 	}
 
 	/// Create new Serializer with buffer pre-allocated with capacity of
@@ -31,25 +33,26 @@ impl UnalignedSerializer<Vec<u8>> {
 	/// dramatically improve performance vs `new`.
 	pub fn with_capacity(capacity: usize) -> Self {
 		Self {
-			buf: Vec::with_capacity(capacity),
+			store: UnalignedVec::with_capacity(capacity),
 		}
 	}
 }
 
-impl<Buf: BorrowMut<Vec<u8>>> UnalignedSerializer<Buf> {
-	/// Create new Serializer from an existing `Vec<u8>` or `&mut Vec<u8>`.
-	pub fn from_vec(buf: Buf) -> Self {
-		Self { buf }
+impl<Store: BorrowMut<UnalignedVec>> UnalignedSerializer<Store> {
+	/// Create new Serializer from an existing `UnalignedVec`
+	/// or `&mut UnalignedVec`.
+	pub fn from_store(store: Store) -> Self {
+		Self { store }
 	}
 
-	/// Consume Serializer and return the output buffer as a `Vec<u8>`
-	/// or `&mut Vec<u8>`.
-	pub fn into_vec(self) -> Buf {
-		self.buf
+	/// Consume Serializer and return the output buffer as an `UnalignedVec`
+	/// or `&mut UnalignedVec`.
+	pub fn into_store(self) -> Store {
+		self.store
 	}
 }
 
-impl<Buf: BorrowMut<Vec<u8>>> Serializer for UnalignedSerializer<Buf> {
+impl<Store: BorrowMut<UnalignedVec>> Serializer for UnalignedSerializer<Store> {
 	#[inline]
 	fn push_slice<T>(&mut self, slice: &[T]) {
 		self.push_slice_raw(slice);
@@ -57,7 +60,7 @@ impl<Buf: BorrowMut<Vec<u8>>> Serializer for UnalignedSerializer<Buf> {
 
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) {
-		self.buf.borrow_mut().extend_from_slice(bytes);
+		self.store.borrow_mut().extend_from_slice(bytes);
 	}
 
 	#[inline]
@@ -70,13 +73,13 @@ impl<Buf: BorrowMut<Vec<u8>>> Serializer for UnalignedSerializer<Buf> {
 	/// Get current capacity of output.
 	#[inline]
 	fn capacity(&self) -> usize {
-		self.buf.borrow().capacity()
+		self.store.borrow().capacity()
 	}
 
 	/// Get current position in output.
 	#[inline]
 	fn pos(&self) -> usize {
-		self.buf.borrow().len()
+		self.store.borrow().len()
 	}
 
 	/// Move current position in output buffer.
@@ -86,6 +89,6 @@ impl<Buf: BorrowMut<Vec<u8>>> Serializer for UnalignedSerializer<Buf> {
 	/// * `pos` must be less than or equal to `self.capacity()`.
 	#[inline]
 	unsafe fn set_pos(&mut self, pos: usize) {
-		self.buf.borrow_mut().set_len(pos);
+		self.store.borrow_mut().set_len(pos);
 	}
 }

@@ -49,7 +49,10 @@ pub trait Serializer: Sized {
 	///   }
 	/// }
 	/// ```
-	fn push_bytes(&mut self, bytes: &[u8]) -> ();
+	#[inline]
+	fn push_bytes(&mut self, bytes: &[u8]) {
+		self.push_slice_raw(bytes);
+	}
 
 	/// Push a value to output.
 	///

@@ -4,15 +4,16 @@ pub use ser_raw_derive::Serialize;
 mod serializer;
 pub use serializer::Serializer;
 mod base;
-pub use base::{align_up_to, is_aligned_to, BaseSerializer};
-mod aligned_vec;
-pub use aligned_vec::AlignedByteVec;
+pub use base::BaseSerializer;
 mod unaligned_serializer;
 pub use unaligned_serializer::UnalignedSerializer;
 
 mod other;
 mod primitives;
 mod ptrs;
+
+pub mod storage;
+pub mod util;
 
 pub trait Serialize<S: Serializer> {
 	#[allow(unused_variables)]

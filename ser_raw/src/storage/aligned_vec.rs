@@ -54,6 +54,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 			"ALIGNMENT must be less than isize::MAX"
 		);
 	};
+
 	/// Maximum capacity of the vector.
 	/// Dictated by the requirements of
 	/// [`alloc::Layout`](https://doc.rust-lang.org/alloc/alloc/struct.Layout.html).
@@ -119,7 +120,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 		} else {
 			assert!(
 				capacity <= Self::MAX_CAPACITY,
-				"`capacity` cannot exceed isize::MAX - 15"
+				"`capacity` cannot exceed `Self::MAX_CAPACITY`"
 			);
 			let ptr = unsafe {
 				let layout = alloc::Layout::from_size_align_unchecked(capacity, Self::ALIGNMENT);
@@ -171,7 +172,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	///   [`MAX_CAPACITY`](AlignedVec::MAX_CAPACITY)
 	/// - `new_cap` must be greater than or equal to [`len()`](AlignedVec::len)
 	#[inline]
-	unsafe fn change_capacity(&mut self, new_cap: usize) {
+	pub unsafe fn change_capacity(&mut self, new_cap: usize) {
 		let new_ptr = if self.cap != 0 {
 			let new_ptr = alloc::realloc(self.ptr.as_ptr(), self.layout(), new_cap);
 			if new_ptr.is_null() {
@@ -345,7 +346,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	///
 	/// # Panics
 	///
-	/// Panics if the new capacity exceeds `isize::MAX - 15` bytes.
+	/// Panics if the new capacity exceeds `isize::MAX + 1 - ALIGNMENT` bytes.
 	///
 	/// # Examples
 	/// ```
@@ -394,11 +395,11 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// If you want to reserve an exact amount of additional space,
 	/// use `reserve_exact` instead.
 	///
-	/// Maximum capacity is `isize::MAX - 15` bytes.
+	/// Maximum capacity is `isize::MAX - Self::ALIGNMENT` bytes.
 	///
 	/// # Panics
 	///
-	/// Panics if the `new_cap` exceeds `isize::MAX - 15` bytes.
+	/// Panics if the `new_cap` exceeds `Self::MAX_CAPACITY` bytes.
 	///
 	/// # Safety
 	///
@@ -440,7 +441,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	///
 	/// # Panics
 	///
-	/// Panics if the new length exceeds `isize::MAX - 15` bytes.
+	/// Panics if the new length exceeds `Self::MAX_CAPACITY` bytes.
 	///
 	/// # Examples
 	/// ```
@@ -558,7 +559,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	///
 	/// # Panics
 	///
-	/// Panics if the new capacity exceeds `isize::MAX - 15` bytes.
+	/// Panics if the new capacity exceeds `Self::MAX_CAPACITY` bytes.
 	///
 	/// # Examples
 	/// ```
@@ -606,7 +607,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	///
 	/// # Panics
 	///
-	/// Panics if the new capacity overflows `isize::MAX - 15`.
+	/// Panics if the new capacity exceeds `Self::MAX_CAPACITY`.
 	///
 	/// # Examples
 	/// ```
