@@ -144,8 +144,7 @@ impl<
 		);
 	};
 
-	/// Create new `BaseSerializer` from an existing `AlignedVec`
-	/// or `&mut AlignedVec`.
+	/// Create new `BaseSerializer` from an existing `BorrowMut<AlignedVec>`.
 	///
 	/// # Panics
 	///
@@ -165,8 +164,8 @@ impl<
 		Self { storage }
 	}
 
-	/// Create new `BaseSerializer` from an existing `AlignedVec`
-	/// or `&mut AlignedVec`, without checking invariants.
+	/// Create new `BaseSerializer` from an existing `BorrowMut<AlignedVec>`,
+	/// without checking invariants.
 	///
 	/// # Safety
 	///
@@ -186,8 +185,7 @@ impl<
 		Self { storage }
 	}
 
-	/// Consume Serializer and return the output buffer as an `AlignedVec`
-	/// or `&mut AlignedVec`.
+	/// Consume Serializer and return the output as a `BorrowMut<AlignedVec>`.
 	pub fn into_storage(self) -> Store {
 		self.storage
 	}
