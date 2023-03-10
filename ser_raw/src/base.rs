@@ -259,12 +259,12 @@ impl<
 	/// Push a slice of values into output buffer.
 	#[inline]
 	fn push_slice<T>(&mut self, slice: &[T]) {
-		self.push_slice_raw(slice);
+		self.push_raw_slice(slice);
 	}
 
 	/// Push a slice of values into output buffer.
 	#[inline]
-	fn push_slice_raw<T>(&mut self, slice: &[T]) {
+	fn push_raw_slice<T>(&mut self, slice: &[T]) {
 		// Align position in buffer to alignment of `T`
 		self.align_to::<T>();
 

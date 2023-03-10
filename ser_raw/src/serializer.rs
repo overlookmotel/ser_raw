@@ -51,7 +51,7 @@ pub trait Serializer: Sized {
 	/// ```
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) {
-		self.push_slice_raw(bytes);
+		self.push_raw_slice(bytes);
 	}
 
 	/// Push a value to output.
@@ -60,14 +60,14 @@ pub trait Serializer: Sized {
 	/// record a pointer address.
 	#[inline]
 	fn push_raw<T>(&mut self, t: &T) {
-		self.push_slice_raw(slice::from_ref(t));
+		self.push_raw_slice(slice::from_ref(t));
 	}
 
 	/// Push a slice of values to output.
 	///
 	/// Unlike `push_slice`, this is not for values for which a Serializer may
 	/// need to record a pointer address.
-	fn push_slice_raw<T>(&mut self, slice: &[T]) -> ();
+	fn push_raw_slice<T>(&mut self, slice: &[T]) -> ();
 
 	/// Get current capacity of output.
 	fn capacity(&self) -> usize;

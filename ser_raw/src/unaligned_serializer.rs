@@ -55,7 +55,7 @@ impl<Store: BorrowMut<UnalignedVec>> UnalignedSerializer<Store> {
 impl<Store: BorrowMut<UnalignedVec>> Serializer for UnalignedSerializer<Store> {
 	#[inline]
 	fn push_slice<T>(&mut self, slice: &[T]) {
-		self.push_slice_raw(slice);
+		self.push_raw_slice(slice);
 	}
 
 	#[inline]
@@ -64,7 +64,7 @@ impl<Store: BorrowMut<UnalignedVec>> Serializer for UnalignedSerializer<Store> {
 	}
 
 	#[inline]
-	fn push_slice_raw<T>(&mut self, slice: &[T]) {
+	fn push_raw_slice<T>(&mut self, slice: &[T]) {
 		let ptr = slice.as_ptr() as *const u8;
 		let bytes = unsafe { slice::from_raw_parts(ptr, slice.len() * mem::size_of::<T>()) };
 		self.push_bytes(bytes);
