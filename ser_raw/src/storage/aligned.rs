@@ -157,7 +157,7 @@ impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize> Storage
 		// but avoids having to handle potential overflow here
 		let remaining = self.capacity().wrapping_sub(self.len());
 		if additional > remaining {
-			self.do_reserve(additional);
+			self.grow_for_reserve(additional);
 		}
 	}
 
@@ -194,7 +194,7 @@ impl<const ALIGNMENT: usize, const CAPACITY_ALIGNMENT: usize>
 	/// This is a copy of `rkyv::AlignedByteVec::do_reserve`, except it ensures
 	/// that `capacity` is always a multiple of `CAPACITY_ALIGNMENT`.
 	#[cold]
-	fn do_reserve(&mut self, additional: usize) {
+	fn grow_for_reserve(&mut self, additional: usize) {
 		let new_cap = self
 			.len()
 			.checked_add(additional)
