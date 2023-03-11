@@ -11,13 +11,12 @@ use syn::{
 pub fn derive_struct(
 	data: DataStruct,
 	ident: Ident,
-	ser_type: Ident,
 	generics: Generics,
 	generics_for_impl: Generics,
 ) -> TokenStream {
 	let field_stmts: Vec<TokenStream> = match data.fields {
-		Fields::Named(fields) => get_named_field_stmts(fields, &ser_type),
-		Fields::Unnamed(fields) => get_unnamed_field_stmts(fields, &ser_type),
+		Fields::Named(fields) => get_named_field_stmts(fields),
+		Fields::Unnamed(fields) => get_unnamed_field_stmts(fields),
 		Fields::Unit => vec![],
 	};
 
@@ -26,47 +25,47 @@ pub fn derive_struct(
 
 	quote! {
 		#[automatically_derived]
-		impl #impl_generics ::ser_raw::Serialize<#ser_type> for #ident #type_generics #where_clause {
-			fn serialize_data(&self, serializer: &mut #ser_type) {
+		impl #impl_generics ::ser_raw::Serialize<__S> for #ident #type_generics #where_clause {
+			fn serialize_data(&self, serializer: &mut __S) {
 				#(#field_stmts)*
 			}
 		}
 	}
 }
 
-fn get_named_field_stmts(fields: FieldsNamed, ser_type: &Ident) -> Vec<TokenStream> {
+fn get_named_field_stmts(fields: FieldsNamed) -> Vec<TokenStream> {
 	fields
 		.named
 		.iter()
 		.map(|field| {
 			let field_name = field.ident.as_ref().expect("Missing field name");
-			get_field_stmt(quote! {#field_name}, field, ser_type)
+			get_field_stmt(quote! {#field_name}, field)
 		})
 		.collect()
 }
 
-fn get_unnamed_field_stmts(fields: FieldsUnnamed, ser_type: &Ident) -> Vec<TokenStream> {
+fn get_unnamed_field_stmts(fields: FieldsUnnamed) -> Vec<TokenStream> {
 	fields
 		.unnamed
 		.iter()
 		.enumerate()
 		.map(|(index, field)| {
 			let index = Index::from(index);
-			get_field_stmt(quote! {#index}, field, ser_type)
+			get_field_stmt(quote! {#index}, field)
 		})
 		.collect()
 }
 
-fn get_field_stmt(field_name: TokenStream, field: &Field, ser_type: &Ident) -> TokenStream {
+fn get_field_stmt(field_name: TokenStream, field: &Field) -> TokenStream {
 	match get_with(field) {
 		Some(with) => {
 			quote_spanned! {field.span()=>
-				<#with as ::ser_raw::SerializeWith::<_, #ser_type>>::serialize_data_with(&self.#field_name, serializer);
+				<#with as ::ser_raw::SerializeWith::<_, __S>>::serialize_data_with(&self.#field_name, serializer);
 			}
 		}
 		None => {
 			quote_spanned! {field.span()=>
-				::ser_raw::Serialize::<#ser_type>::serialize_data(&self.#field_name, serializer);
+				::ser_raw::Serialize::<__S>::serialize_data(&self.#field_name, serializer);
 			}
 		}
 	}

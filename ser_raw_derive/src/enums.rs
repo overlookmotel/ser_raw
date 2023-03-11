@@ -7,7 +7,6 @@ use syn::{DataEnum, Fields, FieldsNamed, FieldsUnnamed, Generics, Ident};
 pub fn derive_enum(
 	data: DataEnum,
 	ident: Ident,
-	ser_type: Ident,
 	generics: Generics,
 	generics_for_impl: Generics,
 ) -> TokenStream {
@@ -19,8 +18,8 @@ pub fn derive_enum(
 		.filter_map(|variant| {
 			match variant.fields {
 				Fields::Unit => None,
-				Fields::Unnamed(fields) => get_match_for_unnamed_fields(variant.ident, fields, &ser_type),
-				Fields::Named(fields) => get_match_for_named_fields(variant.ident, fields, &ser_type),
+				Fields::Unnamed(fields) => get_match_for_unnamed_fields(variant.ident, fields),
+				Fields::Named(fields) => get_match_for_named_fields(variant.ident, fields),
 			}
 		})
 		.collect::<Vec<_>>();
@@ -46,19 +45,15 @@ pub fn derive_enum(
 
 	quote! {
 		#[automatically_derived]
-		impl #impl_generics ::ser_raw::Serialize<#ser_type> for #ident #type_generics #where_clause {
-			fn serialize_data(&self, serializer: &mut #ser_type) {
+		impl #impl_generics ::ser_raw::Serialize<__S> for #ident #type_generics #where_clause {
+			fn serialize_data(&self, serializer: &mut __S) {
 				#match_stmt
 			}
 		}
 	}
 }
 
-fn get_match_for_unnamed_fields(
-	ident: Ident,
-	fields: FieldsUnnamed,
-	ser_type: &Ident,
-) -> Option<TokenStream> {
+fn get_match_for_unnamed_fields(ident: Ident, fields: FieldsUnnamed) -> Option<TokenStream> {
 	let fields = fields.unnamed;
 	if fields.len() == 0 {
 		return None;
@@ -68,7 +63,7 @@ fn get_match_for_unnamed_fields(
 		.into_iter()
 		.map(|index| Ident::new(&("val_".to_string() + &index.to_string()), ident.span()))
 		.collect::<Vec<_>>();
-	let stmts = get_field_stmts(&field_idents, ser_type);
+	let stmts = get_field_stmts(&field_idents);
 
 	Some(quote_spanned! {ident.span()=>
 		Self::#ident(#(#field_idents),*) => {
@@ -77,11 +72,7 @@ fn get_match_for_unnamed_fields(
 	})
 }
 
-fn get_match_for_named_fields(
-	ident: Ident,
-	fields: FieldsNamed,
-	ser_type: &Ident,
-) -> Option<TokenStream> {
+fn get_match_for_named_fields(ident: Ident, fields: FieldsNamed) -> Option<TokenStream> {
 	let fields = fields.named;
 	if fields.len() == 0 {
 		return None;
@@ -103,7 +94,7 @@ fn get_match_for_named_fields(
 		.map(|(ident, alias)| quote! { #ident: #alias })
 		.collect::<Vec<_>>();
 
-	let stmts = get_field_stmts(&field_aliases, ser_type);
+	let stmts = get_field_stmts(&field_aliases);
 
 	Some(quote_spanned! {ident.span()=>
 		Self::#ident{#(#var_mappings),*} => {
@@ -112,12 +103,12 @@ fn get_match_for_named_fields(
 	})
 }
 
-fn get_field_stmts(idents: &Vec<Ident>, ser_type: &Ident) -> Vec<TokenStream> {
+fn get_field_stmts(idents: &Vec<Ident>) -> Vec<TokenStream> {
 	idents
 		.iter()
 		.map(|ident| {
 			quote! {
-				::ser_raw::Serialize::<#ser_type>::serialize_data(#ident, serializer);
+				::ser_raw::Serialize::<__S>::serialize_data(#ident, serializer);
 			}
 		})
 		.collect::<Vec<_>>()
