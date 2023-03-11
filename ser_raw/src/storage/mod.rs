@@ -9,8 +9,6 @@ pub use unaligned::{UnalignedStorage, UnalignedVec};
 mod aligned_vec;
 pub(crate) use aligned_vec::AlignedByteVec;
 
-// TODO: Add `push_empty` method
-
 /// Trait for storage used by Serializers.
 ///
 /// Types implementing `Storage` are usually simple wrappers around another data
@@ -119,6 +117,52 @@ pub trait Storage {
 	/// * call `align_after::<T>()` after.
 	unsafe fn push_slice_unchecked<T>(&mut self, slice: &[T], size: usize) -> ();
 
+	/// Advance buffer position to leave space to write a `T` at current position
+	/// later.
+	///
+	/// In Serializers which maintain alignment, this method will ensure space is
+	/// made for a `T` to be written with correct alignment.
+	#[inline]
+	fn push_empty<T>(&mut self) {
+		self.push_empty_const_slice::<T, 1>();
+	}
+
+	/// Advance buffer position to leave space to write a slice of `&[T; len]` at
+	/// current position later.
+	///
+	/// In Serializers which maintain alignment, this method will ensure space is
+	/// made for a `[T; len]` to be written with correct alignment.
+	#[inline]
+	fn push_empty_slice<T>(&mut self, len: usize) {
+		self.align_for::<T>();
+
+		let size = mem::size_of::<T>() * len;
+		self.reserve(size);
+		unsafe { self.set_len(self.len() + size) };
+
+		self.align_after::<T>();
+	}
+
+	/// Advance buffer position to leave space to write a slice of `&[T; LEN]` at
+	/// current position later.
+	///
+	/// Slighty optimized version of `push_empty_slice` which takes `LEN` as a
+	/// const parameter. Prefer this to `push_empty_slice` if you know the length
+	/// of the slice statically.
+	///
+	/// In Serializers which maintain alignment, this method will ensure space is
+	/// made for a `[T; LEN]` to be written with correct alignment.
+	#[inline]
+	fn push_empty_const_slice<T, const LEN: usize>(&mut self) {
+		self.align_for::<T>();
+
+		let size = mem::size_of::<T>() * LEN;
+		self.reserve(size);
+		unsafe { self.set_len(self.len() + size) };
+
+		self.align_after_slice::<T, LEN>();
+	}
+
 	/// Reserve space in storage for `additional` bytes, growing capacity if
 	/// required.
 	fn reserve(&mut self, additional: usize) -> ();
@@ -130,6 +174,14 @@ pub trait Storage {
 	/// Align position in storage after pushing a `T` or slice `&[T]` with
 	/// `push_slice_unaligned`.
 	fn align_after<T>(&mut self) -> ();
+
+	/// Align position in storage after pushing a slice `&[T; LEN]` with
+	/// `push_slice_unaligned`, where `LEN` is a constant.
+	///
+	/// Slightly optimized version of `align_after` for when size of the slice
+	/// which has been pushed is known statically. Prefer this to `align_after` if
+	/// you know the length of the slice statically.
+	fn align_after_slice<T, const LEN: usize>(&mut self) -> ();
 
 	/// Align position in storage after pushing values of any type with
 	/// `push_slice_unaligned`.
