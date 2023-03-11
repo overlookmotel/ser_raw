@@ -214,6 +214,11 @@ impl<
 	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) {
 		debug_assert!(is_aligned_to(self.len(), mem::align_of::<T>()));
 
+		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
+		if mem::size_of::<T>() == 0 {
+			return;
+		}
+
 		// Calculating `size` can't overflow as that would imply this is a slice of
 		// `usize::MAX + 1` or more bytes, which can't be possible.
 		let size = mem::size_of::<T>() * slice.len();
@@ -250,6 +255,11 @@ impl<
 		debug_assert!(self.capacity() - self.len() >= size);
 		debug_assert_eq!(size, mem::size_of::<T>() * slice.len());
 		debug_assert!(is_aligned_to(self.len(), mem::align_of::<T>()));
+
+		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
+		if mem::size_of::<T>() == 0 {
+			return;
+		}
 
 		let src = slice.as_ptr();
 		let dst = self.as_mut_ptr().add(self.len()) as *mut T;

@@ -83,6 +83,11 @@ impl Storage for UnalignedVec {
 	/// because other `Storage` types may impose safety requirements.
 	#[inline]
 	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) {
+		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
+		if mem::size_of::<T>() == 0 {
+			return;
+		}
+
 		let ptr = slice.as_ptr() as *const u8;
 		let bytes = slice::from_raw_parts(ptr, slice.len() * mem::size_of::<T>());
 		self.push_bytes(bytes);

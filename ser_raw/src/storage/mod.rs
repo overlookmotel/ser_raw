@@ -83,6 +83,11 @@ pub trait Storage {
 	/// * call `align_after::<T>()` after.
 	#[inline]
 	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) {
+		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
+		if mem::size_of::<T>() == 0 {
+			return;
+		}
+
 		// Calculating `size` can't overflow as that would imply this is a slice of
 		// `usize::MAX + 1` or more bytes, which can't be possible.
 		let size = mem::size_of::<T>() * slice.len();
