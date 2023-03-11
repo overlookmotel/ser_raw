@@ -130,19 +130,19 @@ impl Storage for UnalignedVec {
 
 	/// Align position in storage to alignment of `T`.
 	/// `UnalignedVec` does not maintain alignment, so this is a no-op.
-	#[inline]
+	#[inline(always)]
 	fn align_for<T>(&mut self) {}
 
 	/// Align position in storage after pushing a `T` or slice `&[T]` with
 	/// `push_slice_unaligned`.
 	/// `UnalignedVec` does not maintain alignment, so this is a no-op.
-	#[inline]
+	#[inline(always)]
 	fn align_after<T>(&mut self) {}
 
 	/// Align position in storage after pushing values of any type with
 	/// `push_slice_unaligned`.
 	///	`UnalignedVec` does not maintain alignment, so this is a no-op.
-	#[inline]
+	#[inline(always)]
 	fn align_after_any(&mut self) {}
 
 	/// Align position in storage to `alignment`.
@@ -156,7 +156,7 @@ impl Storage for UnalignedVec {
 	///
 	/// These invariants don't actually matter for `UnalignedVec` since `align` is
 	/// a no-op.
-	#[inline]
+	#[inline(always)]
 	unsafe fn align(&mut self, alignment: usize) {
 		debug_assert!(alignment <= isize::MAX as usize);
 		debug_assert!(alignment.is_power_of_two());
