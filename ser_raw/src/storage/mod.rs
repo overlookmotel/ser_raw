@@ -1,7 +1,7 @@
 use std::{mem, slice};
 
 mod aligned;
-pub use aligned::{AlignedStorage, AlignedVec};
+pub use aligned::{aligned_max_capacity, aligned_max_u32_capacity, AlignedStorage, AlignedVec};
 
 mod unaligned;
 pub use unaligned::{UnalignedStorage, UnalignedVec};
@@ -9,7 +9,6 @@ pub use unaligned::{UnalignedStorage, UnalignedVec};
 mod aligned_vec;
 pub(crate) use aligned_vec::AlignedByteVec;
 
-// TODO: Add `MAX_CAPACITY` const param
 // TODO: Add `push_empty` method
 
 /// Trait for storage used by Serializers.

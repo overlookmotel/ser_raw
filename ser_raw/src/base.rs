@@ -15,6 +15,10 @@ use crate::{
 /// serialized. Types with alignment greater than `MAX_VALUE_ALIGNMENT` cannot
 /// be serialized with this serializer.
 ///
+/// `MAX_CAPACITY` is maximum capacity of storage. Cannot be 0 and cannot be
+/// greater than `isize::MAX + 1 - STORAGE_ALIGNMENT`. Must be a multiple of
+/// `MAX_VALUE_ALIGNMENT`.
+///
 /// `VALUE_ALIGNMENT` is minimum alignment all allocated values will have in
 /// output buffer. Types with alignment higher than `VALUE_ALIGNMENT` will have
 /// padding inserted before them if required. Types with alignment lower than
@@ -39,10 +43,11 @@ use crate::{
 /// output, potentially increasing output size, depending on the types being
 /// serialized.
 pub struct BaseSerializer<
-	Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
+	Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
+	const MAX_CAPACITY: usize,
 > {
 	storage: Store,
 }
@@ -51,12 +56,14 @@ impl<
 		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
 	>
 	BaseSerializer<
-		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>,
+		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
 		STORAGE_ALIGNMENT,
 		VALUE_ALIGNMENT,
 		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
 	>
 {
 	/// Create new `BaseSerializer` with no memory pre-allocated.
@@ -89,11 +96,12 @@ impl<
 }
 
 impl<
-		Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
+		Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
-	> BaseSerializer<Store, STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
+		const MAX_CAPACITY: usize,
+	> BaseSerializer<Store, STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Alignment of output buffer
 	pub const STORAGE_ALIGNMENT: usize = STORAGE_ALIGNMENT;
@@ -105,12 +113,7 @@ impl<
 	pub const MAX_VALUE_ALIGNMENT: usize = MAX_VALUE_ALIGNMENT;
 
 	/// Maximum capacity of output buffer.
-	/// Dictated by the requirements of
-	/// [`alloc::Layout`](https://doc.rust-lang.org/alloc/alloc/struct.Layout.html).
-	/// "`size`, when rounded up to the nearest multiple of `align`, must not
-	/// overflow `isize` (i.e. the rounded value must be less than or equal to
-	/// `isize::MAX`)".
-	pub const MAX_CAPACITY: usize = isize::MAX as usize - (STORAGE_ALIGNMENT - 1);
+	pub const MAX_CAPACITY: usize = MAX_CAPACITY;
 
 	/// Create new `BaseSerializer` from an existing `BorrowMut<AlignedVec>`.
 	#[inline]
@@ -130,11 +133,13 @@ impl<
 }
 
 impl<
-		Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>>,
+		Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
-	> Serializer for BaseSerializer<Store, STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
+		const MAX_CAPACITY: usize,
+	> Serializer
+	for BaseSerializer<Store, STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Push a slice of values to output and continue processing content of the
 	/// slice.

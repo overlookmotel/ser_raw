@@ -17,10 +17,14 @@ use crate::util::{align_up_to, is_aligned_to};
 /// * `MAX_VALUE_ALIGNMENT`: maximum alignment requirement of values which can
 ///   be stored in `Storage`. `capacity` must always be a multiple of this
 /// 	(all methods uphold this constraint).
+/// * `MAX_CAPACITY`: maximum capacity of storage. Cannot be 0, and cannot be
+/// 	greater than `isize::MAX + 1 - MEMORY_ALIGNMENT`. Must be a multiple of
+/// 	`MAX_VALUE_ALIGNMENT`.
 pub trait AlignedStorage<
 	const MEMORY_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
+	const MAX_CAPACITY: usize,
 >: Storage
 {
 	/// Alignment of storage's memory buffer.
@@ -32,13 +36,8 @@ pub trait AlignedStorage<
 	/// Maximum alignment of values being added to storage.
 	const MAX_VALUE_ALIGNMENT: usize = MAX_VALUE_ALIGNMENT;
 
-	/// Maximum capacity of output buffer.
-	/// Dictated by the requirements of
-	/// [`alloc::Layout`](https://doc.rust-lang.org/alloc/alloc/struct.Layout.html).
-	/// "`size`, when rounded up to the nearest multiple of `align`, must not
-	/// overflow `isize` (i.e. the rounded value must be less than or equal to
-	/// `isize::MAX`)".
-	const MAX_CAPACITY: usize = isize::MAX as usize - (MEMORY_ALIGNMENT - 1);
+	/// Maximum capacity of storage.
+	const MAX_CAPACITY: usize = MAX_CAPACITY;
 
 	/// Assertions for validity of alignment const params.
 	/// These assertions are not evaluated here.
@@ -55,6 +54,7 @@ pub trait AlignedStorage<
 			MEMORY_ALIGNMENT.is_power_of_two(),
 			"MEMORY_ALIGNMENT must be a power of 2"
 		);
+
 		assert!(MAX_VALUE_ALIGNMENT > 0, "MAX_VALUE_ALIGNMENT cannot be 0");
 		assert!(
 			MAX_VALUE_ALIGNMENT <= MEMORY_ALIGNMENT,
@@ -64,6 +64,7 @@ pub trait AlignedStorage<
 			MAX_VALUE_ALIGNMENT.is_power_of_two(),
 			"MAX_VALUE_ALIGNMENT must be a power of 2"
 		);
+
 		assert!(VALUE_ALIGNMENT > 0, "VALUE_ALIGNMENT cannot be 0");
 		assert!(
 			VALUE_ALIGNMENT <= MAX_VALUE_ALIGNMENT,
@@ -72,6 +73,16 @@ pub trait AlignedStorage<
 		assert!(
 			VALUE_ALIGNMENT.is_power_of_two(),
 			"VALUE_ALIGNMENT must be a power of 2"
+		);
+
+		assert!(MAX_CAPACITY > 0, "MAX_CAPACITY cannot be 0");
+		assert!(
+			MAX_CAPACITY <= aligned_max_capacity(MEMORY_ALIGNMENT),
+			"MAX_CAPACITY cannot exceed isize::MAX + 1 - MEMORY_ALIGNMENT"
+		);
+		assert!(
+			MAX_CAPACITY % MAX_VALUE_ALIGNMENT == 0,
+			"MAX_CAPACITY must be a multiple of MAX_VALUE_ALIGNMENT"
 		);
 	};
 }
@@ -86,6 +97,7 @@ pub struct AlignedVec<
 	const MEMORY_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
+	const MAX_CAPACITY: usize,
 > {
 	inner: AlignedByteVec<MEMORY_ALIGNMENT>,
 }
@@ -94,7 +106,8 @@ impl<
 		const MEMORY_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
-	> Storage for AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
+		const MAX_CAPACITY: usize,
+	> Storage for AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Create new `AlignedVec`.
 	#[inline]
@@ -108,6 +121,10 @@ impl<
 	}
 
 	/// Create new `AlignedVec` with pre-allocated capacity.
+	///
+	/// # Panics
+	///
+	/// Panics if `capacity` exceeds `MAX_CAPACITY`.
 	fn with_capacity(capacity: usize) -> Self {
 		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
@@ -119,8 +136,8 @@ impl<
 		// Round up capacity to multiple of `MAX_VALUE_ALIGNMENT`.
 		// Assertion ensures overflow in `align_up_to()` is not possible.
 		assert!(
-			capacity <= Self::MAX_CAPACITY,
-			"`capacity` cannot exceed isize::MAX - 15"
+			capacity <= MAX_CAPACITY,
+			"capacity cannot exceed MAX_CAPACITY"
 		);
 		let capacity = align_up_to(capacity, MAX_VALUE_ALIGNMENT);
 
@@ -135,20 +152,20 @@ impl<
 	/// Create new `AlignedVec` with pre-allocated capacity,
 	/// without safety checks.
 	///
-	/// # Panics
-	///
-	/// Panics if `capacity` exceeds `Self::MAX_CAPACITY`.
-	///
 	/// # Safety
 	///
+	/// * `capacity` must be less than or equal to `MAX_CAPACITY`.
 	/// * `capacity` must be a multiple of `MAX_VALUE_ALIGNMENT`.
 	unsafe fn with_capacity_unchecked(capacity: usize) -> Self {
 		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
+		debug_assert!(
+			capacity <= MAX_CAPACITY,
+			"capacity cannot exceed MAX_CAPACITY"
+		);
 		debug_assert!(is_aligned_to(capacity, MAX_VALUE_ALIGNMENT));
 
-		// `AlignedByteVec::with_capacity` panics if capacity exceeds max
 		Self {
 			inner: AlignedByteVec::with_capacity(capacity),
 		}
@@ -247,8 +264,8 @@ impl<
 	/// Reserve capacity for at least `additional` more bytes to be inserted into
 	/// the `AlignedVec`.
 	///
-	/// Growth of capacity occurs in powers of 2, and is always at minimum
-	/// `MAX_VALUE_ALIGNMENT`.
+	/// Growth of capacity occurs in powers of 2 up to `MAX_CAPACITY`, and is
+	/// always at minimum `MAX_VALUE_ALIGNMENT`.
 	///
 	/// # Panics
 	///
@@ -357,7 +374,8 @@ impl<
 		const MEMORY_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
-	> AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
+		const MAX_CAPACITY: usize,
+	> AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Extend capacity after `reserve` has found it's necessary.
 	///
@@ -368,7 +386,8 @@ impl<
 	/// This is the same trick that Rust's `Vec::reserve` uses.
 	///
 	/// This is a copy of `rkyv::AlignedByteVec::do_reserve`, except it ensures
-	/// that `capacity` is always a multiple of `MAX_VALUE_ALIGNMENT`.
+	/// that `capacity` is always a multiple of `MAX_VALUE_ALIGNMENT`
+	/// and less than user-defined `MAX_CAPACITY`.
 	#[cold]
 	fn grow_for_reserve(&mut self, additional: usize) {
 		let new_cap = self
@@ -376,14 +395,11 @@ impl<
 			.checked_add(additional)
 			.expect("Cannot grow AlignedVec further");
 
-		let new_cap = if new_cap > (isize::MAX as usize + 1) >> 1 {
-			// Rounding up to next power of 2 would result in `isize::MAX + 1` or higher,
-			// which exceeds max capacity. So cap at max instead.
-			assert!(
-				new_cap <= Self::MAX_CAPACITY,
-				"Cannot grow AlignedVec further"
-			);
-			Self::MAX_CAPACITY
+		let new_cap = if new_cap > MAX_CAPACITY.next_power_of_two() >> 1 {
+			// Rounding up to next power of 2 would result in more than `MAX_CAPACITY`,
+			// so cap at max instead.
+			assert!(new_cap <= MAX_CAPACITY, "Cannot grow AlignedVec further");
+			MAX_CAPACITY
 		} else {
 			// Ensuring at least `MAX_VALUE_ALIGNMENT` here makes sure capacity will always
 			// remain a multiple of `MAX_VALUE_ALIGNMENT` hereafter, as growth after this
@@ -401,7 +417,9 @@ impl<
 		const MEMORY_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
-	> ContiguousStorage for AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
+		const MAX_CAPACITY: usize,
+	> ContiguousStorage
+	for AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Returns a raw pointer to the storage's buffer, or a dangling raw pointer
 	/// valid for zero sized reads if the storage didn't allocate.
@@ -444,9 +462,74 @@ impl<
 		const MEMORY_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
-	> AlignedStorage<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
-	for AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
+		const MAX_CAPACITY: usize,
+	> AlignedStorage<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	for AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
+}
+
+/// Get maximum maximum capacity for an `AlignedStorage` on this system.
+/// i.e. the maximum allowable value for `MAX_CAPACITY` const parameter.
+///
+/// `alignment` must be a power of 2, less than `isize::MAX`.
+///
+/// Max capacity is dictated by the requirements of [`std::alloc::Layout`]:
+/// "`size`, when rounded up to the nearest multiple of `align`, must not
+/// overflow `isize` (i.e. the rounded value must be less than or equal to
+/// `isize::MAX`)".
+///
+/// [`std::alloc::Layout`]: https://doc.rust-lang.org/alloc/alloc/struct.Layout.html
+pub const fn aligned_max_capacity(alignment: usize) -> usize {
+	assert!(alignment != 0, "`alignment` cannot be 2");
+	assert!(
+		alignment.is_power_of_two(),
+		"`alignment` must be a power of 2"
+	);
+	assert!(
+		alignment < isize::MAX as usize,
+		"`alignment` must be less than isize::MAX"
+	);
+	isize::MAX as usize - (alignment - 1)
+}
+
+/// Get maximum maximum capacity for an `AlignedStorage` on this system with a
+/// cap of `u32::MAX + 1`.
+///
+/// Can be used to calculate a value for `MAX_CAPACITY` const parameter whereby
+/// storage positions can always be expressed as a `u32`.
+///
+/// This will be:
+/// * On 64-bit systems: `u32::MAX + 1` (i.e. 4 GiB)
+/// * On 32-bit systems: `i32::MAX + 1 - alignment` (i.e. slighty below 2 GiB)
+///
+/// `alignment` must be a power of 2, less than `u32::MAX` and `isize::MAX`.
+///
+/// Cap at `i32::MAX + 1 - alignment` on 32-bit systems is dictated by the
+/// requirements of [`std::alloc::Layout`]:
+/// "`size`, when rounded up to the nearest multiple of `align`, must not
+/// overflow `isize` (i.e. the rounded value must be less than or equal to
+/// `isize::MAX`)".
+///
+/// [`std::alloc::Layout`]: https://doc.rust-lang.org/alloc/alloc/struct.Layout.html
+pub const fn aligned_max_u32_capacity(alignment: usize) -> usize {
+	assert!(alignment != 0, "`alignment` cannot be 0");
+	assert!(
+		alignment.is_power_of_two(),
+		"`alignment` must be a power of 2"
+	);
+	assert!(
+		alignment < u32::MAX as usize && alignment < isize::MAX as usize,
+		"`alignment` must be less than u32::MAX and isize::MAX"
+	);
+
+	if mem::size_of::<usize>() >= 8 {
+		// This would overflow on a 32-bit system, but check above avoids this path
+		// TODO: This may still fail to compile on 32-bit systems if compiler doesn't
+		// understand this branch cannot be taken. Check this.
+		u32::MAX as usize + 1
+	} else {
+		isize::MAX as usize - (alignment - 1)
+	}
 }
 
 /// Type for static assertion that types being serialized do not have a higher
