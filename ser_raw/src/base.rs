@@ -64,6 +64,7 @@ impl<
 	/// If you know, or can estimate, the amount of buffer space that's going to
 	/// be needed in advance, allocating upfront with `with_capacity` can
 	/// dramatically improve performance vs using `new`.
+	#[inline]
 	pub fn new() -> Self {
 		Self {
 			storage: AlignedVec::new(),
@@ -112,6 +113,7 @@ impl<
 	pub const MAX_CAPACITY: usize = isize::MAX as usize - (STORAGE_ALIGNMENT - 1);
 
 	/// Create new `BaseSerializer` from an existing `BorrowMut<AlignedVec>`.
+	#[inline]
 	pub fn from_storage(storage: Store) -> Self {
 		// `AlignedVec` enforces the constraints we require:
 		// * `capacity` does not exceed `MAX_CAPACITY`
@@ -121,6 +123,7 @@ impl<
 	}
 
 	/// Consume Serializer and return the output as a `BorrowMut<AlignedVec>`.
+	#[inline]
 	pub fn into_storage(self) -> Store {
 		self.storage
 	}

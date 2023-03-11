@@ -108,7 +108,6 @@ impl<
 	}
 
 	/// Create new `AlignedVec` with pre-allocated capacity.
-	#[inline]
 	fn with_capacity(capacity: usize) -> Self {
 		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
@@ -143,7 +142,6 @@ impl<
 	/// # Safety
 	///
 	/// * `capacity` must be a multiple of `MAX_VALUE_ALIGNMENT`.
-	#[inline]
 	unsafe fn with_capacity_unchecked(capacity: usize) -> Self {
 		// Ensure (at compile time) that const params for alignment are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
@@ -266,7 +264,7 @@ impl<
 	}
 
 	/// Align position in storage to alignment of `T`.
-	#[inline]
+	#[inline(always)] // Because this is generally a no-op
 	fn align_for<T>(&mut self) {
 		// Ensure (at compile time) that `T`'s alignment does not exceed
 		// `MAX_VALUE_ALIGNMENT`
@@ -311,7 +309,7 @@ impl<
 	}
 
 	/// Align position in storage after pushing a `T` or slice `&[T]`.
-	#[inline]
+	#[inline(always)] // Because this is generally a no-op
 	fn align_after<T>(&mut self) {
 		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value.
 		// This should be optimized away for types with alignment of `VALUE_ALIGNMENT`
