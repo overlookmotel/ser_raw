@@ -157,11 +157,36 @@ pub trait Storage {
 	fn shrink_to_fit(&mut self) -> ();
 }
 
-// TODO: Add `write` + `write_unchecked` methods to `ContiguousStorage`
-
 /// Trait for storage used by Serializers which store data in a contiguous
 /// memory region.
 pub trait ContiguousStorage: Storage {
+	/// Write a value at a specific position in storage's buffer.
+	///
+	/// # Safety
+	///
+	/// Storage `capacity` must be greater or equal to
+	/// `pos + std::mem::size_of::<T>()`.
+	/// i.e. write is within storage's allocation.
+	///
+	/// Some `ContiguousStorage` types may impose requirements concerning
+	/// alignment which caller must satisfy.
+	#[inline]
+	unsafe fn write<T>(&mut self, value: &T, pos: usize) {
+		self.write_slice(slice::from_ref(value), pos);
+	}
+
+	/// Write a slice of values at a specific position in storage's buffer.
+	///
+	/// # Safety
+	///
+	/// Storage `capacity` must be greater or equal to
+	/// `pos + std::mem::size_of::<T>() * slice.len()`.
+	/// i.e. write is within storage's allocation.
+	///
+	/// Some `ContiguousStorage` types may impose requirements concerning
+	/// alignment which caller must satisfy.
+	unsafe fn write_slice<T>(&mut self, slice: &[T], pos: usize) -> ();
+
 	/// Returns a raw pointer to the storage's buffer, or a dangling raw pointer
 	/// valid for zero sized reads if the storage didn't allocate.
 	///

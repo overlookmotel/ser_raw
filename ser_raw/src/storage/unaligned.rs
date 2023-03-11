@@ -1,4 +1,4 @@
-use std::{mem, slice};
+use std::{mem, ptr, slice};
 
 use super::{ContiguousStorage, Storage};
 
@@ -178,6 +178,29 @@ impl Storage for UnalignedVec {
 }
 
 impl ContiguousStorage for UnalignedVec {
+	/// Write a slice of values at a specific position in storage's buffer.
+	///
+	/// # Safety
+	///
+	/// Storage `capacity` must be greater or equal to
+	/// `pos + std::mem::size_of::<T>() * slice.len()`.
+	/// i.e. write is within storage's allocation.
+	#[inline]
+	unsafe fn write_slice<T>(&mut self, slice: &[T], pos: usize) {
+		debug_assert!(pos <= self.capacity());
+		debug_assert!(self.capacity() - pos >= mem::size_of::<T>() * slice.len());
+
+		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
+		if mem::size_of::<T>() == 0 {
+			return;
+		}
+
+		let src = slice.as_ptr() as *const u8;
+		let dst = self.as_mut_ptr().add(pos);
+		// Ensuring sufficient capacity is a requirement of this method
+		ptr::copy_nonoverlapping(src, dst, std::mem::size_of::<T>() * slice.len());
+	}
+
 	/// Returns a raw pointer to the storage's buffer, or a dangling raw pointer
 	/// valid for zero sized reads if the storage didn't allocate.
 	///

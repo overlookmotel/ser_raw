@@ -261,13 +261,7 @@ impl<
 			return;
 		}
 
-		let src = slice.as_ptr();
-		let dst = self.as_mut_ptr().add(self.len()) as *mut T;
-		// `src` must be correctly aligned as derived from a valid `&[T]`.
-		// `dst` must be within this allocation as `len` can never exceed capacity.
-		// Ensuring sufficient capacity is a requirement of this method.
-		// `dst` being correctly aligned is a requirement of this method.
-		ptr::copy_nonoverlapping(src, dst, slice.len());
+		self.write_slice(slice, self.len());
 		self.inner.set_len(self.len() + size);
 	}
 
@@ -431,6 +425,33 @@ impl<
 	> ContiguousStorage
 	for AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
+	/// Write a slice of values at a specific position in storage's buffer.
+	///
+	/// # Safety
+	///
+	/// * Storage `capacity` must be greater or equal to
+	/// 	`pos + std::mem::size_of::<T>() * slice.len()`.
+	/// 	i.e. write is within storage's allocation.
+	/// * `pos` must be aligned for `T`.
+	#[inline]
+	unsafe fn write_slice<T>(&mut self, slice: &[T], pos: usize) {
+		debug_assert!(pos <= self.capacity());
+		debug_assert!(self.capacity() - pos >= mem::size_of::<T>() * slice.len());
+		debug_assert!(is_aligned_to(pos, mem::align_of::<T>()));
+
+		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
+		if mem::size_of::<T>() == 0 {
+			return;
+		}
+
+		let src = slice.as_ptr();
+		let dst = self.as_mut_ptr().add(pos) as *mut T;
+		// `src` must be correctly aligned as derived from a valid `&[T]`.
+		// Ensuring sufficient capacity is a requirement of this method.
+		// `dst` being correctly aligned is a requirement of this method.
+		ptr::copy_nonoverlapping(src, dst, slice.len());
+	}
+
 	/// Returns a raw pointer to the storage's buffer, or a dangling raw pointer
 	/// valid for zero sized reads if the storage didn't allocate.
 	///
