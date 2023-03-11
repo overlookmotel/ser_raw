@@ -33,7 +33,6 @@ where
 	/// Serialize a value and all its dependencies.
 	///
 	/// The entry point for serializing, which user will call.
-	// Serialize<Ser, Store, BorrowedStore>
 	fn serialize_value<T: Serialize<Self, Store, BorrowedStore>>(&mut self, t: &T) {
 		self.push_raw(t);
 		t.serialize_data(self);
