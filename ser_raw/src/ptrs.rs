@@ -1,9 +1,15 @@
-use std::mem;
+use std::{borrow::BorrowMut, mem};
 
-use crate::{Serialize, Serializer};
+use crate::{storage::Storage, Serialize, Serializer};
 
-impl<T: Serialize<S>, S: Serializer> Serialize<S> for Box<T> {
-	fn serialize_data(&self, serializer: &mut S) {
+impl<T, Ser, Store, BorrowedStore> Serialize<Ser, Store, BorrowedStore> for Box<T>
+where
+	T: Serialize<Ser, Store, BorrowedStore>,
+	Ser: Serializer<Store, BorrowedStore>,
+	Store: Storage,
+	BorrowedStore: BorrowMut<Store>,
+{
+	fn serialize_data(&self, serializer: &mut Ser) {
 		// No need to do anything if box contains ZST
 		if mem::size_of::<T>() == 0 {
 			return;
@@ -17,8 +23,14 @@ impl<T: Serialize<S>, S: Serializer> Serialize<S> for Box<T> {
 	}
 }
 
-impl<T: Serialize<S>, S: Serializer> Serialize<S> for Vec<T> {
-	fn serialize_data(&self, serializer: &mut S) {
+impl<T, Ser, Store, BorrowedStore> Serialize<Ser, Store, BorrowedStore> for Vec<T>
+where
+	T: Serialize<Ser, Store, BorrowedStore>,
+	Ser: Serializer<Store, BorrowedStore>,
+	Store: Storage,
+	BorrowedStore: BorrowMut<Store>,
+{
+	fn serialize_data(&self, serializer: &mut Ser) {
 		// No need to do anything if vec contains ZSTs
 		if mem::size_of::<T>() == 0 {
 			return;
@@ -39,8 +51,13 @@ impl<T: Serialize<S>, S: Serializer> Serialize<S> for Vec<T> {
 	}
 }
 
-impl<S: Serializer> Serialize<S> for String {
-	fn serialize_data(&self, serializer: &mut S) {
+impl<Ser, Store, BorrowedStore> Serialize<Ser, Store, BorrowedStore> for String
+where
+	Ser: Serializer<Store, BorrowedStore>,
+	Store: Storage,
+	BorrowedStore: BorrowMut<Store>,
+{
+	fn serialize_data(&self, serializer: &mut Ser) {
 		// No need to write contents if string is empty
 		if self.len() == 0 {
 			return;

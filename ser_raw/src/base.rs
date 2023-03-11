@@ -2,7 +2,7 @@ use std::borrow::BorrowMut;
 
 use crate::{
 	storage::{AlignedVec, Storage},
-	Serializer,
+	InstantiableSerializer, Serializer,
 };
 
 /// Serializer that ensures values are correctly aligned in output buffer.
@@ -43,56 +43,13 @@ use crate::{
 /// output, potentially increasing output size, depending on the types being
 /// serialized.
 pub struct BaseSerializer<
-	Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+	BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
 	const MAX_CAPACITY: usize,
 > {
-	storage: Store,
-}
-
-impl<
-		const STORAGE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
-		const MAX_VALUE_ALIGNMENT: usize,
-		const MAX_CAPACITY: usize,
-	>
-	BaseSerializer<
-		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
-		STORAGE_ALIGNMENT,
-		VALUE_ALIGNMENT,
-		MAX_VALUE_ALIGNMENT,
-		MAX_CAPACITY,
-	>
-{
-	/// Create new `BaseSerializer` with no memory pre-allocated.
-	///
-	/// If you know, or can estimate, the amount of buffer space that's going to
-	/// be needed in advance, allocating upfront with `with_capacity` can
-	/// dramatically improve performance vs using `new`.
-	#[inline]
-	pub fn new() -> Self {
-		Self {
-			storage: AlignedVec::new(),
-		}
-	}
-
-	/// Create new `BaseSerializer` with buffer pre-allocated with capacity of
-	/// at least `capacity` bytes.
-	///
-	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
-	///
-	/// # Panics
-	///
-	/// Panics if `capacity` exceeds `MAX_CAPACITY`.
-	pub fn with_capacity(capacity: usize) -> Self {
-		// `AlignedVec::with_capacity()` ensures capacity is `< MAX_CAPACITY`
-		// and rounds up capacity to a multiple of `MAX_VALUE_ALIGNMENT`
-		Self {
-			storage: AlignedVec::with_capacity(capacity),
-		}
-	}
+	storage: BorrowedStore,
 }
 
 impl<
@@ -114,56 +71,97 @@ impl<
 
 	/// Maximum capacity of output buffer.
 	pub const MAX_CAPACITY: usize = MAX_CAPACITY;
-
-	/// Create new `BaseSerializer` from an existing `BorrowMut<AlignedVec>`.
-	#[inline]
-	pub fn from_storage(storage: Store) -> Self {
-		// `AlignedVec` enforces the constraints we require:
-		// * `capacity` does not exceed `MAX_CAPACITY`
-		// * `capacity` is a multiple of `MAX_VALUE_ALIGNMENT`
-		// * `len` is a multiple of `VALUE_ALIGNMENT`
-		Self { storage }
-	}
-
-	/// Consume Serializer and return the output as a `BorrowMut<AlignedVec>`.
-	#[inline]
-	pub fn into_storage(self) -> Store {
-		self.storage
-	}
 }
 
 impl<
-		Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
-	> Serializer
-	for BaseSerializer<Store, STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	>
+	InstantiableSerializer<
+		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
+	>
+	for BaseSerializer<
+		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
+		STORAGE_ALIGNMENT,
+		VALUE_ALIGNMENT,
+		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
+	>
 {
-	/// Push a slice of values to output and continue processing content of the
-	/// slice.
+	/// Create new `BaseSerializer` with no memory pre-allocated.
+	///
+	/// If you know, or can estimate, the amount of buffer space that's going to
+	/// be needed in advance, allocating upfront with `with_capacity` can
+	/// dramatically improve performance vs using `new`.
 	#[inline]
-	fn push_and_process_slice<T, P: FnOnce(&mut Self)>(&mut self, slice: &[T], process: P) {
-		self.push_raw_slice(slice);
-		process(self);
+	fn new() -> Self {
+		Self {
+			storage: AlignedVec::new(),
+		}
 	}
 
-	/// Push a slice of values into output buffer.
+	/// Create new `BaseSerializer` with buffer pre-allocated with capacity of
+	/// at least `capacity` bytes.
+	///
+	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
+	///
+	/// # Panics
+	///
+	/// Panics if `capacity` exceeds `MAX_CAPACITY`.
+	fn with_capacity(capacity: usize) -> Self {
+		// `AlignedVec::with_capacity()` ensures capacity is `< MAX_CAPACITY`
+		// and rounds up capacity to a multiple of `MAX_VALUE_ALIGNMENT`
+		Self {
+			storage: AlignedVec::with_capacity(capacity),
+		}
+	}
+}
+
+impl<
+		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+		const STORAGE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+	>
+	Serializer<
+		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
+		BorrowedStore,
+	>
+	for BaseSerializer<
+		BorrowedStore,
+		STORAGE_ALIGNMENT,
+		VALUE_ALIGNMENT,
+		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
+	>
+{
+	/// Get immutable ref to `AlignedVec` backing this serializer.
 	#[inline]
-	fn push_raw_slice<T>(&mut self, slice: &[T]) {
-		self.storage.borrow_mut().push_slice(slice);
+	fn storage(
+		&self,
+	) -> &AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY> {
+		self.storage.borrow()
 	}
 
-	/// Get current capacity of output.
+	/// Get mutable ref to `AlignedVec` backing this serializer.
 	#[inline]
-	fn capacity(&self) -> usize {
-		self.storage.borrow().capacity()
+	fn storage_mut(
+		&mut self,
+	) -> &mut AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY> {
+		self.storage.borrow_mut()
 	}
 
-	/// Get current position in output.
-	#[inline]
-	fn pos(&self) -> usize {
-		self.storage.borrow().len()
+	/// Create new `AlignedSerializer` from an existing `BorrowMut<AlignedVec>`.
+	fn from_storage(storage: BorrowedStore) -> Self {
+		Self { storage }
+	}
+
+	/// Consume Serializer and return the output buffer as a
+	/// `BorrowMut<AlignedVec>`.
+	fn into_storage(self) -> BorrowedStore {
+		self.storage
 	}
 }

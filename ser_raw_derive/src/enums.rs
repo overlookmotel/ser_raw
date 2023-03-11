@@ -45,8 +45,8 @@ pub fn derive_enum(
 
 	quote! {
 		#[automatically_derived]
-		impl #impl_generics ::ser_raw::Serialize<__S> for #ident #type_generics #where_clause {
-			fn serialize_data(&self, serializer: &mut __S) {
+		impl #impl_generics ::ser_raw::Serialize<__Ser, __Store, __Borrowed> for #ident #type_generics #where_clause {
+			fn serialize_data(&self, serializer: &mut __Ser) {
 				#match_stmt
 			}
 		}
@@ -108,7 +108,7 @@ fn get_field_stmts(idents: &Vec<Ident>) -> Vec<TokenStream> {
 		.iter()
 		.map(|ident| {
 			quote! {
-				::ser_raw::Serialize::<__S>::serialize_data(#ident, serializer);
+				::ser_raw::Serialize::<__Ser, __Store, __Borrowed>::serialize_data(#ident, serializer);
 			}
 		})
 		.collect::<Vec<_>>()

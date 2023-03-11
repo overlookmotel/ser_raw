@@ -1,7 +1,15 @@
-use crate::{Serialize, Serializer};
+use std::borrow::BorrowMut;
 
-impl<T: Serialize<S>, S: Serializer> Serialize<S> for Option<T> {
-	fn serialize_data(&self, serializer: &mut S) {
+use crate::{storage::Storage, Serialize, Serializer};
+
+impl<T, Ser, Store, BorrowedStore> Serialize<Ser, Store, BorrowedStore> for Option<T>
+where
+	T: Serialize<Ser, Store, BorrowedStore>,
+	Ser: Serializer<Store, BorrowedStore>,
+	Store: Storage,
+	BorrowedStore: BorrowMut<Store>,
+{
+	fn serialize_data(&self, serializer: &mut Ser) {
 		if let Some(value) = self {
 			value.serialize_data(serializer);
 		}
