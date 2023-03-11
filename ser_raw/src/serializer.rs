@@ -100,10 +100,11 @@ where
 	///
 	/// ```
 	/// struct MyStringProxy;
-	/// impl SerializeWith<MyString, Ser, Store, BorrowedStore> for MyStringProxy
+	/// impl<Ser, Store, BorrowedStore> SerializeWith<MyString, Ser, Store, BorrowedStore>
+	/// 	for MyStringProxy
 	/// where Ser: Serializer<Store, BorrowedStore>,
 	/// 	Store: Storage,
-	/// 	BorrowedStorage: BorrowMut<Store>
+	/// 	BorrowedStore: BorrowMut<Store>
 	/// {
 	///   fn serialize_data_with(my_str: &MyString, serializer: &mut Ser) {
 	///     // Serializer may record pointer to this
