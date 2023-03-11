@@ -1,4 +1,4 @@
-use std::{borrow::BorrowMut, mem, slice};
+use std::borrow::BorrowMut;
 
 use crate::{
 	storage::{Storage, UnalignedVec},
@@ -70,9 +70,7 @@ impl<Store: BorrowMut<UnalignedVec>> Serializer for UnalignedSerializer<Store> {
 	/// Push a slice of values to output.
 	#[inline]
 	fn push_raw_slice<T>(&mut self, slice: &[T]) {
-		let ptr = slice.as_ptr() as *const u8;
-		let bytes = unsafe { slice::from_raw_parts(ptr, slice.len() * mem::size_of::<T>()) };
-		self.push_bytes(bytes);
+		self.storage.borrow_mut().push_slice(slice);
 	}
 
 	/// Get current capacity of output.
