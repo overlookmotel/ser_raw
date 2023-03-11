@@ -53,12 +53,19 @@ pub struct AlignedSerializer<
 }
 
 impl<
-		Store: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
-	> AlignedSerializer<Store, STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	>
+	AlignedSerializer<
+		BorrowedStore,
+		STORAGE_ALIGNMENT,
+		VALUE_ALIGNMENT,
+		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
+	>
 {
 	/// Alignment of output buffer
 	pub const STORAGE_ALIGNMENT: usize = STORAGE_ALIGNMENT;
