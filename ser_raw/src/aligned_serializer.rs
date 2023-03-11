@@ -42,7 +42,7 @@ use crate::{
 /// The higher `VALUE_ALIGNMENT` is, the more padding bytes will end up in
 /// output, potentially increasing output size, depending on the types being
 /// serialized.
-pub struct BaseSerializer<
+pub struct AlignedSerializer<
 	BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
@@ -58,7 +58,7 @@ impl<
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
-	> BaseSerializer<Store, STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	> AlignedSerializer<Store, STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Alignment of output buffer
 	pub const STORAGE_ALIGNMENT: usize = STORAGE_ALIGNMENT;
@@ -82,7 +82,7 @@ impl<
 	InstantiableSerializer<
 		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
 	>
-	for BaseSerializer<
+	for AlignedSerializer<
 		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
 		STORAGE_ALIGNMENT,
 		VALUE_ALIGNMENT,
@@ -130,7 +130,7 @@ impl<
 		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
 		BorrowedStore,
 	>
-	for BaseSerializer<
+	for AlignedSerializer<
 		BorrowedStore,
 		STORAGE_ALIGNMENT,
 		VALUE_ALIGNMENT,

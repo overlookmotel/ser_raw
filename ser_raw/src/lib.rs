@@ -7,9 +7,8 @@ pub use ser_raw_derive::Serialize;
 // Export Serializers, Storage, and utils
 mod serializer;
 pub use serializer::{InstantiableSerializer, Serializer};
-// TODO: Rename to `AlignedSerializer`
-mod base;
-pub use base::BaseSerializer;
+mod aligned_serializer;
+pub use aligned_serializer::AlignedSerializer;
 mod unaligned_serializer;
 pub use unaligned_serializer::UnalignedSerializer;
 pub mod storage;
