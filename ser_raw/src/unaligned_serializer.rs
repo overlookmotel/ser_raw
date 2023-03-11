@@ -55,8 +55,9 @@ impl<Store: BorrowMut<UnalignedVec>> UnalignedSerializer<Store> {
 impl<Store: BorrowMut<UnalignedVec>> Serializer for UnalignedSerializer<Store> {
 	/// Push a slice of values into output buffer.
 	#[inline]
-	fn push_slice<T>(&mut self, slice: &[T]) {
+	fn push_and_process_slice<T, P: FnOnce(&mut Self)>(&mut self, slice: &[T], process: P) {
 		self.push_raw_slice(slice);
+		process(self);
 	}
 
 	/// Push raw bytes to output.

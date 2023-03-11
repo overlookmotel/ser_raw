@@ -10,10 +10,10 @@ impl<T: Serialize<S>, S: Serializer> Serialize<S> for Box<T> {
 		}
 
 		// Write boxed value
-		serializer.push(&**self);
-
-		// Serialize boxed value
-		(**self).serialize_data(serializer);
+		serializer.push_and_process(&**self, |serializer| {
+			// Serialize boxed value
+			(**self).serialize_data(serializer);
+		});
 	}
 }
 
@@ -30,12 +30,12 @@ impl<T: Serialize<S>, S: Serializer> Serialize<S> for Vec<T> {
 		}
 
 		// Write vec's contents
-		serializer.push_slice(self.as_slice());
-
-		// Serialize vec's contents
-		for value in &**self {
-			value.serialize_data(serializer);
-		}
+		serializer.push_and_process_slice(self.as_slice(), |serializer| {
+			// Serialize vec's contents
+			for value in &**self {
+				value.serialize_data(serializer);
+			}
+		});
 	}
 }
 

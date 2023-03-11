@@ -136,10 +136,12 @@ impl<
 		const MAX_VALUE_ALIGNMENT: usize,
 	> Serializer for BaseSerializer<Store, STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT>
 {
-	/// Push a slice of values into output buffer.
+	/// Push a slice of values to output and continue processing content of the
+	/// slice.
 	#[inline]
-	fn push_slice<T>(&mut self, slice: &[T]) {
+	fn push_and_process_slice<T, P: FnOnce(&mut Self)>(&mut self, slice: &[T], process: P) {
 		self.push_raw_slice(slice);
+		process(self);
 	}
 
 	/// Push a slice of values into output buffer.
