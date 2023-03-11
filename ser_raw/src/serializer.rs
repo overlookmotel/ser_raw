@@ -2,7 +2,7 @@ use std::slice;
 
 use crate::Serialize;
 
-/// `ser_raw` Serializers implement this trait.
+/// Serializers implement this trait.
 pub trait Serializer: Sized {
 	/// Serialize a value and all its dependencies.
 	///
