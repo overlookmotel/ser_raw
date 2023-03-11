@@ -74,14 +74,4 @@ pub trait Serializer: Sized {
 
 	/// Get current position in output.
 	fn pos(&self) -> usize;
-
-	/// Move current position in output buffer.
-	///
-	/// # Safety
-	///
-	/// * `pos` must be less than or equal to `self.capacity()`.
-	///
-	/// Serializers may impose further safety contraints.
-	// TODO: Remove this method
-	unsafe fn set_pos(&mut self, pos: usize) -> ();
 }

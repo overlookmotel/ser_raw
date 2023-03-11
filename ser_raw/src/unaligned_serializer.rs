@@ -84,14 +84,4 @@ impl<Store: BorrowMut<UnalignedVec>> Serializer for UnalignedSerializer<Store> {
 	fn pos(&self) -> usize {
 		self.storage.borrow().len()
 	}
-
-	/// Move current position in output buffer.
-	///
-	/// # Safety
-	///
-	/// * `pos` must be less than or equal to `self.capacity()`.
-	#[inline]
-	unsafe fn set_pos(&mut self, pos: usize) {
-		self.storage.borrow_mut().set_len(pos);
-	}
 }

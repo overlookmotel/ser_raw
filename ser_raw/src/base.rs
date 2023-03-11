@@ -159,16 +159,4 @@ impl<
 	fn pos(&self) -> usize {
 		self.storage.borrow().len()
 	}
-
-	/// Move current position in output buffer.
-	///
-	/// # Safety
-	///
-	/// * `pos` must be less than or equal to `self.capacity()`.
-	/// * `pos` must be a multiple of `VALUE_ALIGNMENT`.
-	#[inline]
-	unsafe fn set_pos(&mut self, pos: usize) {
-		// `AlignedVec::set_len` imposes same safety invariants as this method
-		self.storage.borrow_mut().set_len(pos);
-	}
 }
