@@ -1,6 +1,7 @@
 use std::borrow::BorrowMut;
 
 use crate::{
+	impl_pure_copy_serializer,
 	storage::{Storage, UnalignedVec},
 	BorrowingSerializer, InstantiableSerializer, PureCopySerializer, SerializerStorage,
 };
@@ -18,6 +19,11 @@ pub struct UnalignedSerializer<BorrowedStore: BorrowMut<UnalignedVec>> {
 
 impl<BorrowedStore> PureCopySerializer for UnalignedSerializer<BorrowedStore> where BorrowedStore: BorrowMut<UnalignedVec>
 {}
+
+impl_pure_copy_serializer!(
+	UnalignedSerializer<BorrowedStore>
+	where BorrowedStore: BorrowMut<UnalignedVec>
+);
 
 impl<BorrowedStore> SerializerStorage for UnalignedSerializer<BorrowedStore>
 where BorrowedStore: BorrowMut<UnalignedVec>

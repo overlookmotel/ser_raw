@@ -1,6 +1,7 @@
 use std::borrow::BorrowMut;
 
 use crate::{
+	impl_pure_copy_serializer,
 	storage::{AlignedVec, Storage},
 	BorrowingSerializer, InstantiableSerializer, PureCopySerializer, SerializerStorage,
 };
@@ -97,6 +98,17 @@ impl<
 	>
 {
 }
+
+impl_pure_copy_serializer!(
+	AlignedSerializer<
+		const STORAGE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize;
+		BorrowedStore,
+	>
+	where BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+);
 
 impl<
 		const STORAGE_ALIGNMENT: usize,

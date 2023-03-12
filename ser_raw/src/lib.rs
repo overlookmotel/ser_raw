@@ -20,3 +20,6 @@ pub mod util;
 
 // `Serialize` implementations for Rust internal types
 mod serialize_impls;
+
+// Macros for use within crate
+mod macros;
