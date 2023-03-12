@@ -2,7 +2,7 @@ use std::borrow::BorrowMut;
 
 use crate::{
 	storage::{AlignedVec, Storage},
-	BorrowingSerializer, InstantiableSerializer, Serializer,
+	BorrowingSerializer, InstantiableSerializer, Serializer, SerializerStorage,
 };
 
 /// Serializer that ensures values are correctly aligned in output buffer.
@@ -87,6 +87,23 @@ impl<
 		const MAX_VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
 	> Serializer
+	for AlignedSerializer<
+		BorrowedStore,
+		STORAGE_ALIGNMENT,
+		VALUE_ALIGNMENT,
+		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
+	>
+{
+}
+
+impl<
+		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+		const STORAGE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+	> SerializerStorage
 	for AlignedSerializer<
 		BorrowedStore,
 		STORAGE_ALIGNMENT,

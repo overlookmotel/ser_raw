@@ -2,7 +2,7 @@ use std::borrow::BorrowMut;
 
 use crate::{
 	storage::{Storage, UnalignedVec},
-	BorrowingSerializer, InstantiableSerializer, Serializer,
+	BorrowingSerializer, InstantiableSerializer, Serializer, SerializerStorage,
 };
 
 /// Serializer which does not respect alignment in the output.
@@ -16,7 +16,10 @@ pub struct UnalignedSerializer<BorrowedStore: BorrowMut<UnalignedVec>> {
 	storage: BorrowedStore,
 }
 
-impl<BorrowedStore> Serializer for UnalignedSerializer<BorrowedStore>
+impl<BorrowedStore> Serializer for UnalignedSerializer<BorrowedStore> where BorrowedStore: BorrowMut<UnalignedVec>
+{}
+
+impl<BorrowedStore> SerializerStorage for UnalignedSerializer<BorrowedStore>
 where BorrowedStore: BorrowMut<UnalignedVec>
 {
 	/// `Storage` which backs this serializer.

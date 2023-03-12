@@ -4,26 +4,23 @@ use crate::{storage::Storage, Serialize};
 
 /// Serializers implement this trait.
 ///
-/// Implementations only need to provide the following methods at minimum:
-/// * `storage`
-/// * `storage_mut`
+/// Implementing a serializer requires multiple trait implementations.
+/// It's split into these 4 traits to avoid bounds on the main `Serializer`
+/// trait, and to allow composing different parts to create custom serializers.
 ///
-/// Default implementation forwards all other method calls to the underlying
+/// A serializer will implement:
+///
+/// * `Serializer`: Mandatory. Defines serialization behavior.
+/// * `SerializerStorage`: Mandatory. Defines how to access to backing storage.
+/// * `InstantiableSerializer`: Optional. Defines how to create a new serializer
+///   instance along with it's own owned backing `Storage`.
+/// * `BorrowingSerializer`: Optional. Defines how to create a new serializer
+///   instance which mutably borrows an existing `Storage`.
+///
+/// Implementations need not define any methods for the `Serializer` trait.
+/// Default implementation forwards all method calls to the underlying
 /// `Storage`.
-///
-/// `Serializer` implementations should likely also implement
-/// `InstantiableSerializer` and `BorrowingSerializer`. The implementation is
-/// split into 3 traits to avoid bounds on the main `Serializer` trait.
-pub trait Serializer: Sized {
-	/// `Storage` which backs this serializer.
-	type Store: Storage;
-
-	/// Get immutable ref to `Storage` backing this `Serializer`.
-	fn storage(&self) -> &Self::Store;
-
-	/// Get mutable ref to `Storage` backing this `Serializer`.
-	fn storage_mut(&mut self) -> &mut Self::Store;
-
+pub trait Serializer: SerializerStorage + Sized {
 	/// Serialize a value and all its dependencies.
 	///
 	/// The entry point for serializing, which user will call.
@@ -140,7 +137,22 @@ pub trait Serializer: Sized {
 	}
 }
 
-/// Serializers which can create their own `Storage` implement this trait.
+/// Trait for accessing backing `Storage` of a `Serializer`.
+///
+/// `SerializerStorage` is a super-trait of `Serializer`. All serializers must
+/// implement this trait.
+pub trait SerializerStorage {
+	/// `Storage` which backs this serializer.
+	type Store: Storage;
+
+	/// Get immutable ref to `Storage` backing this `Serializer`.
+	fn storage(&self) -> &Self::Store;
+
+	/// Get mutable ref to `Storage` backing this `Serializer`.
+	fn storage_mut(&mut self) -> &mut Self::Store;
+}
+
+/// Serializers which can create their own owned `Storage` implement this trait.
 pub trait InstantiableSerializer<Store>: Serializer {
 	/// Create new `Serializer` without allocating any memory for output.
 	/// Memory will be allocated when first value is serialized.

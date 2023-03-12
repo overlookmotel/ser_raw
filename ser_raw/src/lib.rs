@@ -4,7 +4,7 @@ pub use ser_raw_derive::Serialize;
 
 // Export Serializers, Storage, traits, and utils
 mod serializer;
-pub use serializer::{BorrowingSerializer, InstantiableSerializer, Serializer};
+pub use serializer::{BorrowingSerializer, InstantiableSerializer, Serializer, SerializerStorage};
 
 mod serializers;
 pub use serializers::{AlignedSerializer, UnalignedSerializer};
