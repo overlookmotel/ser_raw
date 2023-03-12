@@ -28,6 +28,6 @@ pub trait PureCopySerializer: Serializer {}
 #[macro_export]
 macro_rules! impl_pure_copy_serializer {
 	($($type_def:tt)*) => {
-		$crate::impl_serializer!({}, $($type_def)*);
+		$crate::impl_serializer!(PureCopySerializer, {}, $($type_def)*);
 	};
 }

@@ -1,4 +1,4 @@
-/// Macro for creating Serializer impls.
+/// Macro for creating `Serializer` impls.
 ///
 /// Use to create macros that implement `Serializer` with default methods
 /// overriden.
@@ -8,14 +8,14 @@
 /// The following input variations can be used:
 ///
 /// ```
-/// impl_serializer!({}, MySer);
-/// impl_serializer!({}, MySer<T>);
-/// impl_serializer!({}, MySer<T, U, V>);
-/// impl_serializer!({}, MySer<T, U> where T: Clone, U: Copy);
-/// impl_serializer!({}, MySer<const N: u8>);
-/// impl_serializer!({}, MySer<const N: u8, const O: u16>);
-/// impl_serializer!({}, MySer<const N: u8; T, U>);
-/// impl_serializer!({}, MySer<const N: u8; T, U> where T: Clone);
+/// impl_serializer!(Tr, {}, MySer);
+/// impl_serializer!(Tr, {}, MySer<T>);
+/// impl_serializer!(Tr, {}, MySer<T, U, V>);
+/// impl_serializer!(Tr, {}, MySer<T, U> where T: Clone, U: Copy);
+/// impl_serializer!(Tr, {}, MySer<const N: u8>);
+/// impl_serializer!(Tr, {}, MySer<const N: u8, const O: u16>);
+/// impl_serializer!(Tr, {}, MySer<const N: u8; T, U>);
+/// impl_serializer!(Tr, {}, MySer<const N: u8; T, U> where T: Clone);
 /// ```
 ///
 /// # Syntax rules:
@@ -29,7 +29,8 @@
 /// ```
 /// macro_rules! impl_super_fast_serializer {
 /// 	($($type_def:tt)*) => {
-/// 		::ser_raw::impl_serializer!(
+/// 		impl_serializer!(
+/// 			SuperFastSerializer,
 /// 			{
 /// 				fn push_raw_slice<T>(&mut self, slice: &[T]) {
 /// 					self.storage_mut().push_super_fast(slice);
@@ -56,29 +57,34 @@
 #[macro_export]
 macro_rules! impl_serializer {
 	// `impl_serializer!({}, Foo)`
-	({$($methods:item)*}, $ty:ident) => {
-		impl $crate::Serializer for $ty {$($methods)*}
+	($trait:ident, {$($methods:item)*}, $ty:ident) => {
+		impl $crate::Serializer for $ty
+		where $ty: $trait
+		{$($methods)*}
 	};
 
-	// `impl_serializer!({}, Foo<T>)`
-	// `impl_serializer!({}, Foo<T, U, V>)`
-	// `impl_serializer!({}, Foo<T> where T: Sized)`
-	// `impl_serializer!({}, Foo<T, U> where T: Sized + Copy, U: Clone)`
+	// `impl_serializer!(Tr, {}, Foo<T>)`
+	// `impl_serializer!(Tr, {}, Foo<T, U, V>)`
+	// `impl_serializer!(Tr, {}, Foo<T> where T: Sized)`
+	// `impl_serializer!(Tr, {}, Foo<T, U> where T: Sized + Copy, U: Clone)`
 	(
+		$trait:ident,
 		{$($methods:item)*},
 		$ty:ident<$first:ident $(,$more:ident)* $(,)?>
 		$(where $($where:tt)+)?
 	) => {
 		impl<$first $(, $more)*> $crate::Serializer
 		for $ty<$first $(, $more)*>
-		$(where $($where)*)?
+		where $ty<$first $(, $more)*>: $trait,
+			$($($where)*)?
 		{$($methods)*}
 	};
 
-	// `impl_serializer!({}, Foo<const N: u8>)`
-	// `impl_serializer!({}, Foo<const N: u8, const O: u8>)`
-	// `impl_serializer!({}, Foo<const N: u8> where N: IsValid<N>)`
+	// `impl_serializer!(Tr, {}, Foo<const N: u8>)`
+	// `impl_serializer!(Tr, {}, Foo<const N: u8, const O: u8>)`
+	// `impl_serializer!(Tr, {}, Foo<const N: u8> where N: IsValid<N>)`
 	(
+		$trait:ident,
 		{$($methods:item)*},
 		$ty:ident<
 			const $first_const:ident : $first_const_type:ty
@@ -92,18 +98,20 @@ macro_rules! impl_serializer {
 			$(, const $more_const: $more_const_type)*
 		> $crate::Serializer
 		for $ty<$first_const $(, $more_const)*>
-		$(where $($where)*)?
+		where $ty<$first_const $(, $more_const)*>: $trait,
+			$($($where)*)?
 		{$($methods)*}
 	};
 
-	// `impl_serializer!({}, Foo<const N: u8; T, U, V>)`
-	// `impl_serializer!({}, Foo<const N: u8, const O: u8; T, U, V>)`
-	// `impl_serializer!({}, Foo<const N: u8; T> where T: Sized)`
-	// `impl_serializer!({}, Foo<const N: u8, const O: u8; T, U> where T: Sized + Copy, U: Clone)`
+	// `impl_serializer!(Tr, {}, Foo<const N: u8; T, U, V>)`
+	// `impl_serializer!(Tr, {}, Foo<const N: u8, const O: u8; T, U, V>)`
+	// `impl_serializer!(Tr, {}, Foo<const N: u8; T> where T: Sized)`
+	// `impl_serializer!(Tr, {}, Foo<const N: u8, const O: u8; T, U> where T: Sized + Copy, U: Clone)`
 	// NB: Const params must be first, followed by a `;` (not `,`).
 	// Can't find a way to make `,` work as `const` after it is ambiguous
 	// - could be a type called `const`.
 	(
+		$trait:ident,
 		{$($methods:item)*},
 		$ty:ident<
 			const $first_const:ident : $first_const_type:ty
@@ -119,7 +127,8 @@ macro_rules! impl_serializer {
 			$first $(, $more)*
 		> $crate::Serializer
 		for $ty<$first_const $(, $more_const)*, $first $(, $more)*>
-		$(where $($where)*)?
+		where $ty<$first_const $(, $more_const)*, $first $(, $more)*>: $trait,
+			$($($where)*)?
 		{$($methods)*}
 	};
 }
