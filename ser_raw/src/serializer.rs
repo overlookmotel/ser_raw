@@ -24,9 +24,9 @@ pub trait Serializer: SerializerStorage + Sized {
 	/// Serialize a value and all its dependencies.
 	///
 	/// The entry point for serializing, which user will call.
-	fn serialize_value<T: Serialize<Self>>(&mut self, t: &T) {
-		self.push_raw(t);
-		t.serialize_data(self);
+	fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
+		self.push_raw(value);
+		value.serialize_data(self);
 	}
 
 	/// Push a value to output.
