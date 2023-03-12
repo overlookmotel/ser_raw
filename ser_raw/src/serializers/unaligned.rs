@@ -10,7 +10,7 @@ use crate::{
 /// Values are likely not be aligned as their types require.
 ///
 /// If most of the allocated types you're serializing share the
-/// same alignment, performance of `BaseSerializer`, which
+/// same alignment, performance of `AlignedSerializer`, which
 /// does respect alignment, is likely to be almost exactly the same.
 pub struct UnalignedSerializer<BorrowedStore: BorrowMut<UnalignedVec>> {
 	storage: BorrowedStore,
