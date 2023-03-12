@@ -8,16 +8,19 @@ use crate::util::{align_up_to, is_aligned_to};
 ///
 /// # Const parameters
 ///
-/// * `MEMORY_ALIGNMENT`: alignment of the underlying memory used by `Storage`.
-/// * `VALUE_ALIGNMENT`: minimum alignment all values will have in `Storage`.
+/// By configuring alignment requirements statically, the compiler is able to
+/// remove alignment calculations for many cases. This improves performance.
+///
+/// * `MEMORY_ALIGNMENT`: Alignment of the underlying memory used by `Storage`.
+/// * `VALUE_ALIGNMENT`: Minimum alignment all values will have in `Storage`.
 /// 	Types with alignment higher than `VALUE_ALIGNMENT` will have padding
 /// 	inserted before them if required. Types with alignment lower than
-///   `VALUE_ALIGNMENT` will have padding inserted after to leave the `Storage`
-/// 	aligned on `VALUE_ALIGNMENT` for the next `push()`.
-/// * `MAX_VALUE_ALIGNMENT`: maximum alignment requirement of values which can
+///   `VALUE_ALIGNMENT` will have padding inserted after them to leave the
+/// 	`Storage` aligned on `VALUE_ALIGNMENT`, ready for the next `push()`.
+/// * `MAX_VALUE_ALIGNMENT`: Maximum alignment requirement of values which can
 ///   be stored in `Storage`. `capacity` must always be a multiple of this
 /// 	(all methods uphold this constraint).
-/// * `MAX_CAPACITY`: maximum capacity of storage. Cannot be 0, and cannot be
+/// * `MAX_CAPACITY`: Maximum capacity of storage. Cannot be 0, and cannot be
 /// 	greater than `isize::MAX + 1 - MEMORY_ALIGNMENT`. Must be a multiple of
 /// 	`MAX_VALUE_ALIGNMENT`.
 pub trait AlignedStorage<
@@ -112,7 +115,7 @@ impl<
 	/// Create new `AlignedVec`.
 	#[inline]
 	fn new() -> Self {
-		// Ensure (at compile time) that const params for alignment are valid
+		// Ensure (at compile time) that const params are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
 		Self {
@@ -126,7 +129,7 @@ impl<
 	///
 	/// Panics if `capacity` exceeds `MAX_CAPACITY`.
 	fn with_capacity(capacity: usize) -> Self {
-		// Ensure (at compile time) that const params for alignment are valid
+		// Ensure (at compile time) that const params are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
 		if capacity == 0 {
@@ -157,7 +160,7 @@ impl<
 	/// * `capacity` must be less than or equal to `MAX_CAPACITY`.
 	/// * `capacity` must be a multiple of `MAX_VALUE_ALIGNMENT`.
 	unsafe fn with_capacity_unchecked(capacity: usize) -> Self {
-		// Ensure (at compile time) that const params for alignment are valid
+		// Ensure (at compile time) that const params are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
 		debug_assert!(
