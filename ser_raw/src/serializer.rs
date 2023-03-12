@@ -78,6 +78,24 @@ pub trait Serializer: SerializerStorage + Sized {
 		process(self);
 	}
 
+	/// Push a value to output.
+	///
+	/// Unlike `push` and `push_and_process`, this is not for values for which a
+	/// Serializer may need to record a pointer address.
+	#[inline]
+	fn push_raw<T>(&mut self, value: &T) {
+		self.push_raw_slice(slice::from_ref(value));
+	}
+
+	/// Push a slice of values to output.
+	///
+	/// Unlike `push_slice` and `push_and_process_slice`, this is not for values
+	/// for which a Serializer may need to record a pointer address.
+	#[inline]
+	fn push_raw_slice<T>(&mut self, slice: &[T]) {
+		self.storage_mut().push_slice(slice);
+	}
+
 	/// Push raw bytes to output.
 	///
 	/// Unlike `push`, `push_slice`, `push_and_process` and
@@ -97,31 +115,13 @@ pub trait Serializer: SerializerStorage + Sized {
 	///     // Serializer may record pointer to this
 	///     serializer.push(&my_str.len());
 	///     // No need to record pointer to this, as it's deductible from pointer to `len`
-	///     serializer.push_bytes(my_str.as_slice());
+	///     serializer.push_raw_bytes(my_str.as_slice());
 	///   }
 	/// }
 	/// ```
 	#[inline]
-	fn push_bytes(&mut self, bytes: &[u8]) {
+	fn push_raw_bytes(&mut self, bytes: &[u8]) {
 		self.storage_mut().push_bytes(bytes);
-	}
-
-	/// Push a value to output.
-	///
-	/// Unlike `push` and `push_and_process`, this is not for values for which a
-	/// Serializer may need to record a pointer address.
-	#[inline]
-	fn push_raw<T>(&mut self, value: &T) {
-		self.push_raw_slice(slice::from_ref(value));
-	}
-
-	/// Push a slice of values to output.
-	///
-	/// Unlike `push_slice` and `push_and_process_slice`, this is not for values
-	/// for which a Serializer may need to record a pointer address.
-	#[inline]
-	fn push_raw_slice<T>(&mut self, slice: &[T]) {
-		self.storage_mut().push_slice(slice);
 	}
 
 	/// Get current capacity of output.

@@ -55,7 +55,7 @@ pub trait Serialize<Ser: Serializer> {
 /// 	fn serialize_data_with(biguint: &BigUint, serializer: &mut S) {
 /// 		let bytes = biguint.to_bytes_le();
 /// 		serializer.push(&bytes.len());
-/// 		serializer.push_bytes(bytes.as_slice());
+/// 		serializer.push_raw_bytes(bytes.as_slice());
 /// 	}
 /// }
 /// ```
