@@ -25,8 +25,8 @@ pub fn derive_struct(
 
 	quote! {
 		#[automatically_derived]
-		impl #impl_generics ::ser_raw::Serialize<__Ser, __Store, __Borrowed> for #ident #type_generics #where_clause {
-			fn serialize_data(&self, serializer: &mut __Ser) {
+		impl #impl_generics ::ser_raw::Serialize<__S> for #ident #type_generics #where_clause {
+			fn serialize_data(&self, serializer: &mut __S) {
 				#(#field_stmts)*
 			}
 		}
@@ -60,14 +60,14 @@ fn get_field_stmt(field_name: TokenStream, field: &Field) -> TokenStream {
 	match get_with(field) {
 		Some(with) => {
 			quote_spanned! {field.span()=>
-				<#with as ::ser_raw::SerializeWith::<_, __Ser, __Store, __Borrowed>>::serialize_data_with(
+				<#with as ::ser_raw::SerializeWith::<_, __S>>::serialize_data_with(
 					&self.#field_name, serializer
 				);
 			}
 		}
 		None => {
 			quote_spanned! {field.span()=>
-				::ser_raw::Serialize::<__Ser, __Store, __Borrowed>::serialize_data(
+				::ser_raw::Serialize::<__S>::serialize_data(
 					&self.#field_name, serializer
 				);
 			}

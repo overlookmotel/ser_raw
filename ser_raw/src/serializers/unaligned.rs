@@ -2,7 +2,7 @@ use std::borrow::BorrowMut;
 
 use crate::{
 	storage::{Storage, UnalignedVec},
-	InstantiableSerializer, Serializer,
+	BorrowingSerializer, InstantiableSerializer, Serializer,
 };
 
 /// Serializer which does not respect alignment in the output.
@@ -14,6 +14,25 @@ use crate::{
 /// does respect alignment, is likely to be almost exactly the same.
 pub struct UnalignedSerializer<BorrowedStore: BorrowMut<UnalignedVec>> {
 	storage: BorrowedStore,
+}
+
+impl<BorrowedStore> Serializer for UnalignedSerializer<BorrowedStore>
+where BorrowedStore: BorrowMut<UnalignedVec>
+{
+	/// `Storage` which backs this serializer.
+	type Store = UnalignedVec;
+
+	/// Get immutable ref to `UnalignedVec` backing this serializer.
+	#[inline]
+	fn storage(&self) -> &UnalignedVec {
+		self.storage.borrow()
+	}
+
+	/// Get mutable ref to `UnalignedVec` backing this serializer.
+	#[inline]
+	fn storage_mut(&mut self) -> &mut UnalignedVec {
+		self.storage.borrow_mut()
+	}
 }
 
 impl InstantiableSerializer<UnalignedVec> for UnalignedSerializer<UnalignedVec> {
@@ -38,21 +57,9 @@ impl InstantiableSerializer<UnalignedVec> for UnalignedSerializer<UnalignedVec> 
 	}
 }
 
-impl<BorrowedStore> Serializer<UnalignedVec, BorrowedStore> for UnalignedSerializer<BorrowedStore>
+impl<BorrowedStore> BorrowingSerializer<BorrowedStore> for UnalignedSerializer<BorrowedStore>
 where BorrowedStore: BorrowMut<UnalignedVec>
 {
-	/// Get immutable ref to `UnalignedVec` backing this serializer.
-	#[inline]
-	fn storage(&self) -> &UnalignedVec {
-		self.storage.borrow()
-	}
-
-	/// Get mutable ref to `UnalignedVec` backing this serializer.
-	#[inline]
-	fn storage_mut(&mut self) -> &mut UnalignedVec {
-		self.storage.borrow_mut()
-	}
-
 	/// Create new `UnalignedSerializer` from an existing
 	/// `BorrowMut<UnalignedVec>`.
 	fn from_storage(storage: BorrowedStore) -> Self {

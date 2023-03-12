@@ -1,13 +1,9 @@
-use std::{borrow::BorrowMut, mem};
+use std::mem;
 
-use crate::{storage::Storage, Serialize, Serializer};
+use crate::{Serialize, Serializer};
 
-impl<T, Ser, Store, BorrowedStore> Serialize<Ser, Store, BorrowedStore> for Box<T>
-where
-	T: Serialize<Ser, Store, BorrowedStore>,
-	Ser: Serializer<Store, BorrowedStore>,
-	Store: Storage,
-	BorrowedStore: BorrowMut<Store>,
+impl<T, Ser: Serializer> Serialize<Ser> for Box<T>
+where T: Serialize<Ser>
 {
 	fn serialize_data(&self, serializer: &mut Ser) {
 		// No need to do anything if box contains ZST
@@ -23,12 +19,8 @@ where
 	}
 }
 
-impl<T, Ser, Store, BorrowedStore> Serialize<Ser, Store, BorrowedStore> for Vec<T>
-where
-	T: Serialize<Ser, Store, BorrowedStore>,
-	Ser: Serializer<Store, BorrowedStore>,
-	Store: Storage,
-	BorrowedStore: BorrowMut<Store>,
+impl<T, Ser: Serializer> Serialize<Ser> for Vec<T>
+where T: Serialize<Ser>
 {
 	fn serialize_data(&self, serializer: &mut Ser) {
 		// No need to do anything if vec contains ZSTs
@@ -51,12 +43,7 @@ where
 	}
 }
 
-impl<Ser, Store, BorrowedStore> Serialize<Ser, Store, BorrowedStore> for String
-where
-	Ser: Serializer<Store, BorrowedStore>,
-	Store: Storage,
-	BorrowedStore: BorrowMut<Store>,
-{
+impl<Ser: Serializer> Serialize<Ser> for String {
 	fn serialize_data(&self, serializer: &mut Ser) {
 		// No need to write contents if string is empty
 		if self.len() == 0 {

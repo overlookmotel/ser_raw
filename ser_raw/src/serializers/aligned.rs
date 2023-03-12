@@ -2,7 +2,7 @@ use std::borrow::BorrowMut;
 
 use crate::{
 	storage::{AlignedVec, Storage},
-	InstantiableSerializer, Serializer,
+	BorrowingSerializer, InstantiableSerializer, Serializer,
 };
 
 /// Serializer that ensures values are correctly aligned in output buffer.
@@ -81,6 +81,37 @@ impl<
 }
 
 impl<
+		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+		const STORAGE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+	> Serializer
+	for AlignedSerializer<
+		BorrowedStore,
+		STORAGE_ALIGNMENT,
+		VALUE_ALIGNMENT,
+		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
+	>
+{
+	/// `Storage` which backs this serializer.
+	type Store = AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>;
+
+	/// Get immutable ref to `AlignedVec` backing this serializer.
+	#[inline]
+	fn storage(&self) -> &Self::Store {
+		self.storage.borrow()
+	}
+
+	/// Get mutable ref to `AlignedVec` backing this serializer.
+	#[inline]
+	fn storage_mut(&mut self) -> &mut Self::Store {
+		self.storage.borrow_mut()
+	}
+}
+
+impl<
 		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
@@ -132,11 +163,7 @@ impl<
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
-	>
-	Serializer<
-		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
-		BorrowedStore,
-	>
+	> BorrowingSerializer<BorrowedStore>
 	for AlignedSerializer<
 		BorrowedStore,
 		STORAGE_ALIGNMENT,
@@ -145,22 +172,6 @@ impl<
 		MAX_CAPACITY,
 	>
 {
-	/// Get immutable ref to `AlignedVec` backing this serializer.
-	#[inline]
-	fn storage(
-		&self,
-	) -> &AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY> {
-		self.storage.borrow()
-	}
-
-	/// Get mutable ref to `AlignedVec` backing this serializer.
-	#[inline]
-	fn storage_mut(
-		&mut self,
-	) -> &mut AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY> {
-		self.storage.borrow_mut()
-	}
-
 	/// Create new `AlignedSerializer` from an existing `BorrowMut<AlignedVec>`.
 	fn from_storage(storage: BorrowedStore) -> Self {
 		Self { storage }

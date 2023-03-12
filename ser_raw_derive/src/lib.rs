@@ -32,18 +32,13 @@ fn get_generics(attrs: Vec<Attribute>, generics: &Generics) -> Generics {
 
 	// Add bounds for serializer + storage.
 	// Add bound from `#[ser_bound(...)]` to Serializer if present.
-	let mut generics_for_impl = generics.clone();
-	let params = &mut generics_for_impl.params;
-
-	let mut generic_param: GenericParam =
-		parse_quote!(__Ser: ::ser_raw::Serializer<__Store, __Borrowed>);
+	let mut generic_param: GenericParam = parse_quote!(__S: ::ser_raw::Serializer);
 	if let Some(ser_bound) = ser_bound {
 		generic_param = parse_quote!(#generic_param + #ser_bound);
 	}
-	params.push(generic_param);
 
-	params.push(parse_quote!(__Store: ::ser_raw::storage::Storage));
-	params.push(parse_quote!(__Borrowed: ::std::borrow::BorrowMut<__Store>));
+	let mut generics_for_impl = generics.clone();
+	generics_for_impl.params.push(generic_param);
 	generics_for_impl
 }
 

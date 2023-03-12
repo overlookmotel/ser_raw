@@ -7,33 +7,27 @@ use crate::{storage::Storage, Serialize};
 /// Implementations only need to provide the following methods at minimum:
 /// * `storage`
 /// * `storage_mut`
-/// * `from_storage`
-/// * `into_storage`
 ///
 /// Default implementation forwards all other method calls to the underlying
 /// `Storage`.
-pub trait Serializer<Store, BorrowedStore>: Sized
-where
-	Store: Storage,
-	BorrowedStore: BorrowMut<Store>,
-{
+///
+/// `Serializer` implementations should likely also implement
+/// `InstantiableSerializer` and `BorrowingSerializer`. The implementation is
+/// split into 3 traits to avoid bounds on the main `Serializer` trait.
+pub trait Serializer: Sized {
+	/// `Storage` which backs this serializer.
+	type Store: Storage;
+
 	/// Get immutable ref to `Storage` backing this `Serializer`.
-	fn storage(&self) -> &Store;
+	fn storage(&self) -> &Self::Store;
 
 	/// Get mutable ref to `Storage` backing this `Serializer`.
-	fn storage_mut(&mut self) -> &mut Store;
-
-	/// Create new `Serializer` using an existing `BorrowMut<Storage>`.
-	fn from_storage(storage: BorrowedStore) -> Self;
-
-	/// Consume Serializer and return the backing storage as a
-	/// `BorrowMut<Storage>`.
-	fn into_storage(self) -> BorrowedStore;
+	fn storage_mut(&mut self) -> &mut Self::Store;
 
 	/// Serialize a value and all its dependencies.
 	///
 	/// The entry point for serializing, which user will call.
-	fn serialize_value<T: Serialize<Self, Store, BorrowedStore>>(&mut self, t: &T) {
+	fn serialize_value<T: Serialize<Self>>(&mut self, t: &T) {
 		self.push_raw(t);
 		t.serialize_data(self);
 	}
@@ -99,13 +93,10 @@ where
 	///
 	/// ```
 	/// struct MyStringProxy;
-	/// impl<Ser, Store, BorrowedStore> SerializeWith<MyString, Ser, Store, BorrowedStore>
-	/// 	for MyStringProxy
-	/// where Ser: Serializer<Store, BorrowedStore>,
-	/// 	Store: Storage,
-	/// 	BorrowedStore: BorrowMut<Store>
+	/// impl<S> SerializeWith<MyString, S> for MyStringProxy
+	/// where S: Serializer
 	/// {
-	///   fn serialize_data_with(my_str: &MyString, serializer: &mut Ser) {
+	///   fn serialize_data_with(my_str: &MyString, serializer: &mut S) {
 	///     // Serializer may record pointer to this
 	///     serializer.push(&my_str.len());
 	///     // No need to record pointer to this, as it's deductible from pointer to `len`
@@ -150,9 +141,7 @@ where
 }
 
 /// Serializers which can create their own `Storage` implement this trait.
-pub trait InstantiableSerializer<Store>: Serializer<Store, Store>
-where Store: Storage
-{
+pub trait InstantiableSerializer<Store>: Serializer {
 	/// Create new `Serializer` without allocating any memory for output.
 	/// Memory will be allocated when first value is serialized.
 	///
@@ -164,4 +153,17 @@ where Store: Storage
 	/// Create new `Serializer` with pre-allocated storage with capacity
 	/// of `capacity` bytes.
 	fn with_capacity(capacity: usize) -> Self;
+}
+
+/// Serializers which can be created from a `BorrowMut` of an existing `Storage`
+/// implement this trait.
+pub trait BorrowingSerializer<BorrowedStore>: Serializer
+where BorrowedStore: BorrowMut<Self::Store>
+{
+	/// Create new `Serializer` using an existing `BorrowMut<Storage>`.
+	fn from_storage(storage: BorrowedStore) -> Self;
+
+	/// Consume Serializer and return the backing storage as a
+	/// `BorrowMut<Storage>`.
+	fn into_storage(self) -> BorrowedStore;
 }

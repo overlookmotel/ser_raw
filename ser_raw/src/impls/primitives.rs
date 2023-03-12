@@ -1,16 +1,10 @@
-use std::{borrow::BorrowMut, num};
+use std::num;
 
-use crate::{storage::Storage, Serialize, Serializer};
+use crate::{Serialize, Serializer};
 
 macro_rules! impl_primitive {
 	($ty:ty) => {
-		impl<Ser, Store, BorrowedStore> Serialize<Ser, Store, BorrowedStore> for $ty
-		where
-			Ser: Serializer<Store, BorrowedStore>,
-			Store: Storage,
-			BorrowedStore: BorrowMut<Store>,
-		{
-		}
+		impl<Ser: Serializer> Serialize<Ser> for $ty {}
 	};
 }
 
