@@ -52,6 +52,7 @@ pub struct AlignedSerializer<
 	storage: BorrowedStore,
 }
 
+// Expose const params as associated consts - `Self::STORAGE_ALIGNMENT` etc.
 impl<
 		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 		const STORAGE_ALIGNMENT: usize,
