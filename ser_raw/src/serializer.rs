@@ -179,7 +179,3 @@ where BorrowedStore: BorrowMut<Self::Store>
 	/// `BorrowMut<Storage>`.
 	fn into_storage(self) -> BorrowedStore;
 }
-
-/// Trait for the most basic serializers which purely copy bytes.
-pub trait PureCopySerializer: Serializer {}
-impl<Ser: PureCopySerializer> Serializer for Ser {}
