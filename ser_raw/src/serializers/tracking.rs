@@ -1,42 +1,6 @@
 #![allow(dead_code)]
 
-use crate::Serializer;
-
-/// Mapping from input address (i.e. memory address of value being serialized)
-/// and output position (i.e. position of that value's representation in
-/// serializer's output).
-#[derive(Copy, Clone, Debug)]
-pub struct PosMapping {
-	input_addr: usize,
-	output_pos: usize,
-}
-
-impl PosMapping {
-	/// Create new position mapping.
-	#[inline]
-	pub fn new(input_addr: usize, output_pos: usize) -> Self {
-		Self {
-			input_addr,
-			output_pos,
-		}
-	}
-
-	#[inline]
-	pub fn dummy() -> Self {
-		Self {
-			input_addr: 0,
-			output_pos: 0,
-		}
-	}
-
-	/// Get position in output for a value which has been serialized.
-	/// That value must have been serialized in an allocation which this
-	/// `PosMapping` represents the start of.
-	#[inline]
-	pub fn pos_for<T>(&self, value: &T) -> usize {
-		(value as *const T as usize) - self.input_addr + self.output_pos
-	}
-}
+use crate::{pos::PosMapping, Serializer};
 
 /// Trait for serializers which track position in output.
 ///
@@ -84,8 +48,12 @@ macro_rules! impl_pos_tracking_serializer {
 		$crate::impl_serializer!(
 			PosTrackingSerializer,
 			{
+				/// `PosTrackingSerializer` serializers do not record pointers,
+				/// so have no need for a working `Addr`.
+				type Addr = $crate::pos::NoopAddr;
+
 				fn serialize_value<T: $crate::Serialize<Self>>(&mut self, value: &T) {
-					use $crate::PosMapping;
+					use $crate::pos::PosMapping;
 
 					// Align storage, ready to write value
 					self.storage_mut().align_for::<T>();
@@ -106,13 +74,18 @@ macro_rules! impl_pos_tracking_serializer {
 
 				// Skip recording position when no further processing for a slice
 				#[inline]
-				fn push_slice<T>(&mut self, slice: &[T]) {
+				fn push_slice<T>(&mut self, slice: &[T], _ptr_addr: Self::Addr) {
 					self.push_raw_slice(slice);
 				}
 
 				#[inline]
-				fn push_and_process_slice<T, P: FnOnce(&mut Self)>(&mut self, slice: &[T], process: P) {
-					use $crate::PosMapping;
+				fn push_and_process_slice<T, P: FnOnce(&mut Self)>(
+					&mut self,
+					slice: &[T],
+					_ptr_addr: Self::Addr,
+					process: P
+				) {
+					use $crate::pos::PosMapping;
 
 					// Get position mapping before processing this
 					let pos_mapping_before = *self.pos_mapping();

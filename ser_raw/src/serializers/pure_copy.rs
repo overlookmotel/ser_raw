@@ -28,6 +28,14 @@ pub trait PureCopySerializer: Serializer {}
 #[macro_export]
 macro_rules! impl_pure_copy_serializer {
 	($($type_def:tt)*) => {
-		$crate::impl_serializer!(PureCopySerializer, {}, $($type_def)*);
+		$crate::impl_serializer!(
+			PureCopySerializer,
+			{
+				/// `PureCopySerializer` serializers do not record pointers,
+				/// so have no need for a working `Addr`.
+				type Addr = $crate::pos::NoopAddr;
+			},
+			$($type_def)*
+		);
 	};
 }

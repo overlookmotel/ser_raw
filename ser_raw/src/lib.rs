@@ -7,7 +7,7 @@ mod serializer;
 pub use serializer::{BorrowingSerializer, InstantiableSerializer, Serializer, SerializerStorage};
 
 mod serializers;
-pub use serializers::{PosMapping, PosTrackingSerializer, PureCopySerializer};
+pub use serializers::{PosTrackingSerializer, PureCopySerializer};
 
 mod serializer_impls;
 pub use serializer_impls::{AlignedSerializer, UnalignedSerializer};
@@ -15,6 +15,7 @@ pub use serializer_impls::{AlignedSerializer, UnalignedSerializer};
 mod serialize;
 pub use serialize::{Serialize, SerializeWith};
 
+pub mod pos;
 pub mod storage;
 pub mod util;
 

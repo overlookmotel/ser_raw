@@ -1,6 +1,6 @@
 use std::{borrow::BorrowMut, slice};
 
-use crate::{storage::Storage, Serialize};
+use crate::{pos::Addr, storage::Storage, Serialize};
 
 /// Serializers implement this trait.
 ///
@@ -19,8 +19,11 @@ use crate::{storage::Storage, Serialize};
 ///
 /// Implementations need not define any methods for the `Serializer` trait.
 /// Default implementation forwards all method calls to the underlying
-/// `Storage`.
+/// `Storage`. They only need to define associated type `Addr`.
 pub trait Serializer: SerializerStorage + Sized {
+	/// `Addr` type this serializer uses.
+	type Addr: Addr;
+
 	/// Serialize a value and all its dependencies.
 	///
 	/// The entry point for serializing, which user will call.
@@ -37,8 +40,8 @@ pub trait Serializer: SerializerStorage + Sized {
 	///
 	/// Some Serializers may record/overwrite the pointer address.
 	#[inline]
-	fn push<T>(&mut self, value: &T) {
-		self.push_slice(slice::from_ref(value));
+	fn push<T>(&mut self, value: &T, ptr_addr: Self::Addr) {
+		self.push_slice(slice::from_ref(value), ptr_addr);
 	}
 
 	/// Push a slice of values to output.
@@ -50,8 +53,8 @@ pub trait Serializer: SerializerStorage + Sized {
 	///
 	/// Some Serializers may record/overwrite the pointer address.
 	#[inline]
-	fn push_slice<T>(&mut self, slice: &[T]) {
-		self.push_and_process_slice(slice, |_| {});
+	fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
+		self.push_and_process_slice(slice, ptr_addr, |_| {});
 	}
 
 	/// Push a value to output and continue processing the value.
@@ -61,8 +64,8 @@ pub trait Serializer: SerializerStorage + Sized {
 	///
 	/// Some Serializers may record/overwrite the pointer address.
 	#[inline]
-	fn push_and_process<T, P: FnOnce(&mut Self)>(&mut self, t: &T, process: P) {
-		self.push_and_process_slice(slice::from_ref(t), process);
+	fn push_and_process<T, P: FnOnce(&mut Self)>(&mut self, t: &T, ptr_addr: Self::Addr, process: P) {
+		self.push_and_process_slice(slice::from_ref(t), ptr_addr, process);
 	}
 
 	/// Push a slice of values to output and continue processing content of the
@@ -73,7 +76,12 @@ pub trait Serializer: SerializerStorage + Sized {
 	///
 	/// Some Serializers may record/overwrite the pointer address.
 	#[inline]
-	fn push_and_process_slice<T, P: FnOnce(&mut Self)>(&mut self, slice: &[T], process: P) {
+	fn push_and_process_slice<T, P: FnOnce(&mut Self)>(
+		&mut self,
+		slice: &[T],
+		#[allow(unused_variables)] ptr_addr: Self::Addr,
+		process: P,
+	) {
 		self.push_raw_slice(slice);
 		process(self);
 	}
