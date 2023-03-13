@@ -43,6 +43,9 @@ impl PosMapping {
 /// Implement the trait on a serializer, and then use macro
 /// `impl_pos_tracking_serializer!()` to implement `Serialize`.
 ///
+/// `serialize_data` functions can then get the position of any value's
+/// serialized representation in output with `serializer.pos_for(&value)`.
+///
 /// # Example
 ///
 /// ```
@@ -95,7 +98,7 @@ macro_rules! impl_pos_tracking_serializer {
 					unsafe { self.storage_mut().push_slice_unaligned(slice) };
 					self.storage_mut().align_after::<T>();
 
-					// Serialize value (which may use the pos value we set)
+					// Serialize value (which may use the pos mapping we set)
 					value.serialize_data(self);
 				}
 
@@ -122,7 +125,7 @@ macro_rules! impl_pos_tracking_serializer {
 					unsafe { self.storage_mut().push_slice_unaligned(slice) };
 					self.storage_mut().align_after::<T>();
 
-					// Call `process` function (which may use the pos value we set)
+					// Call `process` function (which may use the pos mapping we set)
 					process(self);
 
 					// Reset position mapping back to as it was
