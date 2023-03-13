@@ -1,0 +1,269 @@
+use std::{borrow::BorrowMut, mem};
+
+use crate::{
+	impl_rel_ptr_serializer,
+	pos::PosMapping,
+	storage::{AlignedVec, ContiguousStorage, Storage},
+	util::is_aligned_to,
+	BorrowingSerializer, InstantiableSerializer, PosTrackingSerializer, RelPtrSerializer, Serializer,
+	SerializerStorage,
+};
+
+/// Serializer that ensures values are correctly aligned in output buffer
+/// and overwrites pointers in output with pointers relative to the start of the
+/// buffer.
+///
+/// # Const parameters
+///
+/// `STORAGE_ALIGNMENT` is the alignment of the output buffer.
+///
+/// `MAX_VALUE_ALIGNMENT` is maximum alignment of types which will be
+/// serialized. Types with alignment greater than `MAX_VALUE_ALIGNMENT` cannot
+/// be serialized with this serializer.
+///
+/// `MAX_CAPACITY` is maximum capacity of storage. Cannot be 0 and cannot be
+/// greater than `isize::MAX + 1 - STORAGE_ALIGNMENT`. Must be a multiple of
+/// `MAX_VALUE_ALIGNMENT`.
+///
+/// `VALUE_ALIGNMENT` is minimum alignment all allocated values will have in
+/// output buffer. Types with alignment higher than `VALUE_ALIGNMENT` will have
+/// padding inserted before them if required. Types with alignment lower than
+/// `VALUE_ALIGNMENT` will have padding inserted after to leave the buffer
+/// aligned on `VALUE_ALIGNMENT` for the next insertion.
+///
+/// This doesn't affect the "legality" of the output, but if most allocated
+/// types being serialized have the same alignment, setting `VALUE_ALIGNMENT` to
+/// that alignment may significantly improve performance, as alignment
+/// calculations can be skipped when serializing those types.
+///
+/// NB: The word "allocated" in "allocated types" is key here. `ser_raw` deals
+/// in allocations, not individual types. So this means that only types which
+/// are pointed to by a `Box<T>` or `Vec<T>` count as "allocated types"
+/// for the purposes of calculating an optimal value for `VALUE_ALIGNMENT`.
+///
+/// e.g. If all (or almost all) types contain pointers (`Box`, `Vec` etc),
+/// setting `VALUE_ALIGNMENT = std::mem::size_of::<usize>()`
+/// will be the best value for fast serialization.
+///
+/// The higher `VALUE_ALIGNMENT` is, the more padding bytes will end up in
+/// output, potentially increasing output size, depending on the types being
+/// serialized.
+pub struct AlignedRelPtrSerializer<
+	const STORAGE_ALIGNMENT: usize,
+	const VALUE_ALIGNMENT: usize,
+	const MAX_VALUE_ALIGNMENT: usize,
+	const MAX_CAPACITY: usize,
+	BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+> {
+	storage: BorrowedStore,
+	pos_mapping: PosMapping,
+}
+
+// Expose const params as associated consts - `Self::STORAGE_ALIGNMENT` etc.
+impl<
+		const STORAGE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+	>
+	AlignedRelPtrSerializer<
+		STORAGE_ALIGNMENT,
+		VALUE_ALIGNMENT,
+		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
+		BorrowedStore,
+	>
+{
+	/// Alignment of output buffer
+	pub const STORAGE_ALIGNMENT: usize = STORAGE_ALIGNMENT;
+
+	/// Typical alignment of values being serialized
+	pub const VALUE_ALIGNMENT: usize = VALUE_ALIGNMENT;
+
+	/// Maximum alignment of values being serialized
+	pub const MAX_VALUE_ALIGNMENT: usize = MAX_VALUE_ALIGNMENT;
+
+	/// Maximum capacity of output buffer.
+	pub const MAX_CAPACITY: usize = MAX_CAPACITY;
+}
+
+impl<
+		const STORAGE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+	> RelPtrSerializer
+	for AlignedRelPtrSerializer<
+		STORAGE_ALIGNMENT,
+		VALUE_ALIGNMENT,
+		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
+		BorrowedStore,
+	>
+{
+	/// Overwrite pointer.
+	///
+	/// # Safety
+	///
+	/// * `ptr_pos` and `target_pos` must both sit within bounds of output.
+	/// * `target_pos` must be location of a valid value for the type being
+	///   pointed to.
+	/// * `ptr_pos` must be aligned for a pointer.
+	#[inline]
+	unsafe fn write_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
+		// Cannot fully check validity of `target_pos` because its type isn't known
+		debug_assert!(ptr_pos <= self.capacity() - mem::size_of::<usize>());
+		debug_assert!(is_aligned_to(ptr_pos, mem::align_of::<usize>()));
+		debug_assert!(target_pos <= self.capacity());
+
+		self.storage_mut().write(&target_pos, ptr_pos)
+	}
+}
+
+impl_rel_ptr_serializer!(
+	AlignedRelPtrSerializer<
+		const STORAGE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize;
+		BorrowedStore,
+	>
+	where BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+);
+
+impl<
+		const STORAGE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+	> PosTrackingSerializer
+	for AlignedRelPtrSerializer<
+		STORAGE_ALIGNMENT,
+		VALUE_ALIGNMENT,
+		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
+		BorrowedStore,
+	>
+{
+	/// Get current position mapping
+	fn pos_mapping(&self) -> &PosMapping {
+		&self.pos_mapping
+	}
+
+	/// Set current position mapping
+	fn set_pos_mapping(&mut self, pos_mapping: PosMapping) {
+		self.pos_mapping = pos_mapping;
+	}
+}
+
+impl<
+		const STORAGE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+	> SerializerStorage
+	for AlignedRelPtrSerializer<
+		STORAGE_ALIGNMENT,
+		VALUE_ALIGNMENT,
+		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
+		BorrowedStore,
+	>
+{
+	/// `Storage` which backs this serializer.
+	type Store = AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>;
+
+	/// Get immutable ref to `AlignedVec` backing this serializer.
+	#[inline]
+	fn storage(&self) -> &Self::Store {
+		self.storage.borrow()
+	}
+
+	/// Get mutable ref to `AlignedVec` backing this serializer.
+	#[inline]
+	fn storage_mut(&mut self) -> &mut Self::Store {
+		self.storage.borrow_mut()
+	}
+}
+
+impl<
+		const STORAGE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+	>
+	InstantiableSerializer<
+		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
+	>
+	for AlignedRelPtrSerializer<
+		STORAGE_ALIGNMENT,
+		VALUE_ALIGNMENT,
+		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
+		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
+	>
+{
+	/// Create new `AlignedSerializer` with no memory pre-allocated.
+	///
+	/// If you know, or can estimate, the amount of buffer space that's going to
+	/// be needed in advance, allocating upfront with `with_capacity` can
+	/// dramatically improve performance vs using `new`.
+	#[inline]
+	fn new() -> Self {
+		Self {
+			storage: AlignedVec::new(),
+			pos_mapping: PosMapping::dummy(),
+		}
+	}
+
+	/// Create new `AlignedSerializer` with buffer pre-allocated with capacity of
+	/// at least `capacity` bytes.
+	///
+	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
+	///
+	/// # Panics
+	///
+	/// Panics if `capacity` exceeds `MAX_CAPACITY`.
+	fn with_capacity(capacity: usize) -> Self {
+		// `AlignedVec::with_capacity()` ensures capacity is `< MAX_CAPACITY`
+		// and rounds up capacity to a multiple of `MAX_VALUE_ALIGNMENT`
+		Self {
+			storage: AlignedVec::with_capacity(capacity),
+			pos_mapping: PosMapping::dummy(),
+		}
+	}
+}
+
+impl<
+		const STORAGE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+	> BorrowingSerializer<BorrowedStore>
+	for AlignedRelPtrSerializer<
+		STORAGE_ALIGNMENT,
+		VALUE_ALIGNMENT,
+		MAX_VALUE_ALIGNMENT,
+		MAX_CAPACITY,
+		BorrowedStore,
+	>
+{
+	/// Create new `AlignedSerializer` from an existing `BorrowMut<AlignedVec>`.
+	fn from_storage(storage: BorrowedStore) -> Self {
+		Self {
+			storage,
+			pos_mapping: PosMapping::dummy(),
+		}
+	}
+
+	/// Consume Serializer and return the output buffer as a
+	/// `BorrowMut<AlignedVec>`.
+	fn into_storage(self) -> BorrowedStore {
+		self.storage
+	}
+}

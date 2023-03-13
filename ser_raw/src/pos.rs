@@ -63,20 +63,15 @@ pub trait Addr: Copy {
 
 	/// Create `Addr` from a value reference and offset.
 	fn from_ref_offset<T>(value: &T, offset: usize) -> Self;
+
+	/// Get address of `Addr` as `usize`.
+	fn addr(&self) -> usize;
 }
 
 /// An `Addr` which does record addresses.
 #[derive(Copy, Clone)]
 pub struct TrackingAddr {
 	addr: usize,
-}
-
-impl TrackingAddr {
-	/// Get address of `TrackingAddr` as `usize`.
-	#[inline]
-	pub fn addr(&self) -> usize {
-		self.addr
-	}
 }
 
 impl Addr for TrackingAddr {
@@ -94,6 +89,12 @@ impl Addr for TrackingAddr {
 		Self {
 			addr: value as *const T as usize + offset,
 		}
+	}
+
+	/// Get address of `TrackingAddr` as `usize`.
+	#[inline]
+	fn addr(&self) -> usize {
+		self.addr
 	}
 }
 
@@ -115,5 +116,11 @@ impl Addr for NoopAddr {
 	#[inline(always)]
 	fn from_ref_offset<T>(_value: &T, _offset: usize) -> Self {
 		Self
+	}
+
+	/// Get address of `NoopAddr` as `usize`.
+	#[inline(always)]
+	fn addr(&self) -> usize {
+		unreachable!();
 	}
 }
