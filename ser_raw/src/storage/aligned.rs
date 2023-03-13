@@ -11,7 +11,7 @@ use crate::util::{align_up_to, is_aligned_to};
 /// By configuring alignment requirements statically, the compiler is able to
 /// remove alignment calculations for many cases. This improves performance.
 ///
-/// * `MEMORY_ALIGNMENT`: Alignment of the underlying memory used by `Storage`.
+/// * `STORAGE_ALIGNMENT`: Alignment of the underlying memory used by `Storage`.
 /// * `VALUE_ALIGNMENT`: Minimum alignment all values will have in `Storage`.
 /// 	Types with alignment higher than `VALUE_ALIGNMENT` will have padding
 /// 	inserted before them if required. Types with alignment lower than
@@ -21,17 +21,17 @@ use crate::util::{align_up_to, is_aligned_to};
 ///   be stored in `Storage`. `capacity` must always be a multiple of this
 /// 	(all methods uphold this constraint).
 /// * `MAX_CAPACITY`: Maximum capacity of storage. Cannot be 0, and cannot be
-/// 	greater than `isize::MAX + 1 - MEMORY_ALIGNMENT`. Must be a multiple of
+/// 	greater than `isize::MAX + 1 - STORAGE_ALIGNMENT`. Must be a multiple of
 /// 	`MAX_VALUE_ALIGNMENT`.
 pub trait AlignedStorage<
-	const MEMORY_ALIGNMENT: usize,
+	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
 	const MAX_CAPACITY: usize,
 >: Storage
 {
 	/// Alignment of storage's memory buffer.
-	const MEMORY_ALIGNMENT: usize = MEMORY_ALIGNMENT;
+	const STORAGE_ALIGNMENT: usize = STORAGE_ALIGNMENT;
 
 	/// Typical alignment of values being added to storage.
 	const VALUE_ALIGNMENT: usize = VALUE_ALIGNMENT;
@@ -48,20 +48,20 @@ pub trait AlignedStorage<
 	/// creating an `AlignedStorage`, to ensure compile-time error if
 	/// assertions fail.
 	const ASSERT_ALIGNMENTS_VALID: () = {
-		assert!(MEMORY_ALIGNMENT > 0, "MEMORY_ALIGNMENT cannot be 0");
+		assert!(STORAGE_ALIGNMENT > 0, "STORAGE_ALIGNMENT cannot be 0");
 		assert!(
-			MEMORY_ALIGNMENT < isize::MAX as usize,
-			"MEMORY_ALIGNMENT must be less than isize::MAX"
+			STORAGE_ALIGNMENT < isize::MAX as usize,
+			"STORAGE_ALIGNMENT must be less than isize::MAX"
 		);
 		assert!(
-			MEMORY_ALIGNMENT.is_power_of_two(),
-			"MEMORY_ALIGNMENT must be a power of 2"
+			STORAGE_ALIGNMENT.is_power_of_two(),
+			"STORAGE_ALIGNMENT must be a power of 2"
 		);
 
 		assert!(MAX_VALUE_ALIGNMENT > 0, "MAX_VALUE_ALIGNMENT cannot be 0");
 		assert!(
-			MAX_VALUE_ALIGNMENT <= MEMORY_ALIGNMENT,
-			"MAX_VALUE_ALIGNMENT must be less than or equal to ALIGNMENT",
+			MAX_VALUE_ALIGNMENT <= STORAGE_ALIGNMENT,
+			"MAX_VALUE_ALIGNMENT must be less than or equal to STORAGE_ALIGNMENT",
 		);
 		assert!(
 			MAX_VALUE_ALIGNMENT.is_power_of_two(),
@@ -80,8 +80,8 @@ pub trait AlignedStorage<
 
 		assert!(MAX_CAPACITY > 0, "MAX_CAPACITY cannot be 0");
 		assert!(
-			MAX_CAPACITY <= aligned_max_capacity(MEMORY_ALIGNMENT),
-			"MAX_CAPACITY cannot exceed isize::MAX + 1 - MEMORY_ALIGNMENT"
+			MAX_CAPACITY <= aligned_max_capacity(STORAGE_ALIGNMENT),
+			"MAX_CAPACITY cannot exceed isize::MAX + 1 - STORAGE_ALIGNMENT"
 		);
 		assert!(
 			MAX_CAPACITY % MAX_VALUE_ALIGNMENT == 0,
@@ -97,20 +97,20 @@ pub trait AlignedStorage<
 ///
 /// See `AlignedStorage` trait for details of the const parameters.
 pub struct AlignedVec<
-	const MEMORY_ALIGNMENT: usize,
+	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
 	const MAX_CAPACITY: usize,
 > {
-	inner: AlignedByteVec<MEMORY_ALIGNMENT>,
+	inner: AlignedByteVec<STORAGE_ALIGNMENT>,
 }
 
 impl<
-		const MEMORY_ALIGNMENT: usize,
+		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
-	> Storage for AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	> Storage for AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Create new `AlignedVec`.
 	#[inline]
@@ -378,11 +378,11 @@ impl<
 }
 
 impl<
-		const MEMORY_ALIGNMENT: usize,
+		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
-	> AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	> AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Extend capacity after `reserve` has found it's necessary.
 	///
@@ -421,12 +421,12 @@ impl<
 }
 
 impl<
-		const MEMORY_ALIGNMENT: usize,
+		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
 	> ContiguousStorage
-	for AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	for AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Write a slice of values at a specific position in storage's buffer.
 	///
@@ -493,12 +493,12 @@ impl<
 }
 
 impl<
-		const MEMORY_ALIGNMENT: usize,
+		const STORAGE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
-	> AlignedStorage<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
-	for AlignedVec<MEMORY_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	> AlignedStorage<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	for AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 }
 
