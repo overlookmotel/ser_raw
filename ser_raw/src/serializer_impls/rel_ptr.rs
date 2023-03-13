@@ -13,41 +13,7 @@ use crate::{
 /// and overwrites pointers in output with pointers relative to the start of the
 /// buffer.
 ///
-/// # Const parameters
-///
-/// `STORAGE_ALIGNMENT` is the alignment of the output buffer.
-///
-/// `MAX_VALUE_ALIGNMENT` is maximum alignment of types which will be
-/// serialized. Types with alignment greater than `MAX_VALUE_ALIGNMENT` cannot
-/// be serialized with this serializer.
-///
-/// `MAX_CAPACITY` is maximum capacity of storage. Cannot be 0 and cannot be
-/// greater than `isize::MAX + 1 - STORAGE_ALIGNMENT`. Must be a multiple of
-/// `MAX_VALUE_ALIGNMENT`.
-///
-/// `VALUE_ALIGNMENT` is minimum alignment all allocated values will have in
-/// output buffer. Types with alignment higher than `VALUE_ALIGNMENT` will have
-/// padding inserted before them if required. Types with alignment lower than
-/// `VALUE_ALIGNMENT` will have padding inserted after to leave the buffer
-/// aligned on `VALUE_ALIGNMENT` for the next insertion.
-///
-/// This doesn't affect the "legality" of the output, but if most allocated
-/// types being serialized have the same alignment, setting `VALUE_ALIGNMENT` to
-/// that alignment may significantly improve performance, as alignment
-/// calculations can be skipped when serializing those types.
-///
-/// NB: The word "allocated" in "allocated types" is key here. `ser_raw` deals
-/// in allocations, not individual types. So this means that only types which
-/// are pointed to by a `Box<T>` or `Vec<T>` count as "allocated types"
-/// for the purposes of calculating an optimal value for `VALUE_ALIGNMENT`.
-///
-/// e.g. If all (or almost all) types contain pointers (`Box`, `Vec` etc),
-/// setting `VALUE_ALIGNMENT = std::mem::size_of::<usize>()`
-/// will be the best value for fast serialization.
-///
-/// The higher `VALUE_ALIGNMENT` is, the more padding bytes will end up in
-/// output, potentially increasing output size, depending on the types being
-/// serialized.
+/// See `AlignedStorage` for an explanation of the const parameters.
 pub struct AlignedRelPtrSerializer<
 	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,

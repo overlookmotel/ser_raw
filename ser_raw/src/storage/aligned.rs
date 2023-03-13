@@ -4,25 +4,67 @@ use super::{AlignedByteVec, ContiguousStorage, Storage};
 use crate::util::{align_up_to, is_aligned_to};
 
 /// Trait for storage used by Serializers which ensures values added to storage
-/// maintain correct alignment in memory.
+/// maintain correct alignment in memory for their types.
 ///
 /// # Const parameters
 ///
 /// By configuring alignment requirements statically, the compiler is able to
 /// remove alignment calculations for many cases. This improves performance.
 ///
-/// * `STORAGE_ALIGNMENT`: Alignment of the underlying memory used by `Storage`.
-/// * `VALUE_ALIGNMENT`: Minimum alignment all values will have in `Storage`.
-/// 	Types with alignment higher than `VALUE_ALIGNMENT` will have padding
-/// 	inserted before them if required. Types with alignment lower than
-///   `VALUE_ALIGNMENT` will have padding inserted after them to leave the
-/// 	`Storage` aligned on `VALUE_ALIGNMENT`, ready for the next `push()`.
-/// * `MAX_VALUE_ALIGNMENT`: Maximum alignment requirement of values which can
-///   be stored in `Storage`. `capacity` must always be a multiple of this
-/// 	(all methods uphold this constraint).
-/// * `MAX_CAPACITY`: Maximum capacity of storage. Cannot be 0, and cannot be
-/// 	greater than `isize::MAX + 1 - STORAGE_ALIGNMENT`. Must be a multiple of
-/// 	`MAX_VALUE_ALIGNMENT`.
+/// ## `STORAGE_ALIGNMENT`
+///
+/// Alignment of the underlying memory used by `Storage`.
+///
+/// * Must be a power of 2.
+///
+/// ## `VALUE_ALIGNMENT`
+///
+/// Minimum alignment all values will have in `Storage`.
+///
+/// Types with alignment higher than `VALUE_ALIGNMENT` will have padding
+/// inserted before them if required. Types with alignment lower than
+/// `VALUE_ALIGNMENT` will have padding inserted after them to leave the
+/// `Storage` aligned on `VALUE_ALIGNMENT`, ready for the next `push()`.
+///
+/// This doesn't affect the "legality" of the output, but if most allocated
+/// types being serialized have the same alignment, setting `VALUE_ALIGNMENT` to
+/// that alignment may significantly improve performance, as alignment
+/// calculations can be skipped when serializing those types.
+///
+/// NB: The word "allocated" in "allocated types" is key here. `ser_raw` deals
+/// in allocations, not individual types. So this means that only types which
+/// are pointed to by a `Box<T>` or `Vec<T>` count as "allocated types"
+/// for the purposes of calculating an optimal value for `VALUE_ALIGNMENT`.
+///
+/// e.g. If all (or almost all) types contain pointers (`Box`, `Vec` etc),
+/// setting `VALUE_ALIGNMENT = std::mem::size_of::<usize>()`
+/// will be the best value for fast serialization.
+///
+/// The higher `VALUE_ALIGNMENT` is, the more padding bytes will end up in
+/// output, potentially increasing output size, depending on the types being
+/// serialized.
+///
+/// * Must be a power of 2.
+/// * Must be less than or equal to `MAX_VALUE_ALIGNMENT`.
+///
+/// ## `MAX_VALUE_ALIGNMENT`
+///
+/// Maximum alignment requirement of values which can be stored in `Storage`.
+/// Types with alignment greater than `MAX_VALUE_ALIGNMENT` cannot be stored in
+/// this `Storage`.
+///
+/// * Must be a power of 2.
+/// * Must be less than or equal to `STORAGE_ALIGNMENT`.
+///
+/// `capacity` will always be a multiple of this.
+///
+/// ## `MAX_CAPACITY`
+///
+/// Maximum capacity of storage.
+///
+/// * Cannot be 0.
+/// * Cannot be greater than `isize::MAX + 1 - STORAGE_ALIGNMENT`.
+/// * Must be a multiple of `MAX_VALUE_ALIGNMENT`.
 pub trait AlignedStorage<
 	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
