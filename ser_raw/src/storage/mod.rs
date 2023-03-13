@@ -52,6 +52,9 @@ pub trait Storage {
 	}
 
 	/// Push a slice of values `&T` to storage.
+	///
+	/// If the size of the slice is known statically, prefer `push<[T; N]>` to
+	/// `push_slice<T>`, as the former is slightly more efficient.
 	#[inline]
 	fn push_slice<T>(&mut self, slice: &[T]) {
 		self.align_for::<T>();
