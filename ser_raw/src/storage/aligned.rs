@@ -344,19 +344,6 @@ impl<
 		}
 	}
 
-	/// Align position in storage after pushing a slice `&[T; LEN]` with
-	/// `push_slice_unaligned`, where `LEN` is a constant.
-	///
-	/// Slightly optimized version of `align_after` for when size of the slice
-	/// which has been pushed is known statically. Prefer this to `align_after` if
-	/// you know the length of the slice statically.
-	#[inline(always)] // Because this is generally a no-op
-	fn align_after_slice<T, const LEN: usize>(&mut self) {
-		if (mem::size_of::<T>() * LEN) % VALUE_ALIGNMENT > 0 {
-			self.align_after_any();
-		}
-	}
-
 	/// Align position in storage after pushing values with
 	/// `push_slice_unaligned`.
 	///

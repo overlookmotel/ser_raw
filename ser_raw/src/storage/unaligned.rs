@@ -139,12 +139,6 @@ impl Storage for UnalignedVec {
 	#[inline(always)]
 	fn align_after<T>(&mut self) {}
 
-	/// Align position in storage after pushing a slice `&[T; LEN]` with
-	/// `push_slice_unaligned`, where `LEN` is a constant.
-	/// `UnalignedVec` does not maintain alignment, so this is a no-op.
-	#[inline(always)]
-	fn align_after_slice<T, const LEN: usize>(&mut self) {}
-
 	/// Align position in storage after pushing values of any type with
 	/// `push_slice_unaligned`.
 	///	`UnalignedVec` does not maintain alignment, so this is a no-op.
