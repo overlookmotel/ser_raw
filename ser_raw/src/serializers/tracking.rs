@@ -84,7 +84,9 @@ macro_rules! impl_pos_tracking_serializer {
 		$crate::impl_serializer!(
 			PosTrackingSerializer,
 			{
-				fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
+				fn serialize_value<T: $crate::Serialize<Self>>(&mut self, value: &T) {
+					use $crate::PosMapping;
+
 					// Align storage, ready to write value
 					self.storage_mut().align_for::<T>();
 
@@ -110,6 +112,8 @@ macro_rules! impl_pos_tracking_serializer {
 
 				#[inline]
 				fn push_and_process_slice<T, P: FnOnce(&mut Self)>(&mut self, slice: &[T], process: P) {
+					use $crate::PosMapping;
+
 					// Get position mapping before processing this
 					let pos_mapping_before = *self.pos_mapping();
 
