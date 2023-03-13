@@ -20,79 +20,40 @@ pub struct AlignedSerializer<
 }
 
 // Expose const params as associated consts - `Self::STORAGE_ALIGNMENT` etc.
-impl<
-		const STORAGE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
-		const MAX_VALUE_ALIGNMENT: usize,
-		const MAX_CAPACITY: usize,
-		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
-	>
-	AlignedSerializer<
-		STORAGE_ALIGNMENT,
-		VALUE_ALIGNMENT,
-		MAX_VALUE_ALIGNMENT,
-		MAX_CAPACITY,
-		BorrowedStore,
-	>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
+	AlignedSerializer<SA, VA, MVA, MAX, BorrowedStore>
+where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Alignment of output buffer
-	pub const STORAGE_ALIGNMENT: usize = STORAGE_ALIGNMENT;
+	pub const STORAGE_ALIGNMENT: usize = SA;
 
 	/// Typical alignment of values being serialized
-	pub const VALUE_ALIGNMENT: usize = VALUE_ALIGNMENT;
+	pub const VALUE_ALIGNMENT: usize = VA;
 
 	/// Maximum alignment of values being serialized
-	pub const MAX_VALUE_ALIGNMENT: usize = MAX_VALUE_ALIGNMENT;
+	pub const MAX_VALUE_ALIGNMENT: usize = MVA;
 
 	/// Maximum capacity of output buffer.
-	pub const MAX_CAPACITY: usize = MAX_CAPACITY;
+	pub const MAX_CAPACITY: usize = MAX;
 }
 
-impl<
-		const STORAGE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
-		const MAX_VALUE_ALIGNMENT: usize,
-		const MAX_CAPACITY: usize,
-		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
-	> PureCopySerializer
-	for AlignedSerializer<
-		STORAGE_ALIGNMENT,
-		VALUE_ALIGNMENT,
-		MAX_VALUE_ALIGNMENT,
-		MAX_CAPACITY,
-		BorrowedStore,
-	>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
+	PureCopySerializer for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStore>
+where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 }
 
 impl_pure_copy_serializer!(
-	AlignedSerializer<
-		const STORAGE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
-		const MAX_VALUE_ALIGNMENT: usize,
-		const MAX_CAPACITY: usize;
-		BorrowedStore,
-	>
-	where BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+	AlignedSerializer<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize; BorrowedStore>
+	where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>,
 );
 
-impl<
-		const STORAGE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
-		const MAX_VALUE_ALIGNMENT: usize,
-		const MAX_CAPACITY: usize,
-		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
-	> SerializerStorage
-	for AlignedSerializer<
-		STORAGE_ALIGNMENT,
-		VALUE_ALIGNMENT,
-		MAX_VALUE_ALIGNMENT,
-		MAX_CAPACITY,
-		BorrowedStore,
-	>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
+	SerializerStorage for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStore>
+where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// `Storage` which backs this serializer.
-	type Store = AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>;
+	type Store = AlignedVec<SA, VA, MVA, MAX>;
 
 	/// Get immutable ref to `AlignedVec` backing this serializer.
 	#[inline]
@@ -107,22 +68,9 @@ impl<
 	}
 }
 
-impl<
-		const STORAGE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
-		const MAX_VALUE_ALIGNMENT: usize,
-		const MAX_CAPACITY: usize,
-	>
-	InstantiableSerializer<
-		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
-	>
-	for AlignedSerializer<
-		STORAGE_ALIGNMENT,
-		VALUE_ALIGNMENT,
-		MAX_VALUE_ALIGNMENT,
-		MAX_CAPACITY,
-		AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>,
-	>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
+	InstantiableSerializer<AlignedVec<SA, VA, MVA, MAX>>
+	for AlignedSerializer<SA, VA, MVA, MAX, AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Create new `AlignedSerializer` with no memory pre-allocated.
 	///
@@ -153,20 +101,9 @@ impl<
 	}
 }
 
-impl<
-		const STORAGE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
-		const MAX_VALUE_ALIGNMENT: usize,
-		const MAX_CAPACITY: usize,
-		BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
-	> BorrowingSerializer<BorrowedStore>
-	for AlignedSerializer<
-		STORAGE_ALIGNMENT,
-		VALUE_ALIGNMENT,
-		MAX_VALUE_ALIGNMENT,
-		MAX_CAPACITY,
-		BorrowedStore,
-	>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
+	BorrowingSerializer<BorrowedStore> for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStore>
+where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Create new `AlignedSerializer` from an existing `BorrowMut<AlignedVec>`.
 	fn from_storage(storage: BorrowedStore) -> Self {
