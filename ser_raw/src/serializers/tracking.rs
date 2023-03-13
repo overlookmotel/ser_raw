@@ -65,7 +65,7 @@ pub trait PosTrackingSerializer: Serializer {
 	fn pos_mapping(&self) -> &PosMapping;
 
 	/// Set current position mapping
-	fn set_pos_mapping(&mut self, pos: PosMapping) -> ();
+	fn set_pos_mapping(&mut self, pos_mapping: PosMapping) -> ();
 
 	/// Get position for a value
 	#[inline]
