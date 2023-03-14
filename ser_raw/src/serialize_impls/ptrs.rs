@@ -5,10 +5,11 @@ use crate::{pos::Addr, Serialize, Serializer};
 const PTR_SIZE: usize = mem::size_of::<usize>();
 
 impl<T, Ser: Serializer> Serialize<Ser> for Box<T>
-where T: Serialize<Ser>
+where T: Serialize<Ser> + Sized
 {
 	fn serialize_data(&self, serializer: &mut Ser) {
-		// Sanity check that `Box<T>` is a single pointer (evaluated at compile time)
+		// Sanity check that `Box<T>` is just a pointer (evaluated at compile time).
+		// Unsized types are not supported.
 		let _ = SizeCheck::<Box<T>, PTR_SIZE>::ASSERT_SIZE_IS;
 
 		// No need to do anything if box contains ZST
