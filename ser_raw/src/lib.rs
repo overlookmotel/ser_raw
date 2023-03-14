@@ -7,7 +7,7 @@ mod serializer;
 pub use serializer::{BorrowingSerializer, InstantiableSerializer, Serializer, SerializerStorage};
 
 mod serializers;
-pub use serializers::{PosTrackingSerializer, PureCopySerializer, RelPtrSerializer};
+pub use serializers::{PosTrackingSerializer, PtrSerializer, PureCopySerializer};
 
 mod serializer_impls;
 pub use serializer_impls::{AlignedRelPtrSerializer, AlignedSerializer, UnalignedSerializer};

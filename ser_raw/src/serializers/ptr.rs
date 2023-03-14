@@ -2,26 +2,27 @@
 
 use crate::PosTrackingSerializer;
 
-/// Trait for serializers which overwrite pointers in output with positions
-/// relative to the start of the output buffer.
+/// Trait for serializers which overwrite pointers in output.
 ///
 /// Implement the trait on a serializer, and then use macro
-/// `impl_rel_ptr_serializer!()` to implement `Serialize`.
+/// `impl_ptr_serializer!()` to implement `Serialize`.
 ///
 /// # Example
 ///
 /// ```
 /// use ser_raw::{
-/// 	impl_rel_ptr_serializer, PosTrackingSerializer,
-/// 	RelPtrSerializer, SerializerStorage
+/// 	impl_ptr_serializer, PosTrackingSerializer,
+/// 	PtrSerializer, SerializerStorage
 /// };
 ///
 /// struct MySerializer {}
 ///
-/// impl RelPtrSerializer for MySerializer {
-/// 	// ...
+/// impl PtrSerializer for MySerializer {
+/// 	unsafe fn write_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
+/// 		// Implement how you want to write pointers here
+/// 	}
 /// }
-/// impl_rel_ptr_serializer!(MySerializer);
+/// impl_ptr_serializer!(MySerializer);
 ///
 /// impl SerializerStorage for MySerializer {
 /// 	// ...
@@ -31,7 +32,7 @@ use crate::PosTrackingSerializer;
 /// 	// ...
 /// }
 /// ```
-pub trait RelPtrSerializer: PosTrackingSerializer {
+pub trait PtrSerializer: PosTrackingSerializer {
 	/// Overwrite a pointer in output.
 	///
 	/// # Safety
@@ -49,16 +50,16 @@ pub trait RelPtrSerializer: PosTrackingSerializer {
 }
 
 /// Macro to create `Serializer` implementation for serializers implementing
-/// `RelPtrSerializer`.
+/// `PtrSerializer`.
 ///
 /// See `impl_serializer` for syntax rules.
 #[macro_export]
-macro_rules! impl_rel_ptr_serializer {
+macro_rules! impl_ptr_serializer {
 	($($type_def:tt)*) => {
 		$crate::impl_serializer!(
-			RelPtrSerializer,
+			PtrSerializer,
 			{
-				/// `RelPtrSerializer` serializers do record pointers, so need a working `Addr`.
+				/// `PtrSerializer` serializers do record pointers, so need a working `Addr`.
 				type Addr = $crate::pos::TrackingAddr;
 
 				fn serialize_value<T: $crate::Serialize<Self>>(&mut self, value: &T) {

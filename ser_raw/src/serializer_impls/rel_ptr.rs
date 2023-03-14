@@ -1,11 +1,11 @@
 use std::{borrow::BorrowMut, mem};
 
 use crate::{
-	impl_rel_ptr_serializer,
+	impl_ptr_serializer,
 	pos::PosMapping,
 	storage::{AlignedVec, ContiguousStorage, Storage},
 	util::is_aligned_to,
-	BorrowingSerializer, InstantiableSerializer, PosTrackingSerializer, RelPtrSerializer, Serializer,
+	BorrowingSerializer, InstantiableSerializer, PosTrackingSerializer, PtrSerializer, Serializer,
 	SerializerStorage,
 };
 
@@ -44,7 +44,7 @@ where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 }
 
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	RelPtrSerializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStore>
+	PtrSerializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStore>
 where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Overwrite pointer.
@@ -66,7 +66,7 @@ where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	}
 }
 
-impl_rel_ptr_serializer!(
+impl_ptr_serializer!(
 	AlignedRelPtrSerializer<
 		const SA: usize, const VA: usize, const MVA: usize, const MAX: usize; BorrowedStore
 	>
