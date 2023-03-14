@@ -92,14 +92,14 @@ impl<T> VecOffsets<T> {
 		let vec = Vec::<T>::new();
 		// Will fail to compile if `Vec<T>` is not implemented as 3 x `usize`
 		let bytes: [usize; 3] = unsafe { mem::transmute(vec) };
-		let dangling_ptr_addr = mem::align_of::<T>();
-		if bytes[0] == dangling_ptr_addr {
+		let dangle = mem::align_of::<T>();
+		if bytes[0] == dangle {
 			assert!(bytes[1] == 0 && bytes[2] == 0);
 			0
-		} else if bytes[1] == dangling_ptr_addr {
+		} else if bytes[1] == dangle {
 			assert!(bytes[0] == 0 && bytes[2] == 0);
 			1
-		} else if bytes[2] == dangling_ptr_addr {
+		} else if bytes[2] == dangle {
 			assert!(bytes[0] == 0 && bytes[1] == 0);
 			2
 		} else {
@@ -121,11 +121,11 @@ impl<T> VecOffsets<T> {
 	// `capacity` when `capacity != len`
 	#[allow(dead_code)]
 	const OFFSETS_VEC: mem::ManuallyDrop<Vec<T>> = {
-		let dangling_ptr_addr = mem::align_of::<T>();
+		let dangle = mem::align_of::<T>();
 		let bytes = match Self::PTR_INDEX {
-			0 => [dangling_ptr_addr, PTR_SIZE, PTR_SIZE * 2],
-			1 => [0, dangling_ptr_addr, PTR_SIZE * 2],
-			2 => [0, PTR_SIZE, dangling_ptr_addr],
+			0 => [dangle, PTR_SIZE, PTR_SIZE * 2],
+			1 => [0, dangle, PTR_SIZE * 2],
+			2 => [0, PTR_SIZE, dangle],
 			_ => unreachable!(),
 		};
 		unsafe { mem::transmute(bytes) }
@@ -143,14 +143,14 @@ const STRING_PTR_INDEX: usize = {
 	let s = String::new();
 	// Will fail to compile if `String` is not implemented as 3 x `usize`
 	let bytes: [usize; 3] = unsafe { mem::transmute(s) };
-	let dangling_ptr_addr = 1;
-	if bytes[0] == dangling_ptr_addr {
+	let dangle = 1;
+	if bytes[0] == dangle {
 		assert!(bytes[1] == 0 && bytes[2] == 0);
 		0
-	} else if bytes[1] == dangling_ptr_addr {
+	} else if bytes[1] == dangle {
 		assert!(bytes[0] == 0 && bytes[2] == 0);
 		1
-	} else if bytes[2] == dangling_ptr_addr {
+	} else if bytes[2] == dangle {
 		assert!(bytes[0] == 0 && bytes[1] == 0);
 		2
 	} else {
@@ -163,11 +163,11 @@ const STRING_PTR_OFFSET: usize = STRING_PTR_INDEX * PTR_SIZE;
 // `capacity` when `capacity != len`
 #[allow(dead_code)]
 const OFFSETS_STRING: mem::ManuallyDrop<String> = {
-	let dangling_ptr_addr = 1;
+	let dangle = 1;
 	let bytes = match STRING_PTR_INDEX {
-		0 => [dangling_ptr_addr, PTR_SIZE, PTR_SIZE * 2],
-		1 => [0, dangling_ptr_addr, PTR_SIZE * 2],
-		2 => [0, PTR_SIZE, dangling_ptr_addr],
+		0 => [dangle, PTR_SIZE, PTR_SIZE * 2],
+		1 => [0, dangle, PTR_SIZE * 2],
+		2 => [0, PTR_SIZE, dangle],
 		_ => unreachable!(),
 	};
 	unsafe { mem::transmute(bytes) }
