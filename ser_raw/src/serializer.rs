@@ -5,13 +5,15 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// Serializers implement this trait.
 ///
 /// Implementing a serializer requires multiple trait implementations.
-/// It's split into these 4 traits to avoid bounds on the main `Serializer`
+/// It's split into these 5 traits to avoid bounds on the main `Serializer`
 /// trait, and to allow composing different parts to create custom serializers.
 ///
 /// A serializer will implement:
 ///
 /// * `Serializer`: Mandatory. Defines serialization behavior.
 /// * `SerializerStorage`: Mandatory. Defines how to access to backing storage.
+/// * `SerializerWrite`: Mandatory. Defines how to write to backing storage
+/// 	at arbitrary locations.
 /// * `InstantiableSerializer`: Optional. Defines how to create a new serializer
 ///   instance along with it's own owned backing `Storage`.
 /// * `BorrowingSerializer`: Optional. Defines how to create a new serializer
@@ -20,7 +22,7 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// Implementations need not define any methods for the `Serializer` trait.
 /// Default implementation forwards all method calls to the underlying
 /// `Storage`. They only need to define associated type `Addr`.
-pub trait Serializer: SerializerStorage + Sized {
+pub trait Serializer: SerializerStorage + SerializerWrite + Sized {
 	/// `Addr` type this serializer uses.
 	type Addr: Addr;
 
@@ -158,6 +160,66 @@ pub trait SerializerStorage {
 
 	/// Get mutable ref to `Storage` backing this `Serializer`.
 	fn storage_mut(&mut self) -> &mut Self::Storage;
+}
+
+/// Trait for writing to arbitrary locations in Serializer's storage.
+///
+/// `SerializerWrite` is a supertrait of `Serializer`. All serializers must
+/// implement this trait.
+pub trait SerializerWrite {
+	/// Write a value to storage at a specific position.
+	///
+	/// Default implementation is a no-op, and some serializers may not need to
+	/// implement a functional version of this, if they don't need/support writing
+	/// to storage at arbitrary positions.
+	///
+	/// A Serializer can also opt to implement this method not by writing to the
+	/// storage immediately, but instead storing the details of what need to be
+	/// written in some other form, and to leaving it to the deserializer to
+	/// perform the writes later.
+	///
+	/// # Safety
+	///
+	/// `pos + mem::size_of::<T>()` must be less than or equal to `capacity()`.
+	/// i.e. `pos` must be within bounds of the currently allocated storage.
+	#[allow(unused_variables)]
+	#[inline(always)]
+	unsafe fn write<T>(&mut self, value: &T, addr: usize) {
+		// TODO: `addr` here is memory address of the original value.
+		// In order to do anything useful with it, need to translate to output pos,
+		// but that requires `PosTrackingSerializer` trait.
+		// Is that possible, since this trait doesn't inherit from it?
+		// Or move `Addr` assoc type to this trait?
+	}
+
+	/// Write a correction to storage.
+	///
+	/// An example of a "correction" is: Serializing a `Vec` which has
+	/// `capacity` of 2, but `len` of 1. The correction is amending the `capacity`
+	/// field to 1, to reflect that the copy of the `Vec` in serialized output
+	/// only contains 1 element, and no additional capacity.
+	///
+	/// Default implementation is a no-op, and some serializers may not need to
+	/// implement a functional version of this, if they don't need corrections.
+	///
+	/// Method takes a closure, so that `Serialize::serialize_data`
+	/// implementations can perform operations which may have some cost in the
+	/// closure, prior to performing writes. If the `Serializer` doesn't care
+	/// about corrections and uses this default no-op implementation of
+	/// `write_correction`, the closure will not be called and the cost of those
+	/// operations is avoided. Hopefully the compiler will recognise this and
+	/// remove the call to `write_correction` and the code inside the closure
+	/// entirely, so it's completely zero cost unless it's used.
+	///
+	/// If Serializer *does* want to receive corrections, it would implement this
+	/// method as: ```
+	/// fn write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {
+	/// 	write(self);
+	/// }
+	/// ```
+	#[allow(unused_variables)]
+	#[inline(always)]
+	fn write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {}
 }
 
 /// Serializers which can create their own owned `Storage` implement this trait.

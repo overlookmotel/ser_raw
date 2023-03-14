@@ -4,6 +4,7 @@ use crate::{
 	impl_pure_copy_serializer,
 	storage::{Storage, UnalignedVec},
 	BorrowingSerializer, InstantiableSerializer, PureCopySerializer, SerializerStorage,
+	SerializerWrite,
 };
 
 /// Serializer which does not respect alignment in the output.
@@ -43,6 +44,9 @@ where BorrowedStorage: BorrowMut<UnalignedVec>
 		self.storage.borrow_mut()
 	}
 }
+
+impl<BorrowedStore> SerializerWrite for UnalignedSerializer<BorrowedStore> where BorrowedStore: BorrowMut<UnalignedVec>
+{}
 
 impl InstantiableSerializer for UnalignedSerializer<UnalignedVec> {
 	/// Create new `UnalignedSerializer` without allocating any memory for output

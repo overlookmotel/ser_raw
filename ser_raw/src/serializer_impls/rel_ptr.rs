@@ -6,7 +6,7 @@ use crate::{
 	storage::{AlignedVec, ContiguousStorage, Storage},
 	util::is_aligned_to,
 	BorrowingSerializer, InstantiableSerializer, PosTrackingSerializer, PtrSerializer, Serializer,
-	SerializerStorage,
+	SerializerStorage, SerializerWrite,
 };
 
 /// Serializer that ensures values are correctly aligned in output buffer
@@ -106,6 +106,12 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	fn storage_mut(&mut self) -> &mut Self::Storage {
 		self.storage.borrow_mut()
 	}
+}
+
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
+	SerializerWrite for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStore>
+where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+{
 }
 
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize> InstantiableSerializer
