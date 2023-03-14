@@ -147,7 +147,7 @@ pub trait Serializer: SerializerStorage + Sized {
 
 /// Trait for accessing backing `Storage` of a `Serializer`.
 ///
-/// `SerializerStorage` is a super-trait of `Serializer`. All serializers must
+/// `SerializerStorage` is a supertrait of `Serializer`. All serializers must
 /// implement this trait.
 pub trait SerializerStorage {
 	/// `Storage` which backs this serializer.
