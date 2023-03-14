@@ -12,6 +12,7 @@ where T: Serialize<Ser>
 		let _ = SizeCheck::<Box<T>, PTR_SIZE>::ASSERT_SIZE_IS;
 
 		// No need to do anything if box contains ZST
+		// TODO: Should we call `serialize_data()` in case user defines some behavior?
 		if mem::size_of::<T>() == 0 {
 			return;
 		}
@@ -30,6 +31,7 @@ where T: Serialize<Ser>
 {
 	fn serialize_data(&self, serializer: &mut Ser) {
 		// No need to do anything if vec contains ZSTs
+		// TODO: Should we call `serialize_data()` in case user defines some behavior?
 		if mem::size_of::<T>() == 0 {
 			return;
 		}
