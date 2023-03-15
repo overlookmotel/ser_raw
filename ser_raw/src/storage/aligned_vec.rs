@@ -15,7 +15,7 @@ use std::{
 /// but including the changes from [PR #353](https://github.com/rkyv/rkyv/pull/353)
 /// for custom alignment.
 ///
-/// ```
+/// ```ignore
 /// use rkyv::{AlignedByteVec};
 ///
 /// let bytes = AlignedByteVec::<4096>::with_capacity(1);
@@ -68,7 +68,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// The vector will not allocate until elements are pushed into it.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::new();
@@ -90,7 +90,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// reallocating. If `capacity` is 0, the vector will not allocate.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::with_capacity(10);
@@ -149,7 +149,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// vector.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut v = AlignedVec::new();
@@ -200,7 +200,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// still inform the vector that there is space for a few more elements.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::with_capacity(10);
@@ -229,7 +229,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// to it invalid.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// // Allocate vecotr big enough for 4 bytes.
@@ -256,7 +256,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// Equivalent to `&mut s[..]`.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::new();
@@ -286,7 +286,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// of the slice, use [`as_mut_ptr`](AlignedVec::as_mut_ptr).
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut x = AlignedVec::new();
@@ -309,7 +309,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// Equivalent to `&s[..]`.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::new();
@@ -327,7 +327,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// Returns the number of elements the vector can hold without reallocating.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let vec = AlignedVec::with_capacity(10);
@@ -349,7 +349,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// Panics if the new capacity exceeds `isize::MAX + 1 - ALIGNMENT` bytes.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::new();
@@ -407,7 +407,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	///   [`capacity()`](AlignedVec::capacity)
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::new();
@@ -444,7 +444,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// Panics if the new length exceeds `Self::MAX_CAPACITY` bytes.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::new();
@@ -474,7 +474,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// Returns `true` if the vector contains no elements.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut v = Vec::new();
@@ -492,7 +492,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// 'length'.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut a = AlignedVec::new();
@@ -509,7 +509,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// The elements of the slice are appended in-order.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::new();
@@ -536,7 +536,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// empty.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::new();
@@ -562,7 +562,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// Panics if the new capacity exceeds `Self::MAX_CAPACITY` bytes.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::new();
@@ -610,7 +610,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// Panics if the new capacity exceeds `Self::MAX_CAPACITY`.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::new();
@@ -648,7 +648,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// - The elements at `old_len..new_len` must be initialized
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::with_capacity(3);
@@ -674,7 +674,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// capacity is dropped.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut v = AlignedVec::new();
@@ -685,7 +685,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	///
 	/// Any excess capacity is removed:
 	///
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut vec = AlignedVec::with_capacity(10);
@@ -706,7 +706,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// capacity is dropped.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let mut v = AlignedVec::new();
@@ -727,7 +727,7 @@ impl<const ALIGNMENT: usize> AlignedByteVec<ALIGNMENT> {
 	/// If successful, this function will return the total number of bytes read.
 	///
 	/// # Examples
-	/// ```
+	/// ```ignore
 	/// use rkyv::AlignedVec;
 	///
 	/// let source = (0..4096).map(|x| (x % 256) as u8).collect::<Vec<_>>();
