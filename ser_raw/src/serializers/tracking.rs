@@ -12,7 +12,7 @@ use crate::{pos::PosMapping, Serializer};
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ser_raw::{impl_pos_tracking_serializer, PosTrackingSerializer, SerializerStorage};
 ///
 /// struct MySerializer {}

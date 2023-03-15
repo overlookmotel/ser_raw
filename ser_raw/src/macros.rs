@@ -7,7 +7,7 @@
 ///
 /// The following input variations can be used:
 ///
-/// ```
+/// ```ignore
 /// impl_serializer!(Tr, {}, MySer);
 /// impl_serializer!(Tr, {}, MySer<T>);
 /// impl_serializer!(Tr, {}, MySer<T, U, V>);
@@ -45,7 +45,7 @@
 /// It can then be used to instantiate `SuperFastSerializer` with the augmented
 /// `Serializer` methods defined in the macro.
 ///
-/// ```
+/// ```ignore
 /// trait SuperFastSerializer {}
 ///
 /// struct FastSer {

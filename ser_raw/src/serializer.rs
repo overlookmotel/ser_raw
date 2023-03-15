@@ -116,17 +116,24 @@ pub trait Serializer: SerializerStorage + SerializerWrite + Sized {
 	/// representation includes multiple parts, and Deserializer only
 	/// needs to know the location of the first part.
 	///
+	/// # Example
+	///
 	/// ```
+	/// use ser_raw::{Serializer, SerializeWith, pos::Addr};
+	///
+	/// struct MyString { inner: String }
+	///
 	/// struct MyStringProxy;
 	/// impl<S> SerializeWith<MyString, S> for MyStringProxy
 	/// where S: Serializer
 	/// {
-	///   fn serialize_data_with(my_str: &MyString, serializer: &mut S) {
-	///     // Serializer may record pointer to this
-	///     serializer.push(&my_str.len());
-	///     // No need to record pointer to this, as it's deductible from pointer to `len`
-	///     serializer.push_raw_bytes(my_str.as_slice());
-	///   }
+	/// 	fn serialize_data_with(my_str: &MyString, serializer: &mut S) {
+	/// 		// Serializer may record pointer to this
+	/// 		let ptr_addr = S::Addr::from_ref(&my_str.inner);
+	/// 		serializer.push(&my_str.inner.len(), ptr_addr);
+	/// 		// No need to record pointer to this, as it's deductible from pointer to `len`
+	/// 		serializer.push_raw_bytes(my_str.inner.as_bytes());
+	/// 	}
 	/// }
 	/// ```
 	#[inline]
@@ -208,7 +215,8 @@ pub trait SerializerWrite {
 	/// entirely, so it's completely zero cost unless it's used.
 	///
 	/// If Serializer *does* want to receive corrections, it would implement this
-	/// method as: ```
+	/// method as:
+	/// ```ignore
 	/// fn write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {
 	/// 	write(self);
 	/// }

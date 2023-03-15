@@ -8,6 +8,10 @@ edition = "2021"
 [dependencies]
 ser_raw_derive = { path = "../ser_raw_derive", optional = true }
 
+[dev-dependencies]
+# Required for doctests
+num-bigint = "0.4.3"
+
 [features]
 default = ["derive"]
 derive = ["dep:ser_raw_derive"]

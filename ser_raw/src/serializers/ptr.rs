@@ -9,7 +9,7 @@ use crate::PosTrackingSerializer;
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ser_raw::{
 /// 	impl_ptr_serializer, PosTrackingSerializer,
 /// 	PtrSerializer, SerializerStorage

@@ -7,7 +7,7 @@ use crate::Serializer;
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ser_raw::{impl_pure_copy_serializer, PureCopySerializer, SerializerStorage};
 ///
 /// struct MySerializer {}

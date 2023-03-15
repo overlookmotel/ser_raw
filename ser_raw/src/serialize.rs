@@ -36,7 +36,7 @@ pub trait Serialize<Ser: Serializer> {
 /// # Example
 ///
 /// ```
-/// use ser_raw::{Serializer, SerializeWith};
+/// use ser_raw::{Serialize, Serializer, SerializeWith, pos::Addr};
 ///
 /// // The foreign type we want to be able to serialize
 /// use num_bigint::BigUint;
@@ -45,7 +45,7 @@ pub trait Serialize<Ser: Serializer> {
 /// #[derive(Serialize)]
 /// struct Foo {
 /// 	#[ser_with(BigUintProxy)]
-/// 	big: BigInt,
+/// 	big: BigUint,
 /// }
 ///
 /// struct BigUintProxy;
@@ -54,7 +54,8 @@ pub trait Serialize<Ser: Serializer> {
 /// {
 /// 	fn serialize_data_with(biguint: &BigUint, serializer: &mut S) {
 /// 		let bytes = biguint.to_bytes_le();
-/// 		serializer.push(&bytes.len());
+/// 		let ptr_addr = S::Addr::from_ref(biguint);
+/// 		serializer.push(&bytes.len(), ptr_addr);
 /// 		serializer.push_raw_bytes(bytes.as_slice());
 /// 	}
 /// }
