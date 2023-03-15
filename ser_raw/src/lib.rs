@@ -12,7 +12,9 @@ mod serializers;
 pub use serializers::{PosTrackingSerializer, PtrSerializer, PureCopySerializer};
 
 mod serializer_impls;
-pub use serializer_impls::{AlignedRelPtrSerializer, AlignedSerializer, UnalignedSerializer};
+pub use serializer_impls::{
+	AlignedRelPtrSerializer, AlignedSerializer, CompleteSerializer, PtrGroup, UnalignedSerializer,
+};
 
 mod serialize;
 pub use serialize::{Serialize, SerializeWith};

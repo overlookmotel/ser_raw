@@ -185,11 +185,7 @@ pub trait SerializerWrite {
 	#[allow(unused_variables)]
 	#[inline(always)]
 	unsafe fn write<T>(&mut self, value: &T, addr: usize) {
-		// TODO: `addr` here is memory address of the original value.
-		// In order to do anything useful with it, need to translate to output pos,
-		// but that requires `PosTrackingSerializer` trait.
-		// Is that possible, since this trait doesn't inherit from it?
-		// Or move `Addr` assoc type to this trait?
+		// TODO: Would be better to take an `Addr`
 	}
 
 	/// Write a correction to storage.
