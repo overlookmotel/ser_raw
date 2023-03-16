@@ -161,7 +161,7 @@ pub trait SerializerStorage {
 }
 
 /// Serializers which can create their own owned `Storage` implement this trait.
-pub trait InstantiableSerializer<Store>: Serializer {
+pub trait InstantiableSerializer: Serializer {
 	/// Create new `Serializer` without allocating any memory for output.
 	/// Memory will be allocated when first value is serialized.
 	///

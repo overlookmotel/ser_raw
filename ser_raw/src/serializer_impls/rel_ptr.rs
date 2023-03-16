@@ -108,8 +108,7 @@ where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	}
 }
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
-	InstantiableSerializer<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize> InstantiableSerializer
 	for AlignedRelPtrSerializer<SA, VA, MVA, MAX, AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Create new `AlignedSerializer` with no memory pre-allocated.

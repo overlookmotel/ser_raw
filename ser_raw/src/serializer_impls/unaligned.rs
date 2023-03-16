@@ -44,7 +44,7 @@ where BorrowedStore: BorrowMut<UnalignedVec>
 	}
 }
 
-impl InstantiableSerializer<UnalignedVec> for UnalignedSerializer<UnalignedVec> {
+impl InstantiableSerializer for UnalignedSerializer<UnalignedVec> {
 	/// Create new `UnalignedSerializer` without allocating any memory for output
 	/// buffer. Memory will be allocated when first value is serialized.
 	///
