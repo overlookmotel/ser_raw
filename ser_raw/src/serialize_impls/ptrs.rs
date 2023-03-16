@@ -4,10 +4,12 @@ use crate::{pos::Addr, Serialize, Serializer};
 
 const PTR_SIZE: usize = mem::size_of::<usize>();
 
-impl<T, Ser: Serializer> Serialize<Ser> for Box<T>
-where T: Serialize<Ser> + Sized
+impl<T, S> Serialize<S> for Box<T>
+where
+	S: Serializer,
+	T: Serialize<S> + Sized,
 {
-	fn serialize_data(&self, serializer: &mut Ser) {
+	fn serialize_data(&self, serializer: &mut S) {
 		// Sanity check that `Box<T>` is just a pointer (evaluated at compile time).
 		// Unsized types are not supported.
 		let _ = SizeCheck::<Box<T>, PTR_SIZE>::ASSERT_SIZE_IS;
@@ -19,7 +21,7 @@ where T: Serialize<Ser> + Sized
 		}
 
 		// Write boxed value
-		let ptr_addr = Ser::Addr::from_ref(self);
+		let ptr_addr = S::Addr::from_ref(self);
 		serializer.push_and_process(&**self, ptr_addr, |serializer| {
 			// Serialize boxed value
 			(**self).serialize_data(serializer);
@@ -27,10 +29,12 @@ where T: Serialize<Ser> + Sized
 	}
 }
 
-impl<T, Ser: Serializer> Serialize<Ser> for Vec<T>
-where T: Serialize<Ser>
+impl<T, S> Serialize<S> for Vec<T>
+where
+	S: Serializer,
+	T: Serialize<S>,
 {
-	fn serialize_data(&self, serializer: &mut Ser) {
+	fn serialize_data(&self, serializer: &mut S) {
 		// No need to do anything if vec contains ZSTs
 		// TODO: Should we call `serialize_data()` in case user defines some behavior?
 		if mem::size_of::<T>() == 0 {
@@ -43,7 +47,7 @@ where T: Serialize<Ser>
 		}
 
 		// Write vec's contents
-		let ptr_addr = Ser::Addr::from_ref_offset(self, VecOffsets::<T>::PTR_OFFSET);
+		let ptr_addr = S::Addr::from_ref_offset(self, VecOffsets::<T>::PTR_OFFSET);
 		serializer.push_and_process_slice(self.as_slice(), ptr_addr, |serializer| {
 			// Serialize vec's contents
 			for value in &**self {
@@ -53,15 +57,17 @@ where T: Serialize<Ser>
 	}
 }
 
-impl<Ser: Serializer> Serialize<Ser> for String {
-	fn serialize_data(&self, serializer: &mut Ser) {
+impl<S> Serialize<S> for String
+where S: Serializer
+{
+	fn serialize_data(&self, serializer: &mut S) {
 		// No need to write contents if string is empty
 		if self.len() == 0 {
 			return;
 		}
 
 		// Write string's content
-		let ptr_addr = Ser::Addr::from_ref_offset(self, STRING_PTR_OFFSET);
+		let ptr_addr = S::Addr::from_ref_offset(self, STRING_PTR_OFFSET);
 		serializer.push_slice(self.as_bytes(), ptr_addr);
 	}
 }

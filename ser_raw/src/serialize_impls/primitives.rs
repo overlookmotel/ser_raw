@@ -4,7 +4,7 @@ use crate::{Serialize, Serializer};
 
 macro_rules! impl_primitive {
 	($ty:ty) => {
-		impl<Ser: Serializer> Serialize<Ser> for $ty {}
+		impl<S: Serializer> Serialize<S> for $ty {}
 	};
 }
 

@@ -1,11 +1,11 @@
 use crate::{Serialize, Serializer};
 
-impl<T, Ser, const N: usize> Serialize<Ser> for [T; N]
+impl<T, S, const N: usize> Serialize<S> for [T; N]
 where
-	Ser: Serializer,
-	T: Serialize<Ser>,
+	S: Serializer,
+	T: Serialize<S>,
 {
-	fn serialize_data(&self, serializer: &mut Ser) {
+	fn serialize_data(&self, serializer: &mut S) {
 		for i in 0..N {
 			self[i].serialize_data(serializer);
 		}
