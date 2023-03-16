@@ -151,13 +151,13 @@ pub trait Serializer: SerializerStorage + Sized {
 /// implement this trait.
 pub trait SerializerStorage {
 	/// `Storage` which backs this serializer.
-	type Store: Storage;
+	type Storage: Storage;
 
 	/// Get immutable ref to `Storage` backing this `Serializer`.
-	fn storage(&self) -> &Self::Store;
+	fn storage(&self) -> &Self::Storage;
 
 	/// Get mutable ref to `Storage` backing this `Serializer`.
-	fn storage_mut(&mut self) -> &mut Self::Store;
+	fn storage_mut(&mut self) -> &mut Self::Storage;
 }
 
 /// Serializers which can create their own owned `Storage` implement this trait.
@@ -177,13 +177,13 @@ pub trait InstantiableSerializer: Serializer {
 
 /// Serializers which can be created from a `BorrowMut` of an existing `Storage`
 /// implement this trait.
-pub trait BorrowingSerializer<BorrowedStore>: Serializer
-where BorrowedStore: BorrowMut<Self::Store>
+pub trait BorrowingSerializer<BorrowedStorage>: Serializer
+where BorrowedStorage: BorrowMut<Self::Storage>
 {
 	/// Create new `Serializer` using an existing `BorrowMut<Storage>`.
-	fn from_storage(storage: BorrowedStore) -> Self;
+	fn from_storage(storage: BorrowedStorage) -> Self;
 
 	/// Consume Serializer and return the backing storage as a
 	/// `BorrowMut<Storage>`.
-	fn into_storage(self) -> BorrowedStore;
+	fn into_storage(self) -> BorrowedStorage;
 }

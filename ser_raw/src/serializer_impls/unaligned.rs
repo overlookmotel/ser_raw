@@ -13,23 +13,23 @@ use crate::{
 /// If most of the allocated types you're serializing share the
 /// same alignment, performance of `AlignedSerializer`, which
 /// does respect alignment, is likely to be almost exactly the same.
-pub struct UnalignedSerializer<BorrowedStore: BorrowMut<UnalignedVec>> {
-	storage: BorrowedStore,
+pub struct UnalignedSerializer<BorrowedStorage: BorrowMut<UnalignedVec>> {
+	storage: BorrowedStorage,
 }
 
-impl<BorrowedStore> PureCopySerializer for UnalignedSerializer<BorrowedStore> where BorrowedStore: BorrowMut<UnalignedVec>
+impl<BorrowedStorage> PureCopySerializer for UnalignedSerializer<BorrowedStorage> where BorrowedStorage: BorrowMut<UnalignedVec>
 {}
 
 impl_pure_copy_serializer!(
-	UnalignedSerializer<BorrowedStore>
-	where BorrowedStore: BorrowMut<UnalignedVec>
+	UnalignedSerializer<BorrowedStorage>
+	where BorrowedStorage: BorrowMut<UnalignedVec>
 );
 
-impl<BorrowedStore> SerializerStorage for UnalignedSerializer<BorrowedStore>
-where BorrowedStore: BorrowMut<UnalignedVec>
+impl<BorrowedStorage> SerializerStorage for UnalignedSerializer<BorrowedStorage>
+where BorrowedStorage: BorrowMut<UnalignedVec>
 {
 	/// `Storage` which backs this serializer.
-	type Store = UnalignedVec;
+	type Storage = UnalignedVec;
 
 	/// Get immutable ref to `UnalignedVec` backing this serializer.
 	#[inline]
@@ -66,18 +66,18 @@ impl InstantiableSerializer for UnalignedSerializer<UnalignedVec> {
 	}
 }
 
-impl<BorrowedStore> BorrowingSerializer<BorrowedStore> for UnalignedSerializer<BorrowedStore>
-where BorrowedStore: BorrowMut<UnalignedVec>
+impl<BorrowedStorage> BorrowingSerializer<BorrowedStorage> for UnalignedSerializer<BorrowedStorage>
+where BorrowedStorage: BorrowMut<UnalignedVec>
 {
 	/// Create new `UnalignedSerializer` from an existing
 	/// `BorrowMut<UnalignedVec>`.
-	fn from_storage(storage: BorrowedStore) -> Self {
+	fn from_storage(storage: BorrowedStorage) -> Self {
 		Self { storage }
 	}
 
 	/// Consume Serializer and return the output buffer as a
 	/// `BorrowMut<UnalignedVec>`.
-	fn into_storage(self) -> BorrowedStore {
+	fn into_storage(self) -> BorrowedStorage {
 		self.storage
 	}
 }

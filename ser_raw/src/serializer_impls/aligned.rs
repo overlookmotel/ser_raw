@@ -14,15 +14,15 @@ pub struct AlignedSerializer<
 	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
 	const MAX_CAPACITY: usize,
-	BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+	BorrowedStorage: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 > {
-	storage: BorrowedStore,
+	storage: BorrowedStorage,
 }
 
 // Expose const params as associated consts - `Self::STORAGE_ALIGNMENT` etc.
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	AlignedSerializer<SA, VA, MVA, MAX, BorrowedStore>
-where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	AlignedSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Alignment of output buffer
 	pub const STORAGE_ALIGNMENT: usize = SA;
@@ -37,33 +37,33 @@ where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	pub const MAX_CAPACITY: usize = MAX;
 }
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	PureCopySerializer for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStore>
-where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	PureCopySerializer for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 }
 
 impl_pure_copy_serializer!(
-	AlignedSerializer<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize; BorrowedStore>
-	where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>,
+	AlignedSerializer<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize; BorrowedStorage>
+	where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>,
 );
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	SerializerStorage for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStore>
-where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	SerializerStorage for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// `Storage` which backs this serializer.
-	type Store = AlignedVec<SA, VA, MVA, MAX>;
+	type Storage = AlignedVec<SA, VA, MVA, MAX>;
 
 	/// Get immutable ref to `AlignedVec` backing this serializer.
 	#[inline]
-	fn storage(&self) -> &Self::Store {
+	fn storage(&self) -> &Self::Storage {
 		self.storage.borrow()
 	}
 
 	/// Get mutable ref to `AlignedVec` backing this serializer.
 	#[inline]
-	fn storage_mut(&mut self) -> &mut Self::Store {
+	fn storage_mut(&mut self) -> &mut Self::Storage {
 		self.storage.borrow_mut()
 	}
 }
@@ -100,18 +100,18 @@ impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize> Insta
 	}
 }
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	BorrowingSerializer<BorrowedStore> for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStore>
-where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	BorrowingSerializer<BorrowedStorage> for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Create new `AlignedSerializer` from an existing `BorrowMut<AlignedVec>`.
-	fn from_storage(storage: BorrowedStore) -> Self {
+	fn from_storage(storage: BorrowedStorage) -> Self {
 		Self { storage }
 	}
 
 	/// Consume Serializer and return the output buffer as a
 	/// `BorrowMut<AlignedVec>`.
-	fn into_storage(self) -> BorrowedStore {
+	fn into_storage(self) -> BorrowedStorage {
 		self.storage
 	}
 }
