@@ -8,8 +8,8 @@ use ser_raw::{
 const MAX_CAPACITY: usize = aligned_max_capacity(16);
 const PTR_SIZE: usize = mem::size_of::<usize>();
 
-type AlVec = AlignedVec<16, 8, 8, MAX_CAPACITY>;
-type Ser = CompleteSerializer<16, 8, 8, MAX_CAPACITY, AlVec>;
+type AlVec = AlignedVec<16, 8, 16, MAX_CAPACITY>;
+type Ser = CompleteSerializer<16, 8, 16, MAX_CAPACITY, AlVec>;
 
 fn test_serialize<T>(input: &T)
 where T: Serialize<Ser> + Debug + PartialEq {
