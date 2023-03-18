@@ -18,9 +18,9 @@ pub struct CompleteSerializer<
 	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
 	const MAX_CAPACITY: usize,
-	BorrowedStore: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+	BorrowedStorage: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 > {
-	storage: BorrowedStore,
+	storage: BorrowedStorage,
 	pos_mapping: PosMapping,
 	current_ptr_group: PtrGroup,
 	ptr_groups: Vec<PtrGroup>,
@@ -102,9 +102,9 @@ impl PtrGroup {
 }
 
 // Expose const params as associated consts - `Self::STORAGE_ALIGNMENT` etc.
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	CompleteSerializer<SA, VA, MVA, MAX, BorrowedStore>
-where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	CompleteSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Alignment of output buffer
 	pub const STORAGE_ALIGNMENT: usize = SA;
@@ -123,7 +123,7 @@ where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	///
 	/// After this, the serializer cannot be used any further, so this method
 	/// consumes it and returns the underlying `BorrowMut<Storage>`.
-	pub fn finalize(mut self) -> BorrowedStore {
+	pub fn finalize(mut self) -> BorrowedStorage {
 		let storage_ptr = self.storage_mut().as_mut_ptr();
 
 		// Safe if all pointers have been recorded accurately
@@ -144,9 +144,9 @@ where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	}
 }
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	PtrSerializer for CompleteSerializer<SA, VA, MVA, MAX, BorrowedStore>
-where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	PtrSerializer for CompleteSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Overwrite pointer.
 	///
@@ -187,14 +187,14 @@ where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 
 impl_ptr_serializer!(
 	CompleteSerializer<
-		const SA: usize, const VA: usize, const MVA: usize, const MAX: usize; BorrowedStore
+		const SA: usize, const VA: usize, const MVA: usize, const MAX: usize; BorrowedStorage
 	>
-	where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>,
+	where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>,
 );
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	PosTrackingSerializer for CompleteSerializer<SA, VA, MVA, MAX, BorrowedStore>
-where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	PosTrackingSerializer for CompleteSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Get current position mapping
 	fn pos_mapping(&self) -> &PosMapping {
@@ -207,9 +207,9 @@ where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	}
 }
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	SerializerStorage for CompleteSerializer<SA, VA, MVA, MAX, BorrowedStore>
-where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	SerializerStorage for CompleteSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// `Storage` which backs this serializer.
 	type Storage = AlignedVec<SA, VA, MVA, MAX>;
@@ -227,9 +227,9 @@ where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	}
 }
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	SerializerWrite for CompleteSerializer<SA, VA, MVA, MAX, BorrowedStore>
-where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	SerializerWrite for CompleteSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	#[inline]
 	unsafe fn write<T>(&mut self, value: &T, addr: usize) {
@@ -281,12 +281,12 @@ impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize> Insta
 	}
 }
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	BorrowingSerializer<BorrowedStore> for CompleteSerializer<SA, VA, MVA, MAX, BorrowedStore>
-where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	BorrowingSerializer<BorrowedStorage> for CompleteSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Create new `AlignedSerializer` from an existing `BorrowMut<AlignedVec>`.
-	fn from_storage(storage: BorrowedStore) -> Self {
+	fn from_storage(storage: BorrowedStorage) -> Self {
 		Self {
 			storage,
 			pos_mapping: PosMapping::dummy(),
@@ -297,7 +297,7 @@ where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 
 	/// Consume Serializer and return the output buffer as a
 	/// `BorrowMut<AlignedVec>`.
-	fn into_storage(self) -> BorrowedStore {
+	fn into_storage(self) -> BorrowedStorage {
 		self.storage
 	}
 }

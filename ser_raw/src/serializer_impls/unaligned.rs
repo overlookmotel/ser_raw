@@ -45,7 +45,7 @@ where BorrowedStorage: BorrowMut<UnalignedVec>
 	}
 }
 
-impl<BorrowedStore> SerializerWrite for UnalignedSerializer<BorrowedStore> where BorrowedStore: BorrowMut<UnalignedVec>
+impl<BorrowedStorage> SerializerWrite for UnalignedSerializer<BorrowedStorage> where BorrowedStorage: BorrowMut<UnalignedVec>
 {}
 
 impl InstantiableSerializer for UnalignedSerializer<UnalignedVec> {

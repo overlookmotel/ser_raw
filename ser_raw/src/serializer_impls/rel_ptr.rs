@@ -108,9 +108,9 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	}
 }
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStore>
-	SerializerWrite for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStore>
-where BorrowedStore: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	SerializerWrite for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 }
 
