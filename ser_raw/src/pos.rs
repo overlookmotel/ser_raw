@@ -7,6 +7,7 @@ pub struct PosMapping {
 	output_pos: usize,
 }
 
+// TODO: Rename `new` method so `dummy` can be called `new`?
 impl PosMapping {
 	/// Create new position mapping.
 	#[inline]
