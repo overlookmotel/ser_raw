@@ -4,7 +4,7 @@ mod common;
 use common::{generate_minecraft_data, tests, Test};
 use ser_raw::{
 	storage::{aligned_max_capacity, AlignedVec, Storage},
-	AlignedSerializer, InstantiableSerializer, Serialize, Serializer, SerializerStorage,
+	AlignedSerializer, Serialize, Serializer, SerializerStorage,
 };
 
 // NB: Cannot easily test for error if try to serialize a type with alignment

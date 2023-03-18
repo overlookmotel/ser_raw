@@ -230,25 +230,3 @@ pub trait SerializerWrite {
 	#[inline(always)]
 	fn write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {}
 }
-
-/// Serializers which can create their own owned `Storage` implement this trait.
-pub trait InstantiableSerializer: Serializer {
-	/// Create new `Serializer` without allocating any memory for output.
-	/// Memory will be allocated when first value is serialized.
-	///
-	/// If you know, or can estimate, the amount of memory that's going to
-	/// be needed in advance, allocating upfront with `with_capacity` can
-	/// dramatically improve performance vs `new`.
-	fn new() -> Self;
-
-	/// Create new `Serializer` with pre-allocated storage with capacity
-	/// of `capacity` bytes.
-	fn with_capacity(capacity: usize) -> Self;
-}
-
-/// Serializers which can be created from a `BorrowMut` of an existing `Storage`
-/// implement this trait.
-pub trait BorrowingSerializer: Serializer {
-	/// Create new `Serializer` using an existing `BorrowMut<Storage>`.
-	fn from_storage(storage: Self::BorrowedStorage) -> Self;
-}

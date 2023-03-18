@@ -5,8 +5,7 @@ use crate::{
 	pos::PosMapping,
 	storage::{AlignedVec, ContiguousStorage, Storage},
 	util::is_aligned_to,
-	BorrowingSerializer, InstantiableSerializer, PosTrackingSerializer, PtrSerializer, Serializer,
-	SerializerStorage, SerializerWrite,
+	PosTrackingSerializer, PtrSerializer, Serializer, SerializerStorage, SerializerWrite,
 };
 
 /// Serializer that ensures values are correctly aligned in output buffer
@@ -25,7 +24,40 @@ pub struct AlignedRelPtrSerializer<
 	pos_mapping: PosMapping,
 }
 
-// Expose const params as associated consts - `Self::STORAGE_ALIGNMENT` etc.
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
+	AlignedRelPtrSerializer<SA, VA, MVA, MAX, AlignedVec<SA, VA, MVA, MAX>>
+{
+	/// Create new `AlignedSerializer` with no memory pre-allocated.
+	///
+	/// If you know, or can estimate, the amount of buffer space that's going to
+	/// be needed in advance, allocating upfront with `with_capacity` can
+	/// dramatically improve performance vs using `new`.
+	#[inline]
+	pub fn new() -> Self {
+		Self {
+			storage: AlignedVec::new(),
+			pos_mapping: PosMapping::dummy(),
+		}
+	}
+
+	/// Create new `AlignedSerializer` with buffer pre-allocated with capacity of
+	/// at least `capacity` bytes.
+	///
+	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
+	///
+	/// # Panics
+	///
+	/// Panics if `capacity` exceeds `MAX_CAPACITY`.
+	pub fn with_capacity(capacity: usize) -> Self {
+		// `AlignedVec::with_capacity()` ensures capacity is `< MAX_CAPACITY`
+		// and rounds up capacity to a multiple of `MAX_VALUE_ALIGNMENT`
+		Self {
+			storage: AlignedVec::with_capacity(capacity),
+			pos_mapping: PosMapping::dummy(),
+		}
+	}
+}
+
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
 	AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
 where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
@@ -41,6 +73,15 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 
 	/// Maximum capacity of output buffer.
 	pub const MAX_CAPACITY: usize = MAX;
+
+	/// Create new `AlignedRelPtrSerializer` from an existing
+	/// `BorrowMut<AlignedVec>`.
+	pub fn from_storage(storage: BorrowedStorage) -> Self {
+		Self {
+			storage,
+			pos_mapping: PosMapping::dummy(),
+		}
+	}
 }
 
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
@@ -120,51 +161,4 @@ impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, Borro
 	SerializerWrite for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
 where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
-}
-
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize> InstantiableSerializer
-	for AlignedRelPtrSerializer<SA, VA, MVA, MAX, AlignedVec<SA, VA, MVA, MAX>>
-{
-	/// Create new `AlignedSerializer` with no memory pre-allocated.
-	///
-	/// If you know, or can estimate, the amount of buffer space that's going to
-	/// be needed in advance, allocating upfront with `with_capacity` can
-	/// dramatically improve performance vs using `new`.
-	#[inline]
-	fn new() -> Self {
-		Self {
-			storage: AlignedVec::new(),
-			pos_mapping: PosMapping::dummy(),
-		}
-	}
-
-	/// Create new `AlignedSerializer` with buffer pre-allocated with capacity of
-	/// at least `capacity` bytes.
-	///
-	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
-	///
-	/// # Panics
-	///
-	/// Panics if `capacity` exceeds `MAX_CAPACITY`.
-	fn with_capacity(capacity: usize) -> Self {
-		// `AlignedVec::with_capacity()` ensures capacity is `< MAX_CAPACITY`
-		// and rounds up capacity to a multiple of `MAX_VALUE_ALIGNMENT`
-		Self {
-			storage: AlignedVec::with_capacity(capacity),
-			pos_mapping: PosMapping::dummy(),
-		}
-	}
-}
-
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	BorrowingSerializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
-where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
-{
-	/// Create new `AlignedSerializer` from an existing `BorrowMut<AlignedVec>`.
-	fn from_storage(storage: BorrowedStorage) -> Self {
-		Self {
-			storage,
-			pos_mapping: PosMapping::dummy(),
-		}
-	}
 }
