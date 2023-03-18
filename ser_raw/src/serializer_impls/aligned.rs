@@ -69,6 +69,8 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 		self.storage.borrow_mut()
 	}
 
+	/// Consume Serializer and return the backing storage as a
+	/// `BorrowMut<Storage>`.
 	#[inline]
 	fn into_storage(self) -> BorrowedStorage {
 		self.storage
