@@ -161,12 +161,17 @@ pub trait Serializer: SerializerStorage + SerializerWrite + Sized {
 pub trait SerializerStorage {
 	/// `Storage` which backs this serializer.
 	type Storage: Storage;
+	type BorrowedStorage: BorrowMut<Self::Storage>;
 
 	/// Get immutable ref to `Storage` backing this `Serializer`.
 	fn storage(&self) -> &Self::Storage;
 
 	/// Get mutable ref to `Storage` backing this `Serializer`.
 	fn storage_mut(&mut self) -> &mut Self::Storage;
+
+	/// Consume Serializer and return the backing storage as a
+	/// `BorrowMut<Storage>`.
+	fn into_storage(self) -> Self::BorrowedStorage;
 }
 
 /// Trait for writing to arbitrary locations in Serializer's storage.
@@ -248,8 +253,4 @@ where BorrowedStorage: BorrowMut<Self::Storage>
 {
 	/// Create new `Serializer` using an existing `BorrowMut<Storage>`.
 	fn from_storage(storage: BorrowedStorage) -> Self;
-
-	/// Consume Serializer and return the backing storage as a
-	/// `BorrowMut<Storage>`.
-	fn into_storage(self) -> BorrowedStorage;
 }

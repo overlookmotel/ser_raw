@@ -213,6 +213,7 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// `Storage` which backs this serializer.
 	type Storage = AlignedVec<SA, VA, MVA, MAX>;
+	type BorrowedStorage = BorrowedStorage;
 
 	/// Get immutable ref to `AlignedVec` backing this serializer.
 	#[inline]
@@ -224,6 +225,11 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	#[inline]
 	fn storage_mut(&mut self) -> &mut Self::Storage {
 		self.storage.borrow_mut()
+	}
+
+	#[inline]
+	fn into_storage(self) -> BorrowedStorage {
+		self.storage
 	}
 }
 
@@ -293,11 +299,5 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 			current_ptr_group: PtrGroup::dummy(),
 			ptr_groups: Vec::new(),
 		}
-	}
-
-	/// Consume Serializer and return the output buffer as a
-	/// `BorrowMut<AlignedVec>`.
-	fn into_storage(self) -> BorrowedStorage {
-		self.storage
 	}
 }

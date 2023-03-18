@@ -31,6 +31,7 @@ where BorrowedStorage: BorrowMut<UnalignedVec>
 {
 	/// `Storage` which backs this serializer.
 	type Storage = UnalignedVec;
+	type BorrowedStorage = BorrowedStorage;
 
 	/// Get immutable ref to `UnalignedVec` backing this serializer.
 	#[inline]
@@ -42,6 +43,11 @@ where BorrowedStorage: BorrowMut<UnalignedVec>
 	#[inline]
 	fn storage_mut(&mut self) -> &mut UnalignedVec {
 		self.storage.borrow_mut()
+	}
+
+	#[inline]
+	fn into_storage(self) -> BorrowedStorage {
+		self.storage
 	}
 }
 
@@ -77,11 +83,5 @@ where BorrowedStorage: BorrowMut<UnalignedVec>
 	/// `BorrowMut<UnalignedVec>`.
 	fn from_storage(storage: BorrowedStorage) -> Self {
 		Self { storage }
-	}
-
-	/// Consume Serializer and return the output buffer as a
-	/// `BorrowMut<UnalignedVec>`.
-	fn into_storage(self) -> BorrowedStorage {
-		self.storage
 	}
 }
