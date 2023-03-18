@@ -1,11 +1,10 @@
 use std::{borrow::BorrowMut, mem};
 
 use crate::{
-	impl_ptr_serializer,
-	pos::PosMapping,
+	pos::{PosMapping, TrackingAddr},
 	storage::{AlignedVec, ContiguousStorage, Storage},
 	util::is_aligned_to,
-	PosTrackingSerializer, PtrSerializer, Serializer, SerializerStorage, SerializerWrite,
+	PosTrackingSerializer, PtrSerializer, Serialize, Serializer,
 };
 
 /// Serializer that ensures values are correctly aligned in output buffer
@@ -85,57 +84,39 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 }
 
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	PtrSerializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
-where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
-{
-	/// Overwrite pointer.
-	///
-	/// # Safety
-	///
-	/// * `ptr_pos` and `target_pos` must both sit within bounds of output.
-	/// * `target_pos` must be location of a valid value for the type being
-	///   pointed to.
-	/// * `ptr_pos` must be aligned for a pointer.
-	#[inline]
-	unsafe fn write_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
-		// Cannot fully check validity of `target_pos` because its type isn't known
-		debug_assert!(ptr_pos <= self.capacity() - mem::size_of::<usize>());
-		debug_assert!(is_aligned_to(ptr_pos, mem::align_of::<usize>()));
-		debug_assert!(target_pos <= self.capacity());
-
-		self.storage_mut().write(&target_pos, ptr_pos)
-	}
-}
-
-impl_ptr_serializer!(
-	AlignedRelPtrSerializer<
-		const SA: usize, const VA: usize, const MVA: usize, const MAX: usize; BorrowedStorage
-	>
-	where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>,
-);
-
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	PosTrackingSerializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
-where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
-{
-	/// Get current position mapping
-	fn pos_mapping(&self) -> &PosMapping {
-		&self.pos_mapping
-	}
-
-	/// Set current position mapping
-	fn set_pos_mapping(&mut self, pos_mapping: PosMapping) {
-		self.pos_mapping = pos_mapping;
-	}
-}
-
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	SerializerStorage for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+	Serializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
 where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// `Storage` which backs this serializer.
 	type Storage = AlignedVec<SA, VA, MVA, MAX>;
 	type BorrowedStorage = BorrowedStorage;
+
+	/// Pointer serializers do record pointers, so need a functional `Addr`.
+	type Addr = TrackingAddr;
+
+	fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
+		// Delegate to `PtrSerializer`'s implementation
+		PtrSerializer::do_serialize_value(self, value);
+	}
+
+	// Skip recording position mapping here because no further processing of the
+	// slice, but still write pointer
+	#[inline]
+	fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
+		// Delegate to `PtrSerializer`'s implementation
+		PtrSerializer::do_push_slice(self, slice, ptr_addr);
+	}
+
+	#[inline]
+	fn push_and_process_slice<T, P: FnOnce(&mut Self)>(
+		&mut self,
+		slice: &[T],
+		ptr_addr: Self::Addr,
+		process: P,
+	) {
+		// Delegate to `PtrSerializer`'s implementation
+		PtrSerializer::do_push_and_process_slice(self, slice, ptr_addr, process);
+	}
 
 	/// Get immutable ref to `AlignedVec` backing this serializer.
 	#[inline]
@@ -158,7 +139,39 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 }
 
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	SerializerWrite for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+	PtrSerializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
 where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
+	/// Overwrite pointer.
+	///
+	/// # Safety
+	///
+	/// * `ptr_pos` and `target_pos` must both sit within bounds of output.
+	/// * `target_pos` must be location of a valid value for the type being
+	///   pointed to.
+	/// * `ptr_pos` must be aligned for a pointer.
+	#[inline]
+	unsafe fn write_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
+		// Cannot fully check validity of `target_pos` because its type isn't known
+		debug_assert!(ptr_pos <= self.capacity() - mem::size_of::<usize>());
+		debug_assert!(is_aligned_to(ptr_pos, mem::align_of::<usize>()));
+		debug_assert!(target_pos <= self.capacity());
+
+		self.storage_mut().write(&target_pos, ptr_pos)
+	}
+}
+
+impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
+	PosTrackingSerializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+{
+	/// Get current position mapping
+	fn pos_mapping(&self) -> &PosMapping {
+		&self.pos_mapping
+	}
+
+	/// Set current position mapping
+	fn set_pos_mapping(&mut self, pos_mapping: PosMapping) {
+		self.pos_mapping = pos_mapping;
+	}
 }

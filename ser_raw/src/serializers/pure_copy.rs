@@ -1,41 +1,38 @@
 use crate::Serializer;
 
-/// Trait for the most basic serializers which purely copy types.
-///
-/// Implement the trait on a serializer, and then use macro
-/// `impl_pure_copy_serializer!()` to implement `Serialize`.
+/// Trait for the simplest serializers which purely copy types.
 ///
 /// # Example
 ///
-/// ```ignore
-/// use ser_raw::{impl_pure_copy_serializer, PureCopySerializer, SerializerStorage};
+/// This is a simplified version of the `AlignedSerializer` type provided by
+/// this crate:
 ///
-/// struct MySerializer {}
+/// ```
+/// use ser_raw::{
+/// 	pos::NoopAddr,
+/// 	storage::{aligned_max_capacity, AlignedVec},
+/// 	PureCopySerializer, Serializer,
+/// };
+///
+/// const MAX_CAPACITY: usize = aligned_max_capacity(16);
+/// type Store = AlignedVec<16, 8, 16, MAX_CAPACITY>;
+///
+/// struct MySerializer {
+/// 	storage: Store,
+/// }
+///
+/// impl Serializer for MySerializer {
+/// 	type Storage = Store;
+/// 	type BorrowedStorage = Store;
+/// 	type Addr = NoopAddr;
+///
+/// 	fn storage(&self) -> &Store { &self.storage }
+/// 	fn storage_mut(&mut self) -> &mut Store { &mut self.storage }
+/// 	fn into_storage(self) -> Store { self.storage }
+/// }
 ///
 /// impl PureCopySerializer for MySerializer {}
-/// impl_pure_copy_serializer!(MySerializer);
-///
-/// impl SerializerStorage for MySerializer {
-/// 	// ...
-/// }
 /// ```
-pub trait PureCopySerializer: Serializer {}
-
-/// Macro to create `Serializer` implementation for serializers implementing
-/// `PureCopySerializer`.
-///
-/// See `impl_serializer` for syntax rules.
-#[macro_export]
-macro_rules! impl_pure_copy_serializer {
-	($($type_def:tt)*) => {
-		$crate::impl_serializer!(
-			PureCopySerializer,
-			{
-				/// `PureCopySerializer` serializers do not record pointers,
-				/// so have no need for a working `Addr`.
-				type Addr = $crate::pos::NoopAddr;
-			},
-			$($type_def)*
-		);
-	};
+pub trait PureCopySerializer: Serializer {
+	// NB: Pure copy serializers can use `NoopAddr` as `Addr` associated type.
 }

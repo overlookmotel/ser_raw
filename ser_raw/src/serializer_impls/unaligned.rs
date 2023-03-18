@@ -1,9 +1,9 @@
 use std::borrow::BorrowMut;
 
 use crate::{
-	impl_pure_copy_serializer,
+	pos::NoopAddr,
 	storage::{Storage, UnalignedVec},
-	PureCopySerializer, SerializerStorage, SerializerWrite,
+	PureCopySerializer, Serializer,
 };
 
 /// Serializer which does not respect alignment in the output.
@@ -49,20 +49,16 @@ where BorrowedStorage: BorrowMut<UnalignedVec>
 	}
 }
 
-impl<BorrowedStorage> PureCopySerializer for UnalignedSerializer<BorrowedStorage> where BorrowedStorage: BorrowMut<UnalignedVec>
-{}
-
-impl_pure_copy_serializer!(
-	UnalignedSerializer<BorrowedStorage>
-	where BorrowedStorage: BorrowMut<UnalignedVec>
-);
-
-impl<BorrowedStorage> SerializerStorage for UnalignedSerializer<BorrowedStorage>
+impl<BorrowedStorage> Serializer for UnalignedSerializer<BorrowedStorage>
 where BorrowedStorage: BorrowMut<UnalignedVec>
 {
 	/// `Storage` which backs this serializer.
 	type Storage = UnalignedVec;
 	type BorrowedStorage = BorrowedStorage;
+
+	/// Pure copy serializers do not record pointers,
+	/// so have no need for a functional `Addr`.
+	type Addr = NoopAddr;
 
 	/// Get immutable ref to `UnalignedVec` backing this serializer.
 	#[inline]
@@ -84,5 +80,5 @@ where BorrowedStorage: BorrowMut<UnalignedVec>
 	}
 }
 
-impl<BorrowedStorage> SerializerWrite for UnalignedSerializer<BorrowedStorage> where BorrowedStorage: BorrowMut<UnalignedVec>
+impl<BorrowedStorage> PureCopySerializer for UnalignedSerializer<BorrowedStorage> where BorrowedStorage: BorrowMut<UnalignedVec>
 {}

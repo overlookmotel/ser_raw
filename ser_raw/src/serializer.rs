@@ -4,25 +4,61 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 
 /// Serializers implement this trait.
 ///
-/// Implementing a serializer requires multiple trait implementations.
-/// It's split into these 5 traits to avoid bounds on the main `Serializer`
-/// trait, and to allow composing different parts to create custom serializers.
+/// Implementers only need to implement the methods to access storage:
 ///
-/// A serializer will implement:
+/// * `storage`
+/// * `storage_mut`
+/// * `into_storage`
 ///
-/// * `Serializer`: Mandatory. Defines serialization behavior.
-/// * `SerializerStorage`: Mandatory. Defines how to access to backing storage.
-/// * `SerializerWrite`: Mandatory. Defines how to write to backing storage
-/// 	at arbitrary locations.
-/// * `InstantiableSerializer`: Optional. Defines how to create a new serializer
-///   instance along with it's own owned backing `Storage`.
-/// * `BorrowingSerializer`: Optional. Defines how to create a new serializer
-///   instance which mutably borrows an existing `Storage`.
+/// and the associated types:
 ///
-/// Implementations need not define any methods for the `Serializer` trait.
-/// Default implementation forwards all method calls to the underlying
-/// `Storage`. They only need to define associated type `Addr`.
-pub trait Serializer: SerializerStorage + SerializerWrite + Sized {
+/// * `Storage`
+/// * `BorrowedStorage`
+/// * `Addr`
+///
+/// Default implementation of all other methods delegates calls to the
+/// underlying `Storage`. This produces the behavior of a "pure copy" serializer
+/// (e.g. `AlignedSerializer` or `UnalignedSerializer` provided by this crate).
+///
+/// Other methods can be overriden to produce more complicated behavior, as is
+/// the case with other serializers this crate provides e.g.
+/// `CompleteSerializer`.
+///
+/// # Example
+///
+/// This is a simplified version of the `AlignedSerializer` type provided by
+/// this crate:
+///
+/// ```
+/// use ser_raw::{
+/// 	pos::NoopAddr,
+/// 	storage::{aligned_max_capacity, AlignedVec},
+/// 	PureCopySerializer, Serializer,
+/// };
+///
+/// const MAX_CAPACITY: usize = aligned_max_capacity(16);
+/// type Store = AlignedVec<16, 8, 16, MAX_CAPACITY>;
+///
+/// struct MySerializer {
+/// 	storage: Store,
+/// }
+///
+/// impl Serializer for MySerializer {
+/// 	type Storage = Store;
+/// 	type BorrowedStorage = Store;
+/// 	type Addr = NoopAddr;
+///
+/// 	fn storage(&self) -> &Store { &self.storage }
+/// 	fn storage_mut(&mut self) -> &mut Store { &mut self.storage }
+/// 	fn into_storage(self) -> Store { self.storage }
+/// }
+///
+/// impl PureCopySerializer for MySerializer {}
+pub trait Serializer: Sized {
+	/// `Storage` which backs this serializer.
+	type Storage: Storage;
+	type BorrowedStorage: BorrowMut<Self::Storage>;
+
 	/// `Addr` type this serializer uses.
 	type Addr: Addr;
 
@@ -141,44 +177,6 @@ pub trait Serializer: SerializerStorage + SerializerWrite + Sized {
 		self.storage_mut().push_bytes(bytes);
 	}
 
-	/// Get current capacity of output.
-	#[inline]
-	fn capacity(&self) -> usize {
-		self.storage().capacity()
-	}
-
-	/// Get current position in output.
-	#[inline]
-	fn pos(&self) -> usize {
-		self.storage().len()
-	}
-}
-
-/// Trait for accessing backing `Storage` of a `Serializer`.
-///
-/// `SerializerStorage` is a supertrait of `Serializer`. All serializers must
-/// implement this trait.
-pub trait SerializerStorage {
-	/// `Storage` which backs this serializer.
-	type Storage: Storage;
-	type BorrowedStorage: BorrowMut<Self::Storage>;
-
-	/// Get immutable ref to `Storage` backing this `Serializer`.
-	fn storage(&self) -> &Self::Storage;
-
-	/// Get mutable ref to `Storage` backing this `Serializer`.
-	fn storage_mut(&mut self) -> &mut Self::Storage;
-
-	/// Consume Serializer and return the backing storage as a
-	/// `BorrowMut<Storage>`.
-	fn into_storage(self) -> Self::BorrowedStorage;
-}
-
-/// Trait for writing to arbitrary locations in Serializer's storage.
-///
-/// `SerializerWrite` is a supertrait of `Serializer`. All serializers must
-/// implement this trait.
-pub trait SerializerWrite {
 	/// Write a value to storage at a specific position.
 	///
 	/// Default implementation is a no-op, and some serializers may not need to
@@ -229,4 +227,26 @@ pub trait SerializerWrite {
 	#[allow(unused_variables)]
 	#[inline(always)]
 	fn write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {}
+
+	/// Get current capacity of output.
+	#[inline]
+	fn capacity(&self) -> usize {
+		self.storage().capacity()
+	}
+
+	/// Get current position in output.
+	#[inline]
+	fn pos(&self) -> usize {
+		self.storage().len()
+	}
+
+	/// Get immutable ref to `Storage` backing this `Serializer`.
+	fn storage(&self) -> &Self::Storage;
+
+	/// Get mutable ref to `Storage` backing this `Serializer`.
+	fn storage_mut(&mut self) -> &mut Self::Storage;
+
+	/// Consume Serializer and return the backing storage as a
+	/// `BorrowMut<Storage>`.
+	fn into_storage(self) -> Self::BorrowedStorage;
 }

@@ -1,9 +1,9 @@
 use std::borrow::BorrowMut;
 
 use crate::{
-	impl_pure_copy_serializer,
+	pos::NoopAddr,
 	storage::{AlignedVec, Storage},
-	PureCopySerializer, SerializerStorage, SerializerWrite,
+	PureCopySerializer, Serializer,
 };
 
 /// Serializer that ensures values are correctly aligned in output buffer.
@@ -74,23 +74,16 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 }
 
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	PureCopySerializer for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStorage>
-where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
-{
-}
-
-impl_pure_copy_serializer!(
-	AlignedSerializer<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize; BorrowedStorage>
-	where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>,
-);
-
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	SerializerStorage for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+	Serializer for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStorage>
 where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// `Storage` which backs this serializer.
 	type Storage = AlignedVec<SA, VA, MVA, MAX>;
 	type BorrowedStorage = BorrowedStorage;
+
+	/// Pure copy serializers do not record pointers,
+	/// so have no need for a functional `Addr`.
+	type Addr = NoopAddr;
 
 	/// Get immutable ref to `AlignedVec` backing this serializer.
 	#[inline]
@@ -113,7 +106,7 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 }
 
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	SerializerWrite for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+	PureCopySerializer for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStorage>
 where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 }
