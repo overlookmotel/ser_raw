@@ -248,9 +248,7 @@ pub trait InstantiableSerializer: Serializer {
 
 /// Serializers which can be created from a `BorrowMut` of an existing `Storage`
 /// implement this trait.
-pub trait BorrowingSerializer<BorrowedStorage>: Serializer
-where BorrowedStorage: BorrowMut<Self::Storage>
-{
+pub trait BorrowingSerializer: Serializer {
 	/// Create new `Serializer` using an existing `BorrowMut<Storage>`.
-	fn from_storage(storage: BorrowedStorage) -> Self;
+	fn from_storage(storage: Self::BorrowedStorage) -> Self;
 }

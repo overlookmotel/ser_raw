@@ -155,7 +155,7 @@ impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize> Insta
 }
 
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	BorrowingSerializer<BorrowedStorage> for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
+	BorrowingSerializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
 where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 {
 	/// Create new `AlignedSerializer` from an existing `BorrowMut<AlignedVec>`.

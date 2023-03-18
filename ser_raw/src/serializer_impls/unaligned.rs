@@ -76,7 +76,7 @@ impl InstantiableSerializer for UnalignedSerializer<UnalignedVec> {
 	}
 }
 
-impl<BorrowedStorage> BorrowingSerializer<BorrowedStorage> for UnalignedSerializer<BorrowedStorage>
+impl<BorrowedStorage> BorrowingSerializer for UnalignedSerializer<BorrowedStorage>
 where BorrowedStorage: BorrowMut<UnalignedVec>
 {
 	/// Create new `UnalignedSerializer` from an existing
