@@ -132,6 +132,12 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 		CompleteSerializerTrait::do_write_correction(self, write);
 	}
 
+	#[inline]
+	fn finalize(self) -> Self::BorrowedStorage {
+		// Delegate to `CompleteSerializerTrait`'s implementation
+		CompleteSerializerTrait::do_finalize(self)
+	}
+
 	/// Get immutable ref to `AlignedVec` backing this serializer.
 	#[inline]
 	fn storage(&self) -> &Self::Storage {

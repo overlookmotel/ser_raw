@@ -228,6 +228,13 @@ pub trait Serializer: Sized {
 	#[inline(always)]
 	fn write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {}
 
+	/// Finalize serialization, consume serializer, and return backing storage as
+	/// `BorrowMut<Storage>`.
+	#[inline]
+	fn finalize(self) -> Self::BorrowedStorage {
+		self.into_storage()
+	}
+
 	/// Get current capacity of output.
 	#[inline]
 	fn capacity(&self) -> usize {
@@ -248,5 +255,9 @@ pub trait Serializer: Sized {
 
 	/// Consume Serializer and return the backing storage as a
 	/// `BorrowMut<Storage>`.
+	///
+	/// Consumers should not call this method directly. Call `finalize` instead,
+	/// as some serializers need to make final changes to the output at the end of
+	/// serialization.
 	fn into_storage(self) -> Self::BorrowedStorage;
 }
