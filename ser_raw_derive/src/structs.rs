@@ -1,11 +1,8 @@
-#![allow(unused_imports)]
-
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::{
-	parse_macro_input, parse_quote, spanned::Spanned, Data, DataEnum, DataStruct, DeriveInput, Field,
-	Fields, FieldsNamed, FieldsUnnamed, GenericParam, Generics, Ident, Index, Meta, MetaList,
-	NestedMeta, Path, TraitBound, TypeParam,
+	spanned::Spanned, DataStruct, Field, Fields, FieldsNamed, FieldsUnnamed, Generics, Ident, Index,
+	Meta, MetaList, NestedMeta, Path,
 };
 
 pub fn derive_struct(

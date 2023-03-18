@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::{pos::PosMapping, Serializer};
 
 /// Trait for serializers which track position in output.

@@ -1,5 +1,3 @@
-#![allow(dead_code)] // TODO: Remove this
-
 /// Mapping from input address (i.e. memory address of value being serialized)
 /// and output position (i.e. position of that value's representation in
 /// serializer's output).

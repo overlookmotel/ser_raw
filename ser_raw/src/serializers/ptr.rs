@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::PosTrackingSerializer;
 
 /// Trait for serializers which overwrite pointers in output.
