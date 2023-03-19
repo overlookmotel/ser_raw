@@ -2,6 +2,10 @@
 name = "ser_raw_derive_serializer"
 version = "0.0.1"
 edition = "2021"
+authors = ["overlookmotel"]
+description = "Derive macro for ser_raw serializer"
+repository = "https://github.com/overlookmotel/ser_raw"
+license = "MIT"
 
 [lib]
 proc-macro = true

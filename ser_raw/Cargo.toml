@@ -2,6 +2,10 @@
 name = "ser_raw"
 version = "0.0.1"
 edition = "2021"
+authors = ["overlookmotel"]
+description = "Simple and fast serializer"
+repository = "https://github.com/overlookmotel/ser_raw"
+license = "MIT"
 
 [lib]
 
