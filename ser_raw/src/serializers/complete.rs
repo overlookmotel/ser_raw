@@ -2,8 +2,9 @@ use std::borrow::BorrowMut;
 
 use crate::{
 	pos::PosMapping,
+	ser_traits::Ptrs,
 	storage::{AlignedVec, Storage},
-	Ptrs, Serialize, Serializer,
+	Serialize, Serializer,
 };
 
 /// Serializer that produces a buffer which is a complete valid representation

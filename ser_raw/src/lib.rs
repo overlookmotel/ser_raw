@@ -7,16 +7,15 @@ pub use ser_raw_derive_serializer::Serializer;
 mod serializer;
 pub use serializer::Serializer;
 
-mod serializer_traits;
-pub use serializer_traits::{
-	CompleteSerializerTrait, PosTrackingSerializer, PtrGroup, PtrSerializer, Ptrs, RelPtrSerializer,
-	WritableSerializer,
-};
-
 mod serializers;
 pub use serializers::{
 	AlignedRelPtrSerializer, AlignedSerializer, CompleteSerializer, UnalignedSerializer,
 };
+
+mod serializer_traits;
+pub mod ser_traits {
+	pub use super::serializer_traits::*;
+}
 
 mod serialize;
 pub use serialize::{Serialize, SerializeWith};

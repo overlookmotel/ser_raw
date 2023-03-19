@@ -21,12 +21,12 @@ fn get_methods(ns: &TokenStream) -> TokenStream {
 
 		#[inline]
 		fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
-			#ns PosTrackingSerializer::do_serialize_value(self, value);
+			ser_traits::PosTrackingSerializer::do_serialize_value(self, value);
 		}
 
 		#[inline]
 		fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
-			#ns PosTrackingSerializer::do_push_slice(self, slice, ptr_addr);
+			ser_traits::PosTrackingSerializer::do_push_slice(self, slice, ptr_addr);
 		}
 
 		#[inline]
@@ -36,7 +36,7 @@ fn get_methods(ns: &TokenStream) -> TokenStream {
 			ptr_addr: Self::Addr,
 			process: P,
 		) {
-			#ns PosTrackingSerializer::do_push_and_process_slice(self, slice, ptr_addr, process);
+			ser_traits::PosTrackingSerializer::do_push_and_process_slice(self, slice, ptr_addr, process);
 		}
 	}
 }
@@ -54,7 +54,8 @@ pub fn impl_pos_tracking(
 
 	quote! {
 		const _: () = {
-			use #ns {PosTrackingSerializer, pos::PosMapping};
+			use #ns ser_traits::PosTrackingSerializer;
+			use #ns pos::PosMapping;
 
 			#[automatically_derived]
 			impl #impl_generics PosTrackingSerializer for #ser #type_generics #where_clause {

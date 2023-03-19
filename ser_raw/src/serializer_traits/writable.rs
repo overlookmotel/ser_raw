@@ -1,4 +1,4 @@
-use crate::{storage::ContiguousStorage, PosTrackingSerializer};
+use crate::{ser_traits::PosTrackingSerializer, storage::ContiguousStorage};
 
 /// Trait for serializers which can write at arbitrary positions in output.
 pub trait WritableSerializer: PosTrackingSerializer

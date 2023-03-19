@@ -2,8 +2,9 @@ use std::slice;
 
 use crate::{
 	pos::{Addr, PosMapping},
+	ser_traits::PosTrackingSerializer,
 	storage::Storage,
-	PosTrackingSerializer, Serialize,
+	Serialize,
 };
 
 /// Trait for serializers which overwrite pointers in output.

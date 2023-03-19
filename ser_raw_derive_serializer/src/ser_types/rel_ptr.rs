@@ -20,12 +20,12 @@ fn get_methods(ns: &TokenStream) -> TokenStream {
 		// Delegate all methods to `PtrSerializer`'s implementation
 
 		fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
-			#ns PtrSerializer::do_serialize_value(self, value);
+			ser_traits::PtrSerializer::do_serialize_value(self, value);
 		}
 
 		#[inline]
 		fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
-			#ns PtrSerializer::do_push_slice(self, slice, ptr_addr);
+			ser_traits::PtrSerializer::do_push_slice(self, slice, ptr_addr);
 		}
 
 		#[inline]
@@ -35,7 +35,7 @@ fn get_methods(ns: &TokenStream) -> TokenStream {
 			ptr_addr: Self::Addr,
 			process: P,
 		) {
-			#ns PtrSerializer::do_push_and_process_slice(self, slice, ptr_addr, process);
+			ser_traits::PtrSerializer::do_push_and_process_slice(self, slice, ptr_addr, process);
 		}
 	}
 }
@@ -50,7 +50,7 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>, ns: &TokenStream) -> Toke
 		#pos_tracking_impl
 
 		const _: () = {
-			use #ns {PtrSerializer, RelPtrSerializer};
+			use #ns ser_traits::{PtrSerializer, RelPtrSerializer};
 
 			#[automatically_derived]
 			impl #impl_generics PtrSerializer for #ser #type_generics #where_clause {

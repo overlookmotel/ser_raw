@@ -42,7 +42,8 @@ fn serializer_impl(input: DeriveInput) -> TokenStream {
 	quote! {
 		const _: () = {
 			use ::std::borrow::{Borrow, BorrowMut};
-			use #ns Serializer;
+			#[allow(unused_imports)]
+			use #ns {Serializer, ser_traits};
 
 			#[automatically_derived]
 			impl #impl_generics Serializer for #ser #type_generics #where_clause {

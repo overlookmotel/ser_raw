@@ -20,13 +20,13 @@ fn get_methods(ns: &TokenStream) -> TokenStream {
 
 		fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
 			// Delegate to `PtrSerializer`'s implementation
-			#ns PtrSerializer::do_serialize_value(self, value);
+			ser_traits::PtrSerializer::do_serialize_value(self, value);
 		}
 
 		#[inline]
 		fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
 			// Delegate to `PtrSerializer`'s implementation
-			#ns PtrSerializer::do_push_slice(self, slice, ptr_addr);
+			ser_traits::PtrSerializer::do_push_slice(self, slice, ptr_addr);
 		}
 
 		#[inline]
@@ -37,25 +37,25 @@ fn get_methods(ns: &TokenStream) -> TokenStream {
 			process: P,
 		) {
 			// Delegate to `PtrSerializer`'s implementation
-			#ns PtrSerializer::do_push_and_process_slice(self, slice, ptr_addr, process);
+			ser_traits::PtrSerializer::do_push_and_process_slice(self, slice, ptr_addr, process);
 		}
 
 		#[inline]
 		unsafe fn write<T>(&mut self, value: &T, addr: usize) {
 			// Delegate to `WritableSerializer`'s implementation
-			#ns WritableSerializer::do_write(self, value, addr);
+			ser_traits::WritableSerializer::do_write(self, value, addr);
 		}
 
 		#[inline]
 		fn write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {
 			// Delegate to `CompleteSerializerTrait`'s implementation
-			#ns CompleteSerializerTrait::do_write_correction(self, write);
+			ser_traits::CompleteSerializerTrait::do_write_correction(self, write);
 		}
 
 		#[inline]
 		fn finalize(self) -> Self::BorrowedStorage {
 			// Delegate to `CompleteSerializerTrait`'s implementation
-			#ns CompleteSerializerTrait::do_finalize(self)
+			ser_traits::CompleteSerializerTrait::do_finalize(self)
 		}
 	}
 }
@@ -72,7 +72,7 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>, ns: &TokenStream) -> Toke
 		#pos_tracking_impl
 
 		const _: () = {
-			use #ns {CompleteSerializerTrait, Ptrs, PtrSerializer, WritableSerializer};
+			use #ns ser_traits::{CompleteSerializerTrait, Ptrs, PtrSerializer, WritableSerializer};
 
 			#[automatically_derived]
 			impl #impl_generics PtrSerializer for #ser #type_generics #where_clause {

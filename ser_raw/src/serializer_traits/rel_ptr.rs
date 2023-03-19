@@ -1,6 +1,6 @@
 use std::mem;
 
-use crate::{storage::ContiguousStorage, util::is_aligned_to, PosTrackingSerializer};
+use crate::{ser_traits::PosTrackingSerializer, storage::ContiguousStorage, util::is_aligned_to};
 
 /// Trait for serializers which overwrite pointers in output.
 ///

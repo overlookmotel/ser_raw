@@ -1,7 +1,9 @@
 use std::mem;
 
 use crate::{
-	storage::ContiguousStorage, util::is_aligned_to, PosTrackingSerializer, WritableSerializer,
+	ser_traits::{PosTrackingSerializer, WritableSerializer},
+	storage::ContiguousStorage,
+	util::is_aligned_to,
 };
 
 /// Trait for serializers that produce a buffer which is a complete valid
