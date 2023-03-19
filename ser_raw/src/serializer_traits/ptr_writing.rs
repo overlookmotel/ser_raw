@@ -2,7 +2,7 @@ use std::slice;
 
 use crate::{
 	pos::{Addr, PosMapping},
-	ser_traits::PosTrackingSerializer,
+	ser_traits::PosTracking,
 	storage::Storage,
 	Serialize,
 };
@@ -11,7 +11,7 @@ use crate::{
 ///
 /// Used by `CompleteSerializer` and `PtrOffsetSerializer`, provided by this
 /// crate.
-pub trait PtrSerializer: PosTrackingSerializer {
+pub trait PtrWriting: PosTracking {
 	/// Overwrite a pointer in output.
 	///
 	/// # Safety

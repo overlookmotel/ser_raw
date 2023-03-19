@@ -1,7 +1,7 @@
 use std::mem;
 
 use crate::{
-	ser_traits::{PosTrackingSerializer, WritableSerializer},
+	ser_traits::{PosTracking, Writable},
 	storage::ContiguousStorage,
 	util::is_aligned_to,
 };
@@ -9,7 +9,7 @@ use crate::{
 /// Trait for serializers that produce a buffer which is a complete valid
 /// representation of the input, which can be cast to a `&T` without any
 /// deserialization.
-pub trait CompleteSerializer: PosTrackingSerializer + WritableSerializer
+pub trait Complete: PosTracking + Writable
 where Self::Storage: ContiguousStorage
 {
 	// Get reference to record of pointers written.

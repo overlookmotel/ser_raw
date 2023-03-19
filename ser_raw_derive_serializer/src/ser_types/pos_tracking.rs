@@ -4,7 +4,7 @@ use syn::{DeriveInput, Field};
 
 use crate::common::get_tagged_field;
 
-pub fn get_tracking_ser_impl(
+pub fn get_pos_tracking_ser_impl(
 	input: &DeriveInput,
 	fields: &Vec<Field>,
 ) -> (TokenStream, TokenStream) {
@@ -16,16 +16,16 @@ fn get_methods() -> TokenStream {
 		// Position tracking serializers don't need a functional `Addr`
 		type Addr = _ser_raw::pos::NoopAddr;
 
-		// Delegate all methods to `PosTrackingSerializer`'s implementation
+		// Delegate all methods to `PosTracking` trait's implementation
 
 		#[inline]
 		fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
-			ser_traits::PosTrackingSerializer::do_serialize_value(self, value);
+			ser_traits::PosTracking::do_serialize_value(self, value);
 		}
 
 		#[inline]
 		fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
-			ser_traits::PosTrackingSerializer::do_push_slice(self, slice, ptr_addr);
+			ser_traits::PosTracking::do_push_slice(self, slice, ptr_addr);
 		}
 
 		#[inline]
@@ -35,12 +35,12 @@ fn get_methods() -> TokenStream {
 			ptr_addr: Self::Addr,
 			process: P,
 		) {
-			ser_traits::PosTrackingSerializer::do_push_and_process_slice(self, slice, ptr_addr, process);
+			ser_traits::PosTracking::do_push_and_process_slice(self, slice, ptr_addr, process);
 		}
 	}
 }
 
-/// Implement `PosTrackingSerializer` trait
+/// Implement `PosTracking` trait
 pub fn impl_pos_tracking(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
 	let (pos_mapping, ..) = get_tagged_field(fields, "ser_pos_mapping");
 
@@ -49,11 +49,11 @@ pub fn impl_pos_tracking(input: &DeriveInput, fields: &Vec<Field>) -> TokenStrea
 
 	quote! {
 		const _: () = {
-			use ser_traits::PosTrackingSerializer;
+			use ser_traits::PosTracking;
 			use _ser_raw::pos::PosMapping;
 
 			#[automatically_derived]
-			impl #impl_generics PosTrackingSerializer for #ser #type_generics #where_clause {
+			impl #impl_generics PosTracking for #ser #type_generics #where_clause {
 				/// Get current position mapping
 				#[inline]
 				fn pos_mapping(&self) -> &PosMapping {

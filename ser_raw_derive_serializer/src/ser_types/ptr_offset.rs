@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{DeriveInput, Field};
 
-use super::tracking::impl_pos_tracking;
+use super::pos_tracking::impl_pos_tracking;
 
 pub fn get_ptr_offset_ser_impl(
 	input: &DeriveInput,
@@ -16,15 +16,15 @@ fn get_methods() -> TokenStream {
 		// Pointer-writing serializers need a functional `Addr`
 		type Addr = _ser_raw::pos::TrackingAddr;
 
-		// Delegate all methods to `PtrSerializer`'s implementation
+		// Delegate all methods to `PtrWriting` trait's implementation
 
 		fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
-			ser_traits::PtrSerializer::do_serialize_value(self, value);
+			ser_traits::PtrWriting::do_serialize_value(self, value);
 		}
 
 		#[inline]
 		fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
-			ser_traits::PtrSerializer::do_push_slice(self, slice, ptr_addr);
+			ser_traits::PtrWriting::do_push_slice(self, slice, ptr_addr);
 		}
 
 		#[inline]
@@ -34,7 +34,7 @@ fn get_methods() -> TokenStream {
 			ptr_addr: Self::Addr,
 			process: P,
 		) {
-			ser_traits::PtrSerializer::do_push_and_process_slice(self, slice, ptr_addr, process);
+			ser_traits::PtrWriting::do_push_and_process_slice(self, slice, ptr_addr, process);
 		}
 	}
 }
@@ -49,10 +49,10 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
 		#pos_tracking_impl
 
 		const _: () = {
-			use ser_traits::PtrSerializer;
+			use ser_traits::{PtrOffset, PtrWriting};
 
 			#[automatically_derived]
-			impl #impl_generics PtrSerializer for #ser #type_generics #where_clause {
+			impl #impl_generics PtrWriting for #ser #type_generics #where_clause {
 				/// Overwrite pointer.
 				///
 				/// # Safety
@@ -63,13 +63,13 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
 				/// * `ptr_pos` must be aligned for a pointer.
 				#[inline]
 				unsafe fn write_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
-					// Delegate to `PtrOffsetSerializer` trait's implementation
-					ser_traits::PtrOffsetSerializer::do_write_ptr(self, ptr_pos, target_pos);
+					// Delegate to `PtrOffset` trait's implementation
+					PtrOffset::do_write_ptr(self, ptr_pos, target_pos);
 				}
 			}
 
 			#[automatically_derived]
-			impl #impl_generics ser_traits::PtrOffsetSerializer for #ser #type_generics #where_clause {}
+			impl #impl_generics PtrOffset for #ser #type_generics #where_clause {}
 		};
 	}
 }
