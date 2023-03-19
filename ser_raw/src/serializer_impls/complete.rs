@@ -3,7 +3,7 @@ use std::borrow::BorrowMut;
 use crate::{
 	pos::PosMapping,
 	storage::{AlignedVec, Storage},
-	PtrsRecord, Serialize, Serializer,
+	Ptrs, Serialize, Serializer,
 };
 
 /// Serializer that produces a buffer which is a complete valid representation
@@ -27,7 +27,7 @@ pub struct CompleteSerializer<
 	#[ser_pos_mapping]
 	pos_mapping: PosMapping,
 	#[ser_ptrs]
-	ptrs_record: PtrsRecord,
+	ptrs: Ptrs,
 }
 
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
@@ -43,7 +43,7 @@ impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
 		Self {
 			storage: AlignedVec::new(),
 			pos_mapping: PosMapping::dummy(),
-			ptrs_record: PtrsRecord::new(),
+			ptrs: Ptrs::new(),
 		}
 	}
 
@@ -61,7 +61,7 @@ impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
 		Self {
 			storage: AlignedVec::with_capacity(capacity),
 			pos_mapping: PosMapping::dummy(),
-			ptrs_record: PtrsRecord::new(),
+			ptrs: Ptrs::new(),
 		}
 	}
 }
@@ -87,7 +87,7 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 		Self {
 			storage,
 			pos_mapping: PosMapping::dummy(),
-			ptrs_record: PtrsRecord::new(),
+			ptrs: Ptrs::new(),
 		}
 	}
 }

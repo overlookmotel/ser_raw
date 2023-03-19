@@ -63,7 +63,7 @@ fn get_methods(ns: &TokenStream) -> TokenStream {
 fn get_impls(input: &DeriveInput, fields: &Vec<Field>, ns: &TokenStream) -> TokenStream {
 	let pos_tracking_impl = impl_pos_tracking(input, fields, ns);
 
-	let (ptrs_record, ..) = get_tagged_field(fields, "ser_ptrs");
+	let (ptrs, ..) = get_tagged_field(fields, "ser_ptrs");
 
 	let ser = &input.ident;
 	let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
@@ -72,7 +72,7 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>, ns: &TokenStream) -> Toke
 		#pos_tracking_impl
 
 		const _: () = {
-			use #ns {CompleteSerializerTrait, PtrsRecord, PtrSerializer, WritableSerializer};
+			use #ns {CompleteSerializerTrait, Ptrs, PtrSerializer, WritableSerializer};
 
 			#[automatically_derived]
 			impl #impl_generics PtrSerializer for #ser #type_generics #where_clause {
@@ -89,13 +89,13 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>, ns: &TokenStream) -> Toke
 			#[automatically_derived]
 			impl #impl_generics CompleteSerializerTrait for #ser #type_generics #where_clause {
 				#[inline]
-				fn ptrs_record(&self) -> &PtrsRecord {
-					&self.#ptrs_record
+				fn ptrs(&self) -> &Ptrs {
+					&self.#ptrs
 				}
 
 				#[inline]
-				fn ptrs_record_mut(&mut self) -> &mut PtrsRecord {
-					&mut self.#ptrs_record
+				fn ptrs_mut(&mut self) -> &mut Ptrs {
+					&mut self.#ptrs
 				}
 			}
 		};

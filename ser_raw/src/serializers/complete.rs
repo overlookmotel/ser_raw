@@ -11,10 +11,10 @@ pub trait CompleteSerializerTrait: PosTrackingSerializer + WritableSerializer
 where Self::Storage: ContiguousStorage
 {
 	// Get reference to record of pointers written.
-	fn ptrs_record(&self) -> &PtrsRecord;
+	fn ptrs(&self) -> &Ptrs;
 
 	// Get mutable reference to record of pointers written.
-	fn ptrs_record_mut(&mut self) -> &mut PtrsRecord;
+	fn ptrs_mut(&mut self) -> &mut Ptrs;
 
 	#[inline]
 	unsafe fn do_write<T>(&mut self, value: &T, addr: usize) {
@@ -49,19 +49,19 @@ where Self::Storage: ContiguousStorage
 
 		// Record position of this pointer in storage so can be adjusted later if
 		// storage grows and so moves
-		let ptrs_record = self.ptrs_record_mut();
-		if storage_addr != ptrs_record.current.addr() {
+		let ptrs = self.ptrs_mut();
+		if storage_addr != ptrs.current.addr() {
 			// Storage has moved. Create a new pointer group for new storage address.
 			// TODO: Move this to a separate function marked `#[cold]`
-			if ptrs_record.current.is_empty() {
-				ptrs_record.current.set_addr(storage_addr);
+			if ptrs.current.is_empty() {
+				ptrs.current.set_addr(storage_addr);
 			} else {
 				let new_ptr_group = PtrGroup::new(storage_addr);
-				let old_ptr_group = mem::replace(&mut ptrs_record.current, new_ptr_group);
-				ptrs_record.past.push(old_ptr_group);
+				let old_ptr_group = mem::replace(&mut ptrs.current, new_ptr_group);
+				ptrs.past.push(old_ptr_group);
 			}
 		}
-		ptrs_record.current.push_pos(ptr_pos);
+		ptrs.current.push_pos(ptr_pos);
 	}
 
 	/// Finalize the serialized output, updating any pointers which have been made
@@ -72,15 +72,15 @@ where Self::Storage: ContiguousStorage
 	fn do_finalize(mut self) -> Self::BorrowedStorage {
 		let storage_ptr = self.storage_mut().as_mut_ptr();
 
-		let ptrs_record = self.ptrs_record_mut();
+		let ptrs = self.ptrs_mut();
 
 		// Safe if all pointers have been recorded accurately
 		unsafe {
-			if ptrs_record.current.addr() != storage_ptr as usize && !ptrs_record.current.is_empty() {
-				ptrs_record.current.correct_ptrs(storage_ptr);
+			if ptrs.current.addr() != storage_ptr as usize && !ptrs.current.is_empty() {
+				ptrs.current.correct_ptrs(storage_ptr);
 			}
 
-			for ptr_group in &ptrs_record.past {
+			for ptr_group in &ptrs.past {
 				if ptr_group.addr() != storage_ptr as usize {
 					ptr_group.correct_ptrs(storage_ptr);
 				}
@@ -102,14 +102,14 @@ where Self::Storage: ContiguousStorage
 /// `past` is previous groups.
 /// Each time a change in memory address for the storage buffer is detected,
 /// `current` is added to `past` and a fresh `current` is created.
-pub struct PtrsRecord {
+pub struct Ptrs {
 	pub current: PtrGroup,
 	pub past: Vec<PtrGroup>,
 }
 
-impl PtrsRecord {
-	pub fn new() -> PtrsRecord {
-		PtrsRecord {
+impl Ptrs {
+	pub fn new() -> Ptrs {
+		Ptrs {
 			current: PtrGroup::dummy(),
 			past: Vec::new(),
 		}

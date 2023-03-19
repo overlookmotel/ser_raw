@@ -9,8 +9,8 @@ pub use serializer::Serializer;
 
 mod serializers;
 pub use serializers::{
-	CompleteSerializerTrait, PosTrackingSerializer, PtrGroup, PtrSerializer, PtrsRecord,
-	RelPtrSerializer, WritableSerializer,
+	CompleteSerializerTrait, PosTrackingSerializer, PtrGroup, PtrSerializer, Ptrs, RelPtrSerializer,
+	WritableSerializer,
 };
 
 mod serializer_impls;
