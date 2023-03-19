@@ -3,7 +3,7 @@ use std::borrow::BorrowMut;
 use crate::{
 	pos::NoopAddr,
 	storage::{AlignedVec, Storage},
-	PureCopySerializer, Serializer,
+	Serializer,
 };
 
 /// Serializer that ensures values are correctly aligned in output buffer.
@@ -103,10 +103,4 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	fn into_storage(self) -> BorrowedStorage {
 		self.storage
 	}
-}
-
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	PureCopySerializer for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStorage>
-where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
-{
 }

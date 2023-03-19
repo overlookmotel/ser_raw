@@ -3,7 +3,7 @@ use std::borrow::BorrowMut;
 use crate::{
 	pos::NoopAddr,
 	storage::{Storage, UnalignedVec},
-	PureCopySerializer, Serializer,
+	Serializer,
 };
 
 /// Serializer which does not respect alignment in the output.
@@ -79,6 +79,3 @@ where BorrowedStorage: BorrowMut<UnalignedVec>
 		self.storage
 	}
 }
-
-impl<BorrowedStorage> PureCopySerializer for UnalignedSerializer<BorrowedStorage> where BorrowedStorage: BorrowMut<UnalignedVec>
-{}

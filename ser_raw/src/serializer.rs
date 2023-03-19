@@ -33,7 +33,7 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// use ser_raw::{
 /// 	pos::NoopAddr,
 /// 	storage::{aligned_max_capacity, AlignedVec},
-/// 	PureCopySerializer, Serializer,
+/// 	Serializer,
 /// };
 ///
 /// const MAX_CAPACITY: usize = aligned_max_capacity(16);
@@ -52,8 +52,6 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// 	fn storage_mut(&mut self) -> &mut Store { &mut self.storage }
 /// 	fn into_storage(self) -> Store { self.storage }
 /// }
-///
-/// impl PureCopySerializer for MySerializer {}
 pub trait Serializer: Sized {
 	/// `Storage` which backs this serializer.
 	type Storage: Storage;
