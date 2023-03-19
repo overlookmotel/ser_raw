@@ -9,7 +9,7 @@ use crate::{
 /// Trait for serializers that produce a buffer which is a complete valid
 /// representation of the input, which can be cast to a `&T` without any
 /// deserialization.
-pub trait CompleteSerializerTrait: PosTrackingSerializer + WritableSerializer
+pub trait CompleteSerializer: PosTrackingSerializer + WritableSerializer
 where Self::Storage: ContiguousStorage
 {
 	// Get reference to record of pointers written.

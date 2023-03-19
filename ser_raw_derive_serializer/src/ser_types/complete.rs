@@ -47,14 +47,14 @@ fn get_methods() -> TokenStream {
 
 		#[inline]
 		fn write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {
-			// Delegate to `CompleteSerializerTrait`'s implementation
-			ser_traits::CompleteSerializerTrait::do_write_correction(self, write);
+			// Delegate to `CompleteSerializer` trait's implementation
+			ser_traits::CompleteSerializer::do_write_correction(self, write);
 		}
 
 		#[inline]
 		fn finalize(self) -> Self::BorrowedStorage {
-			// Delegate to `CompleteSerializerTrait`'s implementation
-			ser_traits::CompleteSerializerTrait::do_finalize(self)
+			// Delegate to `CompleteSerializer` trait's implementation
+			ser_traits::CompleteSerializer::do_finalize(self)
 		}
 	}
 }
@@ -71,14 +71,14 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
 		#pos_tracking_impl
 
 		const _: () = {
-			use ser_traits::{CompleteSerializerTrait, Ptrs, PtrSerializer, WritableSerializer};
+			use ser_traits::{Ptrs, PtrSerializer, WritableSerializer};
 
 			#[automatically_derived]
 			impl #impl_generics PtrSerializer for #ser #type_generics #where_clause {
 				#[inline]
 				unsafe fn write_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
-					// Delegate to `CompleteSerializerTrait`'s implementation
-					CompleteSerializerTrait::do_write_ptr(self, ptr_pos, target_pos);
+					// Delegate to `CompleteSerializer` trait's implementation
+					ser_traits::CompleteSerializer::do_write_ptr(self, ptr_pos, target_pos);
 				}
 			}
 
@@ -86,7 +86,7 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
 			impl #impl_generics WritableSerializer for #ser #type_generics #where_clause {}
 
 			#[automatically_derived]
-			impl #impl_generics CompleteSerializerTrait for #ser #type_generics #where_clause {
+			impl #impl_generics ser_traits::CompleteSerializer for #ser #type_generics #where_clause {
 				#[inline]
 				fn ptrs(&self) -> &Ptrs {
 					&self.#ptrs

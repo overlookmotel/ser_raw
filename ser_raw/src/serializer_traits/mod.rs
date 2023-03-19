@@ -5,6 +5,6 @@ pub use ptr::PtrSerializer;
 mod writable;
 pub use writable::WritableSerializer;
 mod complete;
-pub use complete::{CompleteSerializerTrait, PtrGroup, Ptrs};
+pub use complete::{CompleteSerializer, PtrGroup, Ptrs};
 mod rel_ptr;
 pub use rel_ptr::RelPtrSerializer;
