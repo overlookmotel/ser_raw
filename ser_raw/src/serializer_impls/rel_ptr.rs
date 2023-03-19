@@ -11,6 +11,8 @@ use crate::{
 /// buffer.
 ///
 /// See `AlignedStorage` for an explanation of the const parameters.
+// TODO: Set defaults for const params.
+// TODO: Reverse order of params - `MAX_VALUE_ALIGNMENT` before `VALUE_ALIGNMENT`.
 #[derive(Serializer)]
 #[ser_type(rel_ptr)]
 #[__local]

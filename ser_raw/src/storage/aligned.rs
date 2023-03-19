@@ -65,6 +65,9 @@ use crate::util::{align_up_to, is_aligned_to};
 /// * Cannot be 0.
 /// * Cannot be greater than `isize::MAX + 1 - STORAGE_ALIGNMENT`.
 /// * Must be a multiple of `MAX_VALUE_ALIGNMENT`.
+// TODO: Set defaults for const params.
+// TODO: Reverse order of params - `MAX_VALUE_ALIGNMENT` before
+// `VALUE_ALIGNMENT`.
 pub trait AlignedStorage<
 	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,

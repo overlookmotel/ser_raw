@@ -8,6 +8,8 @@ use crate::{
 /// Serializer that ensures values are correctly aligned in output buffer.
 ///
 /// See `AlignedStorage` for an explanation of the const parameters.
+// TODO: Set defaults for const params.
+// TODO: Reverse order of params - `MAX_VALUE_ALIGNMENT` before `VALUE_ALIGNMENT`.
 #[derive(Serializer)]
 #[ser_type(pure_copy)]
 #[__local]
