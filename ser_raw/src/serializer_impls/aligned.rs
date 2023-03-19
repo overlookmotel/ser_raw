@@ -1,7 +1,6 @@
 use std::borrow::BorrowMut;
 
 use crate::{
-	pos::NoopAddr,
 	storage::{AlignedVec, Storage},
 	Serializer,
 };
@@ -9,6 +8,9 @@ use crate::{
 /// Serializer that ensures values are correctly aligned in output buffer.
 ///
 /// See `AlignedStorage` for an explanation of the const parameters.
+#[derive(Serializer)]
+#[ser_type(pure_copy)]
+#[__local]
 pub struct AlignedSerializer<
 	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
@@ -16,6 +18,7 @@ pub struct AlignedSerializer<
 	const MAX_CAPACITY: usize,
 	BorrowedStorage: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 > {
+	#[ser_storage(AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>)]
 	storage: BorrowedStorage,
 }
 
@@ -70,37 +73,5 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	/// Create new `AlignedSerializer` from an existing `BorrowMut<AlignedVec>`.
 	pub fn from_storage(storage: BorrowedStorage) -> Self {
 		Self { storage }
-	}
-}
-
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	Serializer for AlignedSerializer<SA, VA, MVA, MAX, BorrowedStorage>
-where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
-{
-	/// `Storage` which backs this serializer.
-	type Storage = AlignedVec<SA, VA, MVA, MAX>;
-	type BorrowedStorage = BorrowedStorage;
-
-	/// Pure copy serializers do not record pointers,
-	/// so have no need for a functional `Addr`.
-	type Addr = NoopAddr;
-
-	/// Get immutable ref to `AlignedVec` backing this serializer.
-	#[inline]
-	fn storage(&self) -> &Self::Storage {
-		self.storage.borrow()
-	}
-
-	/// Get mutable ref to `AlignedVec` backing this serializer.
-	#[inline]
-	fn storage_mut(&mut self) -> &mut Self::Storage {
-		self.storage.borrow_mut()
-	}
-
-	/// Consume Serializer and return the backing storage as a
-	/// `BorrowMut<Storage>`.
-	#[inline]
-	fn into_storage(self) -> BorrowedStorage {
-		self.storage
 	}
 }

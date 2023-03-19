@@ -1,7 +1,6 @@
 use std::borrow::BorrowMut;
 
 use crate::{
-	pos::NoopAddr,
 	storage::{Storage, UnalignedVec},
 	Serializer,
 };
@@ -13,7 +12,11 @@ use crate::{
 /// If most of the allocated types you're serializing share the
 /// same alignment, performance of `AlignedSerializer`, which
 /// does respect alignment, is likely to be almost exactly the same.
+#[derive(Serializer)]
+#[ser_type(pure_copy)]
+#[__local]
 pub struct UnalignedSerializer<BorrowedStorage: BorrowMut<UnalignedVec>> {
+	#[ser_storage(UnalignedVec)]
 	storage: BorrowedStorage,
 }
 
@@ -46,36 +49,5 @@ where BorrowedStorage: BorrowMut<UnalignedVec>
 	/// `BorrowMut<UnalignedVec>`.
 	pub fn from_storage(storage: BorrowedStorage) -> Self {
 		Self { storage }
-	}
-}
-
-impl<BorrowedStorage> Serializer for UnalignedSerializer<BorrowedStorage>
-where BorrowedStorage: BorrowMut<UnalignedVec>
-{
-	/// `Storage` which backs this serializer.
-	type Storage = UnalignedVec;
-	type BorrowedStorage = BorrowedStorage;
-
-	/// Pure copy serializers do not record pointers,
-	/// so have no need for a functional `Addr`.
-	type Addr = NoopAddr;
-
-	/// Get immutable ref to `UnalignedVec` backing this serializer.
-	#[inline]
-	fn storage(&self) -> &UnalignedVec {
-		self.storage.borrow()
-	}
-
-	/// Get mutable ref to `UnalignedVec` backing this serializer.
-	#[inline]
-	fn storage_mut(&mut self) -> &mut UnalignedVec {
-		self.storage.borrow_mut()
-	}
-
-	/// Consume Serializer and return the backing storage as a
-	/// `BorrowMut<Storage>`.
-	#[inline]
-	fn into_storage(self) -> BorrowedStorage {
-		self.storage
 	}
 }

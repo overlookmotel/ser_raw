@@ -1,9 +1,9 @@
 use std::borrow::BorrowMut;
 
 use crate::{
-	pos::{PosMapping, TrackingAddr},
+	pos::PosMapping,
 	storage::{AlignedVec, Storage},
-	PosTrackingSerializer, PtrSerializer, RelPtrSerializer, Serialize, Serializer,
+	Serialize, Serializer,
 };
 
 /// Serializer that ensures values are correctly aligned in output buffer
@@ -11,6 +11,9 @@ use crate::{
 /// buffer.
 ///
 /// See `AlignedStorage` for an explanation of the const parameters.
+#[derive(Serializer)]
+#[ser_type(rel_ptr)]
+#[__local]
 pub struct AlignedRelPtrSerializer<
 	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
@@ -18,7 +21,9 @@ pub struct AlignedRelPtrSerializer<
 	const MAX_CAPACITY: usize,
 	BorrowedStorage: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
 > {
+	#[ser_storage(AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>)]
 	storage: BorrowedStorage,
+	#[ser_pos_mapping]
 	pos_mapping: PosMapping,
 }
 
@@ -80,99 +85,4 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 			pos_mapping: PosMapping::dummy(),
 		}
 	}
-}
-
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	Serializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
-where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
-{
-	/// `Storage` which backs this serializer.
-	type Storage = AlignedVec<SA, VA, MVA, MAX>;
-	type BorrowedStorage = BorrowedStorage;
-
-	/// Pointer serializers do record pointers, so need a functional `Addr`.
-	type Addr = TrackingAddr;
-
-	fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
-		// Delegate to `PtrSerializer`'s implementation
-		PtrSerializer::do_serialize_value(self, value);
-	}
-
-	// Skip recording position mapping here because no further processing of the
-	// slice, but still write pointer
-	#[inline]
-	fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
-		// Delegate to `PtrSerializer`'s implementation
-		PtrSerializer::do_push_slice(self, slice, ptr_addr);
-	}
-
-	#[inline]
-	fn push_and_process_slice<T, P: FnOnce(&mut Self)>(
-		&mut self,
-		slice: &[T],
-		ptr_addr: Self::Addr,
-		process: P,
-	) {
-		// Delegate to `PtrSerializer`'s implementation
-		PtrSerializer::do_push_and_process_slice(self, slice, ptr_addr, process);
-	}
-
-	/// Get immutable ref to `AlignedVec` backing this serializer.
-	#[inline]
-	fn storage(&self) -> &Self::Storage {
-		self.storage.borrow()
-	}
-
-	/// Get mutable ref to `AlignedVec` backing this serializer.
-	#[inline]
-	fn storage_mut(&mut self) -> &mut Self::Storage {
-		self.storage.borrow_mut()
-	}
-
-	/// Consume Serializer and return the backing storage as a
-	/// `BorrowMut<Storage>`.
-	#[inline]
-	fn into_storage(self) -> BorrowedStorage {
-		self.storage
-	}
-}
-
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	PtrSerializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
-where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
-{
-	/// Overwrite pointer.
-	///
-	/// # Safety
-	///
-	/// * `ptr_pos` and `target_pos` must both sit within bounds of output.
-	/// * `target_pos` must be location of a valid value for the type being
-	///   pointed to.
-	/// * `ptr_pos` must be aligned for a pointer.
-	#[inline]
-	unsafe fn write_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
-		// Delegate to `RelPtrSerializer` implementation
-		RelPtrSerializer::do_write_ptr(self, ptr_pos, target_pos);
-	}
-}
-
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	PosTrackingSerializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
-where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
-{
-	/// Get current position mapping
-	fn pos_mapping(&self) -> &PosMapping {
-		&self.pos_mapping
-	}
-
-	/// Set current position mapping
-	fn set_pos_mapping(&mut self, pos_mapping: PosMapping) {
-		self.pos_mapping = pos_mapping;
-	}
-}
-
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	RelPtrSerializer for AlignedRelPtrSerializer<SA, VA, MVA, MAX, BorrowedStorage>
-where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
-{
 }
