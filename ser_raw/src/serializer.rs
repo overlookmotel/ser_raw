@@ -32,7 +32,7 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// ```
 /// use ser_raw::{
 /// 	pos::NoopAddr,
-/// 	storage::{aligned_max_capacity, AlignedVec},
+/// 	storage::{aligned_max_capacity, AlignedVec, Storage},
 /// 	Serializer,
 /// };
 ///
