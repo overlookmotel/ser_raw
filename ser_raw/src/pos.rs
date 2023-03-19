@@ -125,7 +125,7 @@ impl Addr for NoopAddr {
 }
 
 /// A record of pointers written to storage which may require correction if
-/// storage grows during serializtion and its memory address changes.
+/// storage grows during serialization and its memory address changes.
 ///
 /// `current` is the group of of pointers currently in use.
 /// `past` is previous groups.
