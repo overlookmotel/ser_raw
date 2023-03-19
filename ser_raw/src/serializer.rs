@@ -69,7 +69,62 @@ pub trait Serializer: Sized {
 
 	/// Serialize a value and all its dependencies.
 	///
-	/// The entry point for serializing, which user will call.
+	/// This is the entry point for serializing, when serializing a single value.
+	///
+	/// Consume `Serializer` and return backing storage as
+	/// `BorrowMut<Storage>`.
+	///
+	/// # Example
+	///
+	/// ```
+	/// use ser_raw::{
+	/// 	storage::Storage,
+	/// 	AlignedSerializer, Serialize, Serializer,
+	/// };
+	///
+	/// #[derive(Serialize)]
+	/// struct Foo {
+	/// 	small: u8,
+	/// 	big: u32,
+	/// }
+	///
+	/// let mut ser = AlignedSerializer::<16, 8, 16, 1024, _>::new();
+	/// let storage = ser.serialize(&Foo { small: 1, big: 2 });
+	/// assert_eq!(storage.len(), 8);
+	/// ```
+	fn serialize<T: Serialize<Self>>(mut self, value: &T) -> Self::BorrowedStorage {
+		self.serialize_value(value);
+		self.finalize()
+	}
+
+	/// Serialize a value and all its dependencies.
+	///
+	/// This is the entry point for serializing, when serializing multiple values
+	/// with a single `Serializer`.
+	///
+	/// Call `serialize_value` multiple times, and then `finalize` to get output.
+	///
+	/// # Example
+	///
+	/// ```
+	/// use ser_raw::{
+	/// 	storage::Storage,
+	/// 	AlignedSerializer, Serialize, Serializer,
+	/// };
+	///
+	/// #[derive(Serialize)]
+	/// struct Foo {
+	/// 	small: u8,
+	/// 	big: u32,
+	/// }
+	///
+	/// let mut ser = AlignedSerializer::<16, 8, 16, 1024, _>::new();
+	/// ser.serialize_value(&Foo { small: 1, big: 2 });
+	/// ser.serialize_value(&Foo { small: 3, big: 4 });
+	/// let storage = ser.finalize();
+	/// assert_eq!(storage.len(), 16);
+	/// ```
+	// TODO: This should return position of serialized value in output.
 	fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
 		self.push_raw(value);
 		value.serialize_data(self);
