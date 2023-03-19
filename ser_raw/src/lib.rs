@@ -7,8 +7,8 @@ pub use ser_raw_derive_serializer::Serializer;
 mod serializer;
 pub use serializer::Serializer;
 
-mod serializers;
-pub use serializers::{
+mod serializer_traits;
+pub use serializer_traits::{
 	CompleteSerializerTrait, PosTrackingSerializer, PtrGroup, PtrSerializer, Ptrs, RelPtrSerializer,
 	WritableSerializer,
 };
