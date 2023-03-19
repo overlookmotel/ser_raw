@@ -27,23 +27,27 @@ fn serializer_impl(input: DeriveInput) -> TokenStream {
 	let (storage_field_name, storage_type, borrowed_storage_type) = get_storage_field(&fields);
 
 	// Get extra methods, associated types and impls depending on serializer type
-	let ns = get_namespace(&input);
 	let (methods_and_types, impls) = match ser_type {
-		SerializerType::PureCopy => get_pure_copy_ser_impl(&ns),
-		SerializerType::Tracking => get_tracking_ser_impl(&input, &fields, &ns),
-		SerializerType::RelPtr => get_rel_ptr_ser_impl(&input, &fields, &ns),
-		SerializerType::Complete => get_complete_ser_impl(&input, &fields, &ns),
+		SerializerType::PureCopy => get_pure_copy_ser_impl(),
+		SerializerType::Tracking => get_tracking_ser_impl(&input, &fields),
+		SerializerType::RelPtr => get_rel_ptr_ser_impl(&input, &fields),
+		SerializerType::Complete => get_complete_ser_impl(&input, &fields),
 	};
 
 	// Implement `Serializer`
 	let ser = &input.ident;
+	let ns = get_namespace(&input);
 	let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
 
 	quote! {
+		#[allow(unused_imports)]
 		const _: () = {
-			use ::std::borrow::{Borrow, BorrowMut};
-			#[allow(unused_imports)]
-			use #ns {Serializer, ser_traits};
+			// `ser_raw` can be accessed hygenically as `_ser_raw`,
+			// when macro used within `ser_raw`'s own codebase, or externally
+			use #ns as _ser_raw;
+			// Expose `ser_traits` for use within `methods_and_types` and `impls`,
+			// as it's commonly used
+			use _ser_raw::{Serializer, ser_traits};
 
 			#[automatically_derived]
 			impl #impl_generics Serializer for #ser #type_generics #where_clause {
@@ -54,11 +58,13 @@ fn serializer_impl(input: DeriveInput) -> TokenStream {
 
 				#[inline]
 				fn storage(&self) -> &#storage_type {
+					use ::std::borrow::Borrow;
 					self.#storage_field_name.borrow()
 				}
 
 				#[inline]
 				fn storage_mut(&mut self) -> &mut #storage_type {
+					use ::std::borrow::BorrowMut;
 					self.#storage_field_name.borrow_mut()
 				}
 
@@ -67,9 +73,9 @@ fn serializer_impl(input: DeriveInput) -> TokenStream {
 					self.#storage_field_name
 				}
 			}
-		};
 
-		#impls
+			#impls
+		};
 	}
 }
 

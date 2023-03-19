@@ -7,15 +7,14 @@ use crate::common::get_tagged_field;
 pub fn get_tracking_ser_impl(
 	input: &DeriveInput,
 	fields: &Vec<Field>,
-	ns: &TokenStream,
 ) -> (TokenStream, TokenStream) {
-	(get_methods(ns), impl_pos_tracking(input, fields, ns))
+	(get_methods(), impl_pos_tracking(input, fields))
 }
 
-fn get_methods(ns: &TokenStream) -> TokenStream {
+fn get_methods() -> TokenStream {
 	quote! {
 		// Position tracking serializers don't need a functional `Addr`
-		type Addr = #ns pos::NoopAddr;
+		type Addr = _ser_raw::pos::NoopAddr;
 
 		// Delegate all methods to `PosTrackingSerializer`'s implementation
 
@@ -42,11 +41,7 @@ fn get_methods(ns: &TokenStream) -> TokenStream {
 }
 
 /// Implement `PosTrackingSerializer` trait
-pub fn impl_pos_tracking(
-	input: &DeriveInput,
-	fields: &Vec<Field>,
-	ns: &TokenStream,
-) -> TokenStream {
+pub fn impl_pos_tracking(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
 	let (pos_mapping, ..) = get_tagged_field(fields, "ser_pos_mapping");
 
 	let ser = &input.ident;
@@ -54,8 +49,8 @@ pub fn impl_pos_tracking(
 
 	quote! {
 		const _: () = {
-			use #ns ser_traits::PosTrackingSerializer;
-			use #ns pos::PosMapping;
+			use ser_traits::PosTrackingSerializer;
+			use _ser_raw::pos::PosMapping;
 
 			#[automatically_derived]
 			impl #impl_generics PosTrackingSerializer for #ser #type_generics #where_clause {

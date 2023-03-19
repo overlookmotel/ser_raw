@@ -1,12 +1,12 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-pub fn get_pure_copy_ser_impl(ns: &TokenStream) -> (TokenStream, TokenStream) {
-	(get_methods(ns), quote! {})
+pub fn get_pure_copy_ser_impl() -> (TokenStream, TokenStream) {
+	(get_methods(), quote! {})
 }
 
-fn get_methods(ns: &TokenStream) -> TokenStream {
+fn get_methods() -> TokenStream {
 	quote! {
-		type Addr = #ns pos::NoopAddr;
+		type Addr = _ser_raw::pos::NoopAddr;
 	}
 }

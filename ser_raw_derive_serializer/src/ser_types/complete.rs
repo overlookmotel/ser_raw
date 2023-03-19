@@ -8,15 +8,14 @@ use crate::common::get_tagged_field;
 pub fn get_complete_ser_impl(
 	input: &DeriveInput,
 	fields: &Vec<Field>,
-	ns: &TokenStream,
 ) -> (TokenStream, TokenStream) {
-	(get_methods(ns), get_impls(input, fields, ns))
+	(get_methods(), get_impls(input, fields))
 }
 
-fn get_methods(ns: &TokenStream) -> TokenStream {
+fn get_methods() -> TokenStream {
 	quote! {
 		// Pointer-writing serializers need a functional `Addr`
-		type Addr = #ns pos::TrackingAddr;
+		type Addr = _ser_raw::pos::TrackingAddr;
 
 		fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
 			// Delegate to `PtrSerializer`'s implementation
@@ -60,8 +59,8 @@ fn get_methods(ns: &TokenStream) -> TokenStream {
 	}
 }
 
-fn get_impls(input: &DeriveInput, fields: &Vec<Field>, ns: &TokenStream) -> TokenStream {
-	let pos_tracking_impl = impl_pos_tracking(input, fields, ns);
+fn get_impls(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
+	let pos_tracking_impl = impl_pos_tracking(input, fields);
 
 	let (ptrs, ..) = get_tagged_field(fields, "ser_ptrs");
 
@@ -72,7 +71,7 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>, ns: &TokenStream) -> Toke
 		#pos_tracking_impl
 
 		const _: () = {
-			use #ns ser_traits::{CompleteSerializerTrait, Ptrs, PtrSerializer, WritableSerializer};
+			use ser_traits::{CompleteSerializerTrait, Ptrs, PtrSerializer, WritableSerializer};
 
 			#[automatically_derived]
 			impl #impl_generics PtrSerializer for #ser #type_generics #where_clause {

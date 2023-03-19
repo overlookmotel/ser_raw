@@ -63,10 +63,10 @@ pub fn get_ser_type(input: &DeriveInput) -> SerializerType {
 }
 
 /// Get namespace for hygienic references to `ser_raw`'s exports.
-/// Usually this will be `::ser_raw::`.
+/// Usually this will be `::ser_raw`.
 /// However, `::ser_raw::Serializer` doesn't work within `ser_raw` crate itself.
 /// When macros are used within `ser_raw`'s own codebase, the structs are tagged
-/// `#[__local]`, and then a `crate::` namespace is used instead.
+/// `#[__local]`, and then a `crate` namespace is used instead.
 pub fn get_namespace(input: &DeriveInput) -> TokenStream {
 	let is_local = input
 		.attrs
@@ -75,8 +75,8 @@ pub fn get_namespace(input: &DeriveInput) -> TokenStream {
 		.next()
 		.is_some();
 	match is_local {
-		true => quote! {crate::},
-		false => quote! {::ser_raw::},
+		true => quote! {crate},
+		false => quote! {::ser_raw},
 	}
 }
 

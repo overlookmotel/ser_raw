@@ -7,15 +7,14 @@ use super::tracking::impl_pos_tracking;
 pub fn get_rel_ptr_ser_impl(
 	input: &DeriveInput,
 	fields: &Vec<Field>,
-	ns: &TokenStream,
 ) -> (TokenStream, TokenStream) {
-	(get_methods(ns), get_impls(input, fields, ns))
+	(get_methods(), get_impls(input, fields))
 }
 
-fn get_methods(ns: &TokenStream) -> TokenStream {
+fn get_methods() -> TokenStream {
 	quote! {
 		// Pointer-writing serializers need a functional `Addr`
-		type Addr = #ns pos::TrackingAddr;
+		type Addr = _ser_raw::pos::TrackingAddr;
 
 		// Delegate all methods to `PtrSerializer`'s implementation
 
@@ -40,8 +39,8 @@ fn get_methods(ns: &TokenStream) -> TokenStream {
 	}
 }
 
-fn get_impls(input: &DeriveInput, fields: &Vec<Field>, ns: &TokenStream) -> TokenStream {
-	let pos_tracking_impl = impl_pos_tracking(input, fields, ns);
+fn get_impls(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
+	let pos_tracking_impl = impl_pos_tracking(input, fields);
 
 	let ser = &input.ident;
 	let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
@@ -50,7 +49,7 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>, ns: &TokenStream) -> Toke
 		#pos_tracking_impl
 
 		const _: () = {
-			use #ns ser_traits::{PtrSerializer, RelPtrSerializer};
+			use ser_traits::{PtrSerializer, RelPtrSerializer};
 
 			#[automatically_derived]
 			impl #impl_generics PtrSerializer for #ser #type_generics #where_clause {
