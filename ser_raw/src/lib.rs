@@ -1,6 +1,7 @@
-// Derive macro for `Serialize`
+// Derive macros
 #[cfg(feature = "derive")]
 pub use ser_raw_derive::Serialize;
+pub use ser_raw_derive_serializer::Serializer;
 
 // Export Serializers, Storage, traits, and utils
 mod serializer;

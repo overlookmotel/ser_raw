@@ -1,2 +1,2 @@
 [workspace]
-members = ["ser_raw", "ser_raw_derive"]
+members = ["ser_raw", "ser_raw_derive", "ser_raw_derive_serializer"]

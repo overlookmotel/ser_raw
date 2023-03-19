@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 ser_raw_derive = { path = "../ser_raw_derive", optional = true }
+ser_raw_derive_serializer = { path = "../ser_raw_derive_serializer" }
 
 [dev-dependencies]
 num-bigint = "0.4.3" # Required for doctests
