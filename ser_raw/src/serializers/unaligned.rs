@@ -5,12 +5,15 @@ use crate::{
 	Serializer,
 };
 
-/// Serializer which does not respect alignment in the output.
+/// Simple serializer that just copies values, with no position tracking or
+/// pointer correction.
 ///
-/// Values are likely not be aligned as their types require.
+/// Unlike `PureCopySerializer`, `UnalignedSerializer` does not respect
+/// alignment in the output. Values are likely not be aligned as their types
+/// require.
 ///
 /// If most of the allocated types you're serializing share the
-/// same alignment, performance of `AlignedSerializer`, which
+/// same alignment, performance of `PureCopySerializer`, which
 /// does respect alignment, is likely to be almost exactly the same.
 #[derive(Serializer)]
 #[ser_type(pure_copy)]

@@ -135,7 +135,8 @@ pub trait AlignedStorage<
 	};
 }
 
-/// Aligned contiguous memory buffer. Used by `AlignedSerializer`.
+/// Aligned contiguous memory buffer. Used as backing storage by all of the
+/// Serializers provided by this crate, except for `UnalignedSerializer`.
 ///
 /// A wrapper around rkyv's `AlignedByteVec` which ensures all values pushed to
 /// the storage are correctly aligned.

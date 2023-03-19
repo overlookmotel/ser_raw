@@ -9,7 +9,7 @@ pub use serializer::Serializer;
 
 mod serializers;
 pub use serializers::{
-	AlignedRelPtrSerializer, AlignedSerializer, CompleteSerializer, UnalignedSerializer,
+	AlignedRelPtrSerializer, CompleteSerializer, PureCopySerializer, UnalignedSerializer,
 };
 
 mod serializer_traits;

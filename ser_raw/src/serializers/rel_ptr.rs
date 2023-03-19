@@ -32,7 +32,7 @@ pub struct AlignedRelPtrSerializer<
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
 	AlignedRelPtrSerializer<SA, VA, MVA, MAX, AlignedVec<SA, VA, MVA, MAX>>
 {
-	/// Create new `AlignedSerializer` with no memory pre-allocated.
+	/// Create new `AlignedRelPtrSerializer` with no memory pre-allocated.
 	///
 	/// If you know, or can estimate, the amount of buffer space that's going to
 	/// be needed in advance, allocating upfront with `with_capacity` can
@@ -45,8 +45,8 @@ impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
 		}
 	}
 
-	/// Create new `AlignedSerializer` with buffer pre-allocated with capacity of
-	/// at least `capacity` bytes.
+	/// Create new `AlignedRelPtrSerializer` with buffer pre-allocated with
+	/// capacity of at least `capacity` bytes.
 	///
 	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
 	///

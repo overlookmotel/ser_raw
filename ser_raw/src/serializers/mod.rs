@@ -1,5 +1,5 @@
-mod aligned;
-pub use aligned::AlignedSerializer;
+mod pure_copy;
+pub use pure_copy::PureCopySerializer;
 mod unaligned;
 pub use unaligned::UnalignedSerializer;
 mod rel_ptr;

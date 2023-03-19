@@ -18,7 +18,7 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 ///
 /// Default implementation of all other methods delegates calls to the
 /// underlying `Storage`. This produces the behavior of a "pure copy" serializer
-/// (e.g. `AlignedSerializer` or `UnalignedSerializer` provided by this crate).
+/// (e.g. `PureCopySerializer` or `UnalignedSerializer` provided by this crate).
 ///
 /// Other methods can be overriden to produce more complicated behavior, as is
 /// the case with other serializers this crate provides e.g.
@@ -26,8 +26,7 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 ///
 /// # Example
 ///
-/// This is a simplified version of the `AlignedSerializer` type provided by
-/// this crate:
+/// This is a slightly simplified version of `PureCopySerializer`:
 ///
 /// ```
 /// use ser_raw::{
@@ -79,7 +78,7 @@ pub trait Serializer: Sized {
 	/// ```
 	/// use ser_raw::{
 	/// 	storage::Storage,
-	/// 	AlignedSerializer, Serialize, Serializer,
+	/// 	PureCopySerializer, Serialize, Serializer,
 	/// };
 	///
 	/// #[derive(Serialize)]
@@ -88,7 +87,7 @@ pub trait Serializer: Sized {
 	/// 	big: u32,
 	/// }
 	///
-	/// let mut ser = AlignedSerializer::<16, 8, 16, 1024, _>::new();
+	/// let mut ser = PureCopySerializer::<16, 8, 16, 1024, _>::new();
 	/// let storage = ser.serialize(&Foo { small: 1, big: 2 });
 	/// assert_eq!(storage.len(), 8);
 	/// ```
@@ -109,7 +108,7 @@ pub trait Serializer: Sized {
 	/// ```
 	/// use ser_raw::{
 	/// 	storage::Storage,
-	/// 	AlignedSerializer, Serialize, Serializer,
+	/// 	PureCopySerializer, Serialize, Serializer,
 	/// };
 	///
 	/// #[derive(Serialize)]
@@ -118,7 +117,7 @@ pub trait Serializer: Sized {
 	/// 	big: u32,
 	/// }
 	///
-	/// let mut ser = AlignedSerializer::<16, 8, 16, 1024, _>::new();
+	/// let mut ser = PureCopySerializer::<16, 8, 16, 1024, _>::new();
 	/// ser.serialize_value(&Foo { small: 1, big: 2 });
 	/// ser.serialize_value(&Foo { small: 3, big: 4 });
 	/// let storage = ser.finalize();
