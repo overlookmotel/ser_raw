@@ -63,7 +63,7 @@ fn get_methods(ns: &TokenStream) -> TokenStream {
 fn get_impls(input: &DeriveInput, fields: &Vec<Field>, ns: &TokenStream) -> TokenStream {
 	let pos_tracking_impl = impl_pos_tracking(input, fields, ns);
 
-	let (ptrs_record, ..) = get_tagged_field(fields, "ser_ptrs_record");
+	let (ptrs_record, ..) = get_tagged_field(fields, "ser_ptrs");
 
 	let ser = &input.ident;
 	let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();

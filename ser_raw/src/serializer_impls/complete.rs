@@ -26,7 +26,7 @@ pub struct CompleteSerializer<
 	storage: BorrowedStorage,
 	#[ser_pos_mapping]
 	pos_mapping: PosMapping,
-	#[ser_ptrs_record]
+	#[ser_ptrs]
 	ptrs_record: PtrsRecord,
 }
 

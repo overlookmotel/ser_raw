@@ -11,7 +11,7 @@ use ser_types::{
 
 #[proc_macro_derive(
 	Serializer,
-	attributes(ser_type, ser_storage, ser_pos_mapping, ser_ptrs_record, __local)
+	attributes(ser_type, ser_storage, ser_pos_mapping, ser_ptrs, __local)
 )]
 pub fn serializer(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let input = parse_macro_input!(input as DeriveInput);
