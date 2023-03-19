@@ -2,10 +2,11 @@ use std::mem;
 
 use crate::{ser_traits::PosTrackingSerializer, storage::ContiguousStorage, util::is_aligned_to};
 
-/// Trait for serializers which overwrite pointers in output.
+/// Trait for serializers which overwrite pointers in output with position
+/// offsets relative to start of output.
 ///
-/// Used by `CompleteSerializer` and `RelPtrSerializer`, provided by this crate.
-pub trait RelPtrSerializer: PosTrackingSerializer
+/// Used by `PtrOffsetSerializer` serializer, provided by this crate.
+pub trait PtrOffsetSerializer: PosTrackingSerializer
 where Self::Storage: ContiguousStorage
 {
 	/// Overwrite pointer.

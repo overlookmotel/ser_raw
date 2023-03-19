@@ -8,7 +8,7 @@ use syn::{
 pub enum SerializerType {
 	PureCopy,
 	Tracking,
-	RelPtr,
+	PtrOffset,
 	Complete,
 }
 
@@ -51,12 +51,12 @@ pub fn get_ser_type(input: &DeriveInput) -> SerializerType {
 	match ser_type.as_ref() {
 		"pure_copy" => SerializerType::PureCopy,
 		"tracking" => SerializerType::Tracking,
-		"rel_ptr" => SerializerType::RelPtr,
+		"ptr_offset" => SerializerType::PtrOffset,
 		"complete" => SerializerType::Complete,
 		_ => {
 			panic!(
-				"Unrecognised `#[ser_type]` type. Valid options are 'pure_copy', 'tracking', 'rel_ptr', \
-				 'complete'"
+				"Unrecognised `#[ser_type]` type. Valid options are 'pure_copy', 'tracking', \
+				 'ptr_offset', 'complete'"
 			);
 		}
 	}

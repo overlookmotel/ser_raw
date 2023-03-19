@@ -4,7 +4,7 @@ use syn::{DeriveInput, Field};
 
 use super::tracking::impl_pos_tracking;
 
-pub fn get_rel_ptr_ser_impl(
+pub fn get_ptr_offset_ser_impl(
 	input: &DeriveInput,
 	fields: &Vec<Field>,
 ) -> (TokenStream, TokenStream) {
@@ -49,7 +49,7 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
 		#pos_tracking_impl
 
 		const _: () = {
-			use ser_traits::{PtrSerializer, RelPtrSerializer};
+			use ser_traits::PtrSerializer;
 
 			#[automatically_derived]
 			impl #impl_generics PtrSerializer for #ser #type_generics #where_clause {
@@ -63,13 +63,13 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
 				/// * `ptr_pos` must be aligned for a pointer.
 				#[inline]
 				unsafe fn write_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
-					// Delegate to `RelPtrSerializer` implementation
-					RelPtrSerializer::do_write_ptr(self, ptr_pos, target_pos);
+					// Delegate to `PtrOffsetSerializer` trait's implementation
+					ser_traits::PtrOffsetSerializer::do_write_ptr(self, ptr_pos, target_pos);
 				}
 			}
 
 			#[automatically_derived]
-			impl #impl_generics RelPtrSerializer for #ser #type_generics #where_clause {}
+			impl #impl_generics ser_traits::PtrOffsetSerializer for #ser #type_generics #where_clause {}
 		};
 	}
 }

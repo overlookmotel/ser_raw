@@ -6,7 +6,7 @@ pub(crate) mod common;
 use common::{get_fields, get_namespace, get_ser_type, get_tagged_field, SerializerType};
 mod ser_types;
 use ser_types::{
-	get_complete_ser_impl, get_pure_copy_ser_impl, get_rel_ptr_ser_impl, get_tracking_ser_impl,
+	get_complete_ser_impl, get_ptr_offset_ser_impl, get_pure_copy_ser_impl, get_tracking_ser_impl,
 };
 
 #[proc_macro_derive(
@@ -30,7 +30,7 @@ fn serializer_impl(input: DeriveInput) -> TokenStream {
 	let (methods_and_types, impls) = match ser_type {
 		SerializerType::PureCopy => get_pure_copy_ser_impl(),
 		SerializerType::Tracking => get_tracking_ser_impl(&input, &fields),
-		SerializerType::RelPtr => get_rel_ptr_ser_impl(&input, &fields),
+		SerializerType::PtrOffset => get_ptr_offset_ser_impl(&input, &fields),
 		SerializerType::Complete => get_complete_ser_impl(&input, &fields),
 	};
 

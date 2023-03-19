@@ -2,7 +2,8 @@ use crate::{pos::PosMapping, storage::Storage, Serialize, Serializer};
 
 /// Trait for serializers which track position in output.
 ///
-/// Used by `CompleteSerializer` and `RelPtrSerializer`, provided by this crate.
+/// Used by `CompleteSerializer` and `PtrOffsetSerializer`, provided by this
+/// crate.
 pub trait PosTrackingSerializer: Serializer {
 	// NB: Position tracking serializers can use `NoopAddr` as `Addr` associated
 	// type, unless they are also recording pointers.

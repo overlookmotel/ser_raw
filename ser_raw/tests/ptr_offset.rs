@@ -4,7 +4,7 @@ mod common;
 use common::{generate_minecraft_data, tests, Test};
 use ser_raw::{
 	storage::{aligned_max_capacity, AlignedVec, Storage},
-	AlignedRelPtrSerializer, Serialize, Serializer,
+	PtrOffsetSerializer, Serialize, Serializer,
 };
 
 // NB: Cannot easily test for error if try to serialize a type with alignment
@@ -12,9 +12,8 @@ use ser_raw::{
 // compile time, not runtime.
 
 const MAX_CAPACITY: usize = aligned_max_capacity(16);
-
 type AlVec = AlignedVec<16, 8, 16, MAX_CAPACITY>;
-type Ser = AlignedRelPtrSerializer<16, 8, 16, MAX_CAPACITY, AlVec>;
+type Ser = PtrOffsetSerializer<16, 8, 16, MAX_CAPACITY, AlVec>;
 
 fn serialize<T: Serialize<Ser>>(value: &T) -> AlVec {
 	let mut ser = Ser::new();

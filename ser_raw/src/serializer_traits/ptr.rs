@@ -9,7 +9,8 @@ use crate::{
 
 /// Trait for serializers which overwrite pointers in output.
 ///
-/// Used by `CompleteSerializer` and `RelPtrSerializer`, provided by this crate.
+/// Used by `CompleteSerializer` and `PtrOffsetSerializer`, provided by this
+/// crate.
 pub trait PtrSerializer: PosTrackingSerializer {
 	/// Overwrite a pointer in output.
 	///

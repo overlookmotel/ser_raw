@@ -6,5 +6,5 @@ mod writable;
 pub use writable::WritableSerializer;
 mod complete;
 pub use complete::{CompleteSerializer, PtrGroup, Ptrs};
-mod rel_ptr;
-pub use rel_ptr::RelPtrSerializer;
+mod ptr_offset;
+pub use ptr_offset::PtrOffsetSerializer;
