@@ -13,8 +13,8 @@ pub use serializer_traits::{
 	WritableSerializer,
 };
 
-mod serializer_impls;
-pub use serializer_impls::{
+mod serializers;
+pub use serializers::{
 	AlignedRelPtrSerializer, AlignedSerializer, CompleteSerializer, UnalignedSerializer,
 };
 
