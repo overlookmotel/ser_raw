@@ -43,6 +43,12 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// 	storage: Store,
 /// }
 ///
+/// impl MySerializer {
+/// 	fn new() -> Self {
+/// 		Self { storage: Store::new() }
+/// 	}
+/// }
+///
 /// impl Serializer for MySerializer {
 /// 	type Storage = Store;
 /// 	type BorrowedStorage = Store;
@@ -52,6 +58,7 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// 	fn storage_mut(&mut self) -> &mut Store { &mut self.storage }
 /// 	fn into_storage(self) -> Store { self.storage }
 /// }
+/// ```
 pub trait Serializer: Sized {
 	/// `Storage` which backs this serializer.
 	type Storage: Storage;
