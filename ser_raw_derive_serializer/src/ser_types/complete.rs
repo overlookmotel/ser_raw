@@ -71,7 +71,8 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
 		#pos_tracking_impl
 
 		const _: () = {
-			use ser_traits::{Complete, Ptrs, PtrWriting, Writable};
+			use _ser_raw::pos::Ptrs;
+			use ser_traits::{Complete, PtrWriting, Writable};
 
 			#[automatically_derived]
 			impl #impl_generics PtrWriting for #ser #type_generics #where_clause {

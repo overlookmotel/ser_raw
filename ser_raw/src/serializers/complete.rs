@@ -1,8 +1,7 @@
 use std::borrow::BorrowMut;
 
 use crate::{
-	pos::PosMapping,
-	ser_traits::Ptrs,
+	pos::{PosMapping, Ptrs},
 	storage::{AlignedVec, Storage},
 	Serialize, Serializer,
 };

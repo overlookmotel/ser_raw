@@ -1,6 +1,7 @@
 use std::mem;
 
 use crate::{
+	pos::{PtrGroup, Ptrs},
 	ser_traits::{PosTracking, Writable},
 	storage::ContiguousStorage,
 	util::is_aligned_to,
@@ -96,95 +97,3 @@ where Self::Storage: ContiguousStorage
 // TODO: If also provided a `Storage` with fixed capacity which can never move,
 // recording pointers for later correction could be skipped as they'll always be
 // accurate when they're written.
-
-/// A record of pointers written to storage which may require correction if
-/// storage grows during serializtion and its memory address changes.
-///
-/// `current` is the group of of pointers currently in use.
-/// `past` is previous groups.
-/// Each time a change in memory address for the storage buffer is detected,
-/// `current` is added to `past` and a fresh `current` is created.
-pub struct Ptrs {
-	pub current: PtrGroup,
-	pub past: Vec<PtrGroup>,
-}
-
-impl Ptrs {
-	pub fn new() -> Ptrs {
-		Ptrs {
-			current: PtrGroup::dummy(),
-			past: Vec::new(),
-		}
-	}
-}
-
-/// A group of pointers which were written to storage when the memory address of
-/// the storage was `storage_addr`.
-/// Used for correcting pointers if the storage grows during serialization and
-/// its memory address changes.
-// TODO: Use `u32` for ptr positions if `MAX_CAPACITY` is less than `u32::MAX`
-pub struct PtrGroup {
-	/// Memory address of the storage at time pointers in this group were created
-	storage_addr: usize,
-	/// Positions of pointers in storage (relative to start of storage)
-	ptr_positions: Vec<usize>,
-}
-
-impl PtrGroup {
-	#[inline]
-	pub fn new(storage_addr: usize) -> Self {
-		Self {
-			storage_addr,
-			// TODO: Maybe replace with `with_capacity(32)` or similar to avoid repeated growing?
-			ptr_positions: Vec::new(),
-		}
-	}
-
-	#[inline]
-	pub fn dummy() -> Self {
-		Self::new(0)
-	}
-
-	#[inline]
-	pub fn is_empty(&self) -> bool {
-		self.ptr_positions.len() == 0
-	}
-
-	#[inline]
-	pub fn addr(&self) -> usize {
-		self.storage_addr
-	}
-
-	#[inline]
-	pub fn set_addr(&mut self, storage_addr: usize) {
-		self.storage_addr = storage_addr;
-	}
-
-	#[inline]
-	pub fn push_pos(&mut self, pos: usize) {
-		self.ptr_positions.push(pos);
-	}
-
-	/// Correct pointers in storage.
-	///
-	/// # Safety
-	///
-	/// All `ptr_positions` must be within the bounds of the `Storage` pointed to
-	/// by `storage_ptr`.
-	pub unsafe fn correct_ptrs(&self, storage_ptr: *mut u8) {
-		// These pointers were written when start of storage was at
-		// `ptr_group.storage_addr`. Now it's at `storage_addr`.
-		// Shift pointers' target addresses forward or backwards as required so they
-		// point to targets' current memory addresses.
-		// Using `wrapping_*` for correct maths for all possible old + new addresses,
-		// regardless of whether new addr is less than or greater than old addr.
-		// No need to cast to `isize` to handle negative shift.
-		// e.g. `old = 4`, `new = 10` -> `shift_by = 6` -> each ptr has 6 added.
-		let shift_by = (storage_ptr as usize).wrapping_sub(self.storage_addr);
-		for ptr_pos in &self.ptr_positions {
-			// TODO: Use `storage.read()` and `storage.write()` instead of this
-			let ptr = storage_ptr.add(*ptr_pos) as *mut usize;
-			*ptr = (*ptr).wrapping_add(shift_by);
-		}
-	}
-}

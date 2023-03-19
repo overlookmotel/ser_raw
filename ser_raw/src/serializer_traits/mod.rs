@@ -1,5 +1,5 @@
 mod complete;
-pub use complete::{Complete, PtrGroup, Ptrs};
+pub use complete::Complete;
 mod pos_tracking;
 pub use pos_tracking::PosTracking;
 mod ptr_offset;
