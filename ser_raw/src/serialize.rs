@@ -61,5 +61,5 @@ pub trait Serialize<Ser: Serializer> {
 /// }
 /// ```
 pub trait SerializeWith<T, Ser: Serializer> {
-	fn serialize_data_with(t: &T, serializer: &mut Ser) -> ();
+	fn serialize_data_with(value: &T, serializer: &mut Ser) -> ();
 }
