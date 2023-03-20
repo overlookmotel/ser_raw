@@ -1,3 +1,5 @@
+use std::slice;
+
 use crate::{pos::PosMapping, storage::Storage, Serialize, Serializer};
 
 /// Trait for serializers which track position in output.
@@ -30,7 +32,7 @@ pub trait PosTracking: Serializer {
 		// Push value to storage.
 		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
 		// `align_after::<T>()`.
-		let slice = ::std::slice::from_ref(value);
+		let slice = slice::from_ref(value);
 		unsafe { self.storage_mut().push_slice_unaligned(slice) };
 		self.storage_mut().align_after::<T>();
 

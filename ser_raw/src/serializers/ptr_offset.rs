@@ -3,7 +3,7 @@ use std::borrow::BorrowMut;
 use crate::{
 	pos::PosMapping,
 	storage::{AlignedVec, Storage},
-	Serialize, Serializer,
+	Serializer,
 };
 
 /// Serializer that overwrites pointers in output with position offsets,

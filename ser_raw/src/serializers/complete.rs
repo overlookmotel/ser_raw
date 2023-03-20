@@ -3,7 +3,7 @@ use std::borrow::BorrowMut;
 use crate::{
 	pos::{PosMapping, Ptrs},
 	storage::{AlignedVec, Storage},
-	Serialize, Serializer,
+	Serializer,
 };
 
 /// Serializer that produces a buffer which is a complete valid representation
