@@ -10,8 +10,8 @@ use crate::Serializer;
 /// use ser_raw::{Serialize, Serializer};
 ///
 /// struct Foo {
-///   smalls: Vec<u8>,
-///   bigs: Vec<u32>,
+/// 	smalls: Vec<u8>,
+/// 	bigs: Vec<u32>,
 /// }
 ///
 /// impl<S> Serialize<S> for Foo

@@ -13,18 +13,19 @@ where
 }
 
 macro_rules! impl_tuple {
-  ($($idx:tt $t:ident),+) => {
-    impl<$($t,)+ Ser> Serialize<Ser> for ($($t,)+)
-    where Ser: Serializer,
-      $($t: Serialize<Ser>,)+
-    {
-      fn serialize_data(&self, serializer: &mut Ser) {
-      	$(
-          self.$idx.serialize_data(serializer);
+	($($idx:tt $t:ident),+) => {
+		#[doc(hidden)]
+		impl<$($t,)+ Ser> Serialize<Ser> for ($($t,)+)
+		where Ser: Serializer,
+			$($t: Serialize<Ser>,)+
+		{
+			fn serialize_data(&self, serializer: &mut Ser) {
+				$(
+					self.$idx.serialize_data(serializer);
 				)+
-      }
-    }
-  };
+			}
+		}
+	};
 }
 
 impl_tuple!(0 A);

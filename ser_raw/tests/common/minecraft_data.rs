@@ -294,41 +294,41 @@ impl_generate!(f32);
 impl_generate!(f64);
 
 macro_rules! impl_tuple {
-    () => {};
-    ($first:ident, $($rest:ident,)*) => {
-        impl<$first: Generate, $($rest: Generate,)*> Generate for ($first, $($rest,)*) {
-            fn generate<R: Rng>(rng: &mut R) -> Self {
-                ($first::generate(rng), $($rest::generate(rng),)*)
-            }
-        }
+	() => {};
+	($first:ident, $($rest:ident,)*) => {
+		impl<$first: Generate, $($rest: Generate,)*> Generate for ($first, $($rest,)*) {
+			fn generate<R: Rng>(rng: &mut R) -> Self {
+				($first::generate(rng), $($rest::generate(rng),)*)
+			}
+		}
 
-        impl_tuple!($($rest,)*);
-    };
-	}
+		impl_tuple!($($rest,)*);
+	};
+}
 
 impl_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11,);
 
 macro_rules! impl_array {
-    () => {};
-    ($len:literal, $($rest:literal,)*) => {
-        impl<T: Generate> Generate for [T; $len] {
-            fn generate<R: Rng>(rng: &mut R) -> Self {
-                let mut result = mem::MaybeUninit::<Self>::uninit();
-                let result_ptr = result.as_mut_ptr().cast::<T>();
-                for i in 0..$len {
-                    unsafe {
-                        result_ptr.add(i).write(T::generate(rng));
-                    }
-                }
-                unsafe {
-                    result.assume_init()
-                }
-            }
-        }
+	() => {};
+	($len:literal, $($rest:literal,)*) => {
+		impl<T: Generate> Generate for [T; $len] {
+			fn generate<R: Rng>(rng: &mut R) -> Self {
+				let mut result = mem::MaybeUninit::<Self>::uninit();
+				let result_ptr = result.as_mut_ptr().cast::<T>();
+				for i in 0..$len {
+					unsafe {
+						result_ptr.add(i).write(T::generate(rng));
+					}
+				}
+				unsafe {
+					result.assume_init()
+				}
+			}
+		}
 
-        impl_array!($($rest,)*);
-    }
+		impl_array!($($rest,)*);
 	}
+}
 
 impl_array!(
 	31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7,
