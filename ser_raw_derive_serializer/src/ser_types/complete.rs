@@ -18,8 +18,8 @@ fn get_methods() -> TokenStream {
 		type Addr = _ser_raw::pos::TrackingAddr;
 
 		fn serialize_value<T: _ser_raw::Serialize<Self>>(&mut self, value: &T) {
-			// Delegate to `PtrWriting` trait's implementation
-			ser_traits::PtrWriting::do_serialize_value(self, value);
+			// Delegate to `PosTracking` trait's implementation
+			ser_traits::PosTracking::do_serialize_value(self, value);
 		}
 
 		#[inline]

@@ -16,14 +16,14 @@ fn get_methods() -> TokenStream {
 		// Pointer-writing serializers need a functional `Addr`
 		type Addr = _ser_raw::pos::TrackingAddr;
 
-		// Delegate all methods to `PtrWriting` trait's implementation
-
 		fn serialize_value<T: _ser_raw::Serialize<Self>>(&mut self, value: &T) {
-			ser_traits::PtrWriting::do_serialize_value(self, value);
+			// Delegate to `PosTracking` trait's implementation
+			ser_traits::PosTracking::do_serialize_value(self, value);
 		}
 
 		#[inline]
 		fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
+			// Delegate to `PtrWriting` trait's implementation
 			ser_traits::PtrWriting::do_push_slice(self, slice, ptr_addr);
 		}
 
@@ -34,6 +34,7 @@ fn get_methods() -> TokenStream {
 			ptr_addr: Self::Addr,
 			process: P,
 		) {
+			// Delegate to `PtrWriting` trait's implementation
 			ser_traits::PtrWriting::do_push_and_process_slice(self, slice, ptr_addr, process);
 		}
 	}
