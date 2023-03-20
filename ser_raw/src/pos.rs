@@ -120,6 +120,7 @@ impl Addr for NoopAddr {
 	/// Get address of `NoopAddr` as `usize`.
 	#[inline(always)]
 	fn addr(&self) -> usize {
+		// TODO: Replace this with a compile-time error.
 		unreachable!();
 	}
 }
