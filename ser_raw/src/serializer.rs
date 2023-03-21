@@ -227,6 +227,8 @@ pub trait Serializer: Sized {
 	/// Call `serialize_value` multiple times, and then [`finalize`] to get
 	/// output.
 	///
+	/// Returns position of value in output (byte index).
+	///
 	/// # Example
 	///
 	/// ```
@@ -244,17 +246,33 @@ pub trait Serializer: Sized {
 	///
 	/// const MAX_CAPACITY: usize = aligned_max_capacity(16);
 	/// let mut ser = PureCopySerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
-	/// ser.serialize_value(&Foo { small: 1, big: 2 });
-	/// ser.serialize_value(&Foo { small: 3, big: 4 });
+	/// let pos1 = ser.serialize_value(&Foo { small: 1, big: 2 });
+	/// let pos2 = ser.serialize_value(&Foo { small: 3, big: 4 });
 	/// let storage = ser.finalize();
+	///
 	/// assert_eq!(storage.len(), 16);
+	/// assert_eq!(pos1, 0);
+	/// assert_eq!(pos2, 8);
 	/// ```
 	///
 	/// [`finalize`]: Serializer::finalize
-	// TODO: This should return position of serialized value in output.
-	fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
-		self.push_raw(value);
+	fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) -> usize {
+		// Align storage, ready to write value, and get position
+		self.storage_mut().align_for::<T>();
+		let pos = self.pos();
+
+		// Push value to storage.
+		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
+		// `align_after::<T>()`.
+		let slice = slice::from_ref(value);
+		unsafe { self.storage_mut().push_slice_unaligned(slice) };
+		self.storage_mut().align_after::<T>();
+
+		// Serialize value
 		value.serialize_data(self);
+
+		// Return position value was written at
+		pos
 	}
 
 	/// Push a value to output.
