@@ -11,6 +11,56 @@ use crate::{
 ///
 /// See [`AlignedStorage`] for an explanation of the const parameters.
 ///
+/// # Safety
+///
+/// It's always safe to serialize, but casting the serializer's output back to a
+/// `&T` can be very unsafe unless the following warnings are heeded.
+///
+/// The format of serialized output is dependent on the system serialization is
+/// performed on. This format is **not** portable to other systems with
+/// different architectures (big endian vs little endian, 32 bit vs 64 bit, or
+/// possibly other differences in system architecture).
+///
+/// Rust also offers no guarantee that even the same code compiled twice on the
+/// same system will result in the same memory layouts (in practice it does, but
+/// you can always tag your types `#[repr(C)]` to make sure).
+///
+/// Therefore, great care should be taken to ensure deserialization occurs on
+/// same type of machine as serialization occured on, and ideally using the same
+/// binary. A mismatch will be very likely to cause memory unsafety and the
+/// dreaded *undefined behavior*.
+///
+/// Additionally, the storage's backing buffer must not move in memory after
+/// serialization. Adding more data to the storage later (e.g. with
+/// `storage.push_bytes()`) may exceed the storage's capacity, causing it to
+/// grow and reallocate to a different memory location. However, the pointers in
+/// the storage buffer will still point to the old memory locations, which are
+/// no longer valid. Accessing the deserialized value will then be UB.
+///
+/// # Example
+///
+/// ```
+/// use ser_raw::{
+/// 	CompleteSerializer, Serialize, Serializer,
+/// 	storage::{aligned_max_capacity, ContiguousStorage},
+/// };
+///
+/// let boxed: Box<u8> = Box::new(123);
+///
+/// // Serialize
+/// const MAX_CAPACITY: usize = aligned_max_capacity(16);
+/// let mut ser = CompleteSerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
+/// let storage = ser.serialize(&boxed);
+///
+/// // Deserialize
+/// // This is safe because:
+/// // 1. Serialization and deserialization are performed
+/// //    on same system with same binary
+/// // 2. `storage` has not been mutated after serialization completed
+/// let boxed_out: &Box<u8> = unsafe { &*storage.as_ptr().cast() };
+/// assert_eq!(boxed_out, &boxed);
+/// ```
+///
 /// [`AlignedStorage`]: crate::storage::AlignedStorage
 // TODO: Set defaults for const params.
 #[derive(Serializer)]
