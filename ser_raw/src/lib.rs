@@ -118,8 +118,8 @@
 //! out also to be slower than expected.
 //!
 //! The idea is to use [layout_inspect] to produce a schema of Rust's type
-//! layouts, and to use that schema to generate a matching JavaScript serializer
-//! / deserializer in which can deserialize `ser_raw`'s output.
+//! layouts, and write a codegen which uses that schema to generate a JavaScript
+//! serializer / deserializer which can deserialize `ser_raw`'s output.
 //!
 //! This is the main reason why there aren't deserializers implemented in Rust
 //! yet! I'm planning to be doing the deserialization in JavaScript.
