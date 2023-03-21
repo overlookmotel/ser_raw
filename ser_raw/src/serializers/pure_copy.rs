@@ -35,7 +35,7 @@ use crate::{
 /// let boxed: Box<u8> = Box::new(123);
 /// const MAX_CAPACITY: usize = aligned_max_capacity(16);
 /// let mut ser = PureCopySerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
-/// let storage = ser.serialize(&boxed);
+/// let (pos, storage) = ser.serialize(&boxed);
 /// drop(boxed);
 /// ```
 ///

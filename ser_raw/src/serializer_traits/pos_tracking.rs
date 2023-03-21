@@ -22,12 +22,13 @@ pub trait PosTracking: Serializer {
 		self.pos_mapping().pos_for(value)
 	}
 
-	fn do_serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
+	fn do_serialize_value<T: Serialize<Self>>(&mut self, value: &T) -> usize {
 		// Align storage, ready to write value
 		self.storage_mut().align_for::<T>();
 
 		// Record position mapping for this value
-		self.set_pos_mapping(PosMapping::new(value as *const T as usize, self.pos()));
+		let pos = self.pos();
+		self.set_pos_mapping(PosMapping::new(value as *const T as usize, pos));
 
 		// Push value to storage.
 		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
@@ -38,6 +39,9 @@ pub trait PosTracking: Serializer {
 
 		// Serialize value (which may use the pos mapping we set)
 		value.serialize_data(self);
+
+		// Return position value was written at
+		pos
 	}
 
 	// Skip recording position when no further processing for a slice

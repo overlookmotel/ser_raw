@@ -15,14 +15,14 @@ use ser_raw::{
 const MAX_CAPACITY: usize = aligned_max_capacity(16);
 type Ser = PureCopySerializer<16, 16, 8, MAX_CAPACITY, AlignedVec>;
 
-fn serialize<T: Serialize<Ser>>(value: &T) -> AlignedVec {
+fn serialize<T: Serialize<Ser>>(value: &T) -> (usize, AlignedVec) {
 	let ser = Ser::new();
 	ser.serialize(value)
 }
 
 fn test_serialize<T>(input: &T, test: Test, test_num: usize)
 where T: Serialize<Ser> + Debug + PartialEq {
-	let storage = serialize(input);
+	let (pos, storage) = serialize(input);
 
 	// No deserializer, so can't test output. Just testing length of output for now.
 	let expected_size = match test {
@@ -55,6 +55,7 @@ where T: Serialize<Ser> + Debug + PartialEq {
 		Test::MinecraftData => 1375104,
 	};
 
+	assert_eq!(pos, 0);
 	assert_eq!(storage.len(), expected_size);
 }
 

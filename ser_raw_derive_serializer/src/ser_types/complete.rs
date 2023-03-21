@@ -17,9 +17,9 @@ fn get_methods() -> TokenStream {
 		// Pointer-writing serializers need a functional `Addr`
 		type Addr = _ser_raw::pos::TrackingAddr;
 
-		fn serialize_value<T: _ser_raw::Serialize<Self>>(&mut self, value: &T) {
+		fn serialize_value<T: _ser_raw::Serialize<Self>>(&mut self, value: &T) -> usize {
 			// Delegate to `PosTracking` trait's implementation
-			ser_traits::PosTracking::do_serialize_value(self, value);
+			ser_traits::PosTracking::do_serialize_value(self, value)
 		}
 
 		#[inline]

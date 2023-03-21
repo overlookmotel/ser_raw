@@ -51,14 +51,14 @@ use crate::{
 /// // Serialize
 /// const MAX_CAPACITY: usize = aligned_max_capacity(16);
 /// let mut ser = CompleteSerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
-/// let storage = ser.serialize(&boxed);
+/// let (pos, storage) = ser.serialize(&boxed);
 ///
 /// // Deserialize
 /// // This is safe because:
 /// // 1. Serialization and deserialization are performed
 /// //    on same system with same binary
 /// // 2. `storage` has not been mutated after serialization completed
-/// let boxed_out: &Box<u8> = unsafe { &*storage.as_ptr().cast() };
+/// let boxed_out: &Box<u8> = unsafe { &*storage.as_ptr().add(pos).cast() };
 /// assert_eq!(boxed_out, &boxed);
 /// ```
 #[derive(Serializer)]

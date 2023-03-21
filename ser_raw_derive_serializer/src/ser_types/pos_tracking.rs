@@ -19,8 +19,8 @@ fn get_methods() -> TokenStream {
 		// Delegate all methods to `PosTracking` trait's implementation
 
 		#[inline]
-		fn serialize_value<T: _ser_raw::Serialize<Self>>(&mut self, value: &T) {
-			ser_traits::PosTracking::do_serialize_value(self, value);
+		fn serialize_value<T: _ser_raw::Serialize<Self>>(&mut self, value: &T) -> usize {
+			ser_traits::PosTracking::do_serialize_value(self, value)
 		}
 
 		#[inline]
