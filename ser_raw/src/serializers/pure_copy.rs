@@ -28,7 +28,7 @@ use crate::{
 ///
 /// ```
 /// use ser_raw::{
-/// 	storage::aligned_max_capacity,
+/// 	util::aligned_max_capacity,
 /// 	PureCopySerializer, Serialize, Serializer,
 /// };
 ///

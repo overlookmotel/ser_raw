@@ -19,7 +19,8 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 ///
 /// ```
 /// use ser_raw::{
-/// 	storage::{aligned_max_capacity, AlignedVec, Storage},
+/// 	storage::{AlignedVec, Storage},
+/// 	util::aligned_max_capacity,
 /// 	Serializer,
 /// };
 ///
@@ -49,7 +50,8 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// ```
 /// use ser_raw::{
 /// 	pos::PosMapping,
-/// 	storage::{aligned_max_capacity, AlignedVec, Storage},
+/// 	storage::{AlignedVec, Storage},
+/// 	util::aligned_max_capacity,
 /// 	Serializer,
 /// };
 ///
@@ -82,7 +84,8 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// ```
 /// use ser_raw::{
 /// 	pos::{PosMapping, Ptrs},
-/// 	storage::{aligned_max_capacity, AlignedVec, Storage},
+/// 	storage::{AlignedVec, Storage},
+/// 	util::aligned_max_capacity,
 /// 	Serializer,
 /// };
 ///
@@ -140,7 +143,8 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// ```
 /// use ser_raw::{
 /// 	pos::NoopAddr,
-/// 	storage::{aligned_max_capacity, AlignedVec, Storage},
+/// 	storage::{AlignedVec, Storage},
+/// 	util::aligned_max_capacity,
 /// 	Serializer,
 /// };
 ///
@@ -194,7 +198,8 @@ pub trait Serializer: Sized {
 	///
 	/// ```
 	/// use ser_raw::{
-	/// 	storage::{aligned_max_capacity, Storage},
+	/// 	storage::Storage,
+	/// 	util::aligned_max_capacity,
 	/// 	PureCopySerializer, Serialize, Serializer,
 	/// };
 	///
@@ -226,7 +231,8 @@ pub trait Serializer: Sized {
 	///
 	/// ```
 	/// use ser_raw::{
-	/// 	storage::{aligned_max_capacity, Storage},
+	/// 	storage::Storage,
+	/// 	util::aligned_max_capacity,
 	/// 	PureCopySerializer, Serialize, Serializer,
 	/// };
 	///

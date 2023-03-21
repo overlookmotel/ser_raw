@@ -3,7 +3,8 @@ use std::fmt::Debug;
 mod common;
 use common::{generate_minecraft_data, tests, Test};
 use ser_raw::{
-	storage::{aligned_max_capacity, AlignedVec, Storage},
+	storage::{AlignedVec, Storage},
+	util::aligned_max_capacity,
 	PtrOffsetSerializer, Serialize, Serializer,
 };
 

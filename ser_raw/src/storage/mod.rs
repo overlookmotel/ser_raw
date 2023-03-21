@@ -3,7 +3,7 @@
 use std::{mem, slice};
 
 mod aligned;
-pub use aligned::{aligned_max_capacity, aligned_max_u32_capacity, AlignedStorage, AlignedVec};
+pub use aligned::{AlignedStorage, AlignedVec};
 
 mod unaligned;
 pub use unaligned::{UnalignedStorage, UnalignedVec};

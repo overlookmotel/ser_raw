@@ -21,7 +21,8 @@ use crate::{
 /// ```
 /// use ser_raw::{
 /// 	PtrOffsetSerializer, Serialize, Serializer,
-/// 	storage::{aligned_max_capacity, ContiguousStorage},
+/// 	storage::ContiguousStorage,
+/// 	util::aligned_max_capacity,
 /// };
 ///
 /// let boxed: Box<u8> = Box::new(123);
