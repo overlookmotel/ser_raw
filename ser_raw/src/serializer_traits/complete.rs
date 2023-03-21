@@ -55,7 +55,14 @@ where Self::Storage: ContiguousStorage
 		let ptrs = self.ptrs_mut();
 		if storage_addr != ptrs.current.addr() {
 			// Storage has moved. Create a new pointer group for new storage address.
-			// TODO: Move this to a separate function marked `#[cold]`
+			new_ptr_group(ptrs, storage_addr);
+		}
+		ptrs.current.push_pos(ptr_pos);
+
+		// Separate function to guide inlining and branch prediction.
+		// This should rarely be called, as storage growth is an occasional event.
+		#[cold]
+		fn new_ptr_group(ptrs: &mut Ptrs, storage_addr: usize) {
 			if ptrs.current.is_empty() {
 				ptrs.current.set_addr(storage_addr);
 			} else {
@@ -64,7 +71,6 @@ where Self::Storage: ContiguousStorage
 				ptrs.past.push(old_ptr_group);
 			}
 		}
-		ptrs.current.push_pos(ptr_pos);
 	}
 
 	/// Finalize the serialized output, updating any pointers which have been made
