@@ -29,12 +29,18 @@ use crate::{
 /// const MAX_CAPACITY: usize = aligned_max_capacity(16);
 /// let mut ser = PtrOffsetSerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
 /// let storage = ser.serialize(&boxed);
-/// let slice = storage.as_slice();
 ///
-/// const PTR_SIZE: usize = std::mem::size_of::<usize>();
-/// let offset = usize::from_ne_bytes(slice[..PTR_SIZE].try_into().unwrap());
-/// assert_eq!(offset, 8);
-/// assert_eq!(slice[offset], 123);
+/// // We have to be careful to avoid reading any uninitialized
+/// // padding bytes in the output. You wouldn't really want to be
+/// // using unsafe code like this, but this is just to illustrate
+/// // the layout of the output.
+/// unsafe {
+/// 	let ptr = storage.as_ptr();
+/// 	let offset = std::ptr::read(ptr as *const usize);
+/// 	assert_eq!(offset, 8);
+/// 	let num = std::ptr::read(ptr.add(offset));
+/// 	assert_eq!(num, 123);
+/// }
 /// ```
 ///
 /// [`AlignedStorage`]: crate::storage::AlignedStorage

@@ -1,4 +1,9 @@
-use std::{cmp, marker::PhantomData, mem, ptr};
+use std::{
+	cmp,
+	marker::PhantomData,
+	mem::{self, MaybeUninit},
+	ptr, slice,
+};
 
 use super::{AlignedByteVec, ContiguousStorage, Storage};
 use crate::util::{align_up_to, aligned_max_capacity, is_aligned_to};
@@ -538,6 +543,12 @@ impl<
 	/// returns, or else it will end up pointing to garbage. Modifying the storage
 	/// may cause its buffer to be reallocated, which would also make any pointers
 	/// to it invalid.
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
 	#[inline]
 	fn as_ptr(&self) -> *const u8 {
 		self.inner.as_ptr()
@@ -550,21 +561,39 @@ impl<
 	/// returns, or else it will end up pointing to garbage. Modifying the storage
 	/// may cause its buffer to be reallocated, which would also make any pointers
 	/// to it invalid.
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
 	#[inline]
 	fn as_mut_ptr(&mut self) -> *mut u8 {
 		self.inner.as_mut_ptr()
 	}
 
 	/// Extracts a slice containing the entire storage buffer.
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
 	#[inline]
-	fn as_slice(&self) -> &[u8] {
-		self.inner.as_slice()
+	fn as_slice(&self) -> &[MaybeUninit<u8>] {
+		unsafe { slice::from_raw_parts(self.as_ptr() as *const MaybeUninit<u8>, self.len()) }
 	}
 
 	/// Extracts a mutable slice of the entire storage buffer.
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
 	#[inline]
-	fn as_mut_slice(&mut self) -> &mut [u8] {
-		self.inner.as_mut_slice()
+	fn as_mut_slice(&mut self) -> &mut [MaybeUninit<u8>] {
+		unsafe { slice::from_raw_parts_mut(self.as_mut_ptr() as *mut MaybeUninit<u8>, self.len()) }
 	}
 }
 

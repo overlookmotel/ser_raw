@@ -1,6 +1,9 @@
 //! Storage types and traits.
 
-use std::{mem, slice};
+use std::{
+	mem::{self, MaybeUninit},
+	slice,
+};
 
 mod aligned;
 pub use aligned::{AlignedStorage, AlignedVec};
@@ -227,6 +230,12 @@ pub trait ContiguousStorage: Storage {
 	/// returns, or else it will end up pointing to garbage. Modifying the storage
 	/// may cause its buffer to be reallocated, which would also make any pointers
 	/// to it invalid.
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
 	fn as_ptr(&self) -> *const u8;
 
 	/// Returns an unsafe mutable pointer to the storage's buffer, or a dangling
@@ -236,11 +245,29 @@ pub trait ContiguousStorage: Storage {
 	/// returns, or else it will end up pointing to garbage. Modifying the storage
 	/// may cause its buffer to be reallocated, which would also make any pointers
 	/// to it invalid.
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
 	fn as_mut_ptr(&mut self) -> *mut u8;
 
 	/// Extracts a slice containing the entire storage buffer.
-	fn as_slice(&self) -> &[u8];
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
+	fn as_slice(&self) -> &[MaybeUninit<u8>];
 
 	/// Extracts a mutable slice of the entire storage buffer.
-	fn as_mut_slice(&mut self) -> &mut [u8];
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
+	fn as_mut_slice(&mut self) -> &mut [MaybeUninit<u8>];
 }

@@ -1,4 +1,7 @@
-use std::{mem, ptr, slice};
+use std::{
+	mem::{self, MaybeUninit},
+	ptr, slice,
+};
 
 use super::{ContiguousStorage, Storage};
 
@@ -8,15 +11,12 @@ use super::{ContiguousStorage, Storage};
 /// [`Serializer`]: crate::Serializer
 pub trait UnalignedStorage: Storage {}
 
-// TODO: Should use `Vec<MaybeUninit<u8>>` not `Vec<u8>` as output likely
-// includes uninitialized padding bytes
-
 /// Unaligned contiguous memory buffer. Used by
 /// [`UnalignedSerializer`](crate::UnalignedSerializer).
 ///
-/// Just a wrapper around `Vec<u8>`.
+/// Just a wrapper around `Vec<MaybeUninit<u8>>`.
 pub struct UnalignedVec {
-	inner: Vec<u8>,
+	inner: Vec<MaybeUninit<u8>>,
 }
 
 impl Storage for UnalignedVec {
@@ -93,9 +93,9 @@ impl Storage for UnalignedVec {
 			return;
 		}
 
-		let ptr = slice.as_ptr() as *const u8;
+		let ptr = slice.as_ptr() as *const MaybeUninit<u8>;
 		let bytes = slice::from_raw_parts(ptr, slice.len() * mem::size_of::<T>());
-		self.push_bytes(bytes);
+		self.inner.extend_from_slice(bytes);
 	}
 
 	/// Push a slice of values `&T` to storage.
@@ -127,6 +127,9 @@ impl Storage for UnalignedVec {
 	/// [`push_slice_unaligned`](Storage::push_slice_unaligned).
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) {
+		// Rust guarantees `MaybeUninit<T>` will have the same size, alignment, and ABI
+		// as `T`, so safe to transmute `&[u8]` to `&[MaybeUninit<T>]`
+		let bytes = unsafe { mem::transmute(bytes) };
 		self.inner.extend_from_slice(bytes);
 	}
 
@@ -217,9 +220,15 @@ impl ContiguousStorage for UnalignedVec {
 	/// returns, or else it will end up pointing to garbage. Modifying the storage
 	/// may cause its buffer to be reallocated, which would also make any pointers
 	/// to it invalid.
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
 	#[inline]
 	fn as_ptr(&self) -> *const u8 {
-		self.inner.as_ptr()
+		self.inner.as_ptr() as *const u8
 	}
 
 	/// Returns an unsafe mutable pointer to the storage's buffer, or a dangling
@@ -229,20 +238,38 @@ impl ContiguousStorage for UnalignedVec {
 	/// returns, or else it will end up pointing to garbage. Modifying the storage
 	/// may cause its buffer to be reallocated, which would also make any pointers
 	/// to it invalid.
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
 	#[inline]
 	fn as_mut_ptr(&mut self) -> *mut u8 {
-		self.inner.as_mut_ptr()
+		self.inner.as_mut_ptr() as *mut u8
 	}
 
 	/// Extracts a slice containing the entire storage buffer.
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
 	#[inline]
-	fn as_slice(&self) -> &[u8] {
+	fn as_slice(&self) -> &[MaybeUninit<u8>] {
 		self.inner.as_slice()
 	}
 
 	/// Extracts a mutable slice of the entire storage buffer.
+	///
+	/// Buffer will very likely contain uninitialized padding bytes. It's safe to
+	/// read from the sections of the buffer which are initialized, but reading
+	/// the uninitialized bytes is UB. Understanding which are which requires an
+	/// exact knowledge of the memory layouts of types which have been written to
+	/// this storage.
 	#[inline]
-	fn as_mut_slice(&mut self) -> &mut [u8] {
+	fn as_mut_slice(&mut self) -> &mut [MaybeUninit<u8>] {
 		self.inner.as_mut_slice()
 	}
 }
