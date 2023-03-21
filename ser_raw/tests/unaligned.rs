@@ -14,9 +14,8 @@ use ser_raw::{
 type Ser = UnalignedSerializer<UnalignedVec>;
 
 fn serialize<T: Serialize<Ser>>(value: &T) -> UnalignedVec {
-	let mut ser = Ser::new();
-	ser.serialize_value(value);
-	ser.into_storage()
+	let ser = Ser::new();
+	ser.serialize(value)
 }
 
 fn test_serialize<T>(input: &T, test: Test, test_num: usize)

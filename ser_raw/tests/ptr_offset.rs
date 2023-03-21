@@ -16,9 +16,8 @@ type AlVec = AlignedVec<16, 16, 8, MAX_CAPACITY>;
 type Ser = PtrOffsetSerializer<16, 16, 8, MAX_CAPACITY, AlVec>;
 
 fn serialize<T: Serialize<Ser>>(value: &T) -> AlVec {
-	let mut ser = Ser::new();
-	ser.serialize_value(value);
-	ser.into_storage()
+	let ser = Ser::new();
+	ser.serialize(value)
 }
 
 fn test_serialize<T>(input: &T, test: Test, test_num: usize)

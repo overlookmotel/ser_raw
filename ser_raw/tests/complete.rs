@@ -18,9 +18,8 @@ type AlVec = AlignedVec<16, 16, 8, MAX_CAPACITY>;
 type Ser = CompleteSerializer<16, 16, 8, MAX_CAPACITY, AlVec>;
 
 fn serialize<T: Serialize<Ser>>(value: &T) -> AlVec {
-	let mut ser = Ser::new();
-	ser.serialize_value(value);
-	ser.finalize()
+	let ser = Ser::new();
+	ser.serialize(value)
 }
 
 fn deserialize<T>(storage: &AlVec) -> &T {
