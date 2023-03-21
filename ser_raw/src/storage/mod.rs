@@ -1,3 +1,5 @@
+//! Storage types and traits.
+
 use std::{mem, slice};
 
 mod aligned;

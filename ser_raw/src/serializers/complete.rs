@@ -9,7 +9,9 @@ use crate::{
 /// Serializer that produces a buffer which is a complete valid representation
 /// of the input, which can be cast to a `&T` without any deserialization.
 ///
-/// See `AlignedStorage` for an explanation of the const parameters.
+/// See [`AlignedStorage`] for an explanation of the const parameters.
+///
+/// [`AlignedStorage`]: crate::storage::AlignedStorage
 // TODO: Set defaults for const params.
 // TODO: Reverse order of params - `MAX_VALUE_ALIGNMENT` before `VALUE_ALIGNMENT`.
 #[derive(Serializer)]
@@ -33,11 +35,13 @@ pub struct CompleteSerializer<
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
 	CompleteSerializer<SA, VA, MVA, MAX, AlignedVec<SA, VA, MVA, MAX>>
 {
-	/// Create new `CompleteSerializer` with no memory pre-allocated.
+	/// Create new [`CompleteSerializer`] with no memory pre-allocated.
 	///
 	/// If you know, or can estimate, the amount of buffer space that's going to
-	/// be needed in advance, allocating upfront with `with_capacity` can
+	/// be needed in advance, allocating upfront with [`with_capacity`] can
 	/// dramatically improve performance vs using `new`.
+	///
+	/// [`with_capacity`]: CompleteSerializer::with_capacity
 	#[inline]
 	pub fn new() -> Self {
 		Self {
@@ -47,8 +51,8 @@ impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
 		}
 	}
 
-	/// Create new `CompleteSerializer` with buffer pre-allocated with capacity of
-	/// at least `capacity` bytes.
+	/// Create new [`CompleteSerializer`] with buffer pre-allocated with capacity
+	/// of at least `capacity` bytes.
 	///
 	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
 	///
@@ -82,7 +86,8 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	/// Maximum capacity of output buffer.
 	pub const MAX_CAPACITY: usize = MAX;
 
-	/// Create new `CompleteSerializer` from an existing `BorrowMut<AlignedVec>`.
+	/// Create new [`CompleteSerializer`] from an existing
+	/// `BorrowMut<AlignedVec>`.
 	pub fn from_storage(storage: BorrowedStorage) -> Self {
 		Self {
 			storage,

@@ -1,6 +1,15 @@
+//! Types and traits used for tracking position in output, and locations of
+//! pointers.
+
 /// Mapping from input address (i.e. memory address of value being serialized)
-/// and output position (i.e. position of that value's representation in
+/// to output position (i.e. position of that value's representation in
 /// serializer's output).
+///
+/// Used by [`CompleteSerializer`] and [`PtrOffsetSerializer`] for tracking
+/// where pointers are in output.
+///
+/// [`CompleteSerializer`]: crate::CompleteSerializer
+/// [`PtrOffsetSerializer`]: crate::PtrOffsetSerializer
 #[derive(Copy, Clone, Debug)]
 pub struct PosMapping {
 	input_addr: usize,
@@ -29,7 +38,7 @@ impl PosMapping {
 
 	/// Get position in output for a value which has been serialized.
 	/// That value must have been serialized in an allocation which this
-	/// `PosMapping` represents the start of.
+	/// [`PosMapping`] represents the start of.
 	#[inline]
 	pub fn pos_for_addr(&self, addr: usize) -> usize {
 		addr - self.input_addr + self.output_pos
@@ -37,7 +46,7 @@ impl PosMapping {
 
 	/// Get position in output for a value which has been serialized.
 	/// That value must have been serialized in an allocation which this
-	/// `PosMapping` represents the start of.
+	/// [`PosMapping`] represents the start of.
 	#[inline]
 	pub fn pos_for<T>(&self, value: &T) -> usize {
 		self.pos_for_addr(value as *const T as usize)
@@ -49,32 +58,35 @@ impl PosMapping {
 /// Reason why this is a trait, rather than a single type, is that not all
 /// serializers need to know output positions.
 ///
-/// Such serializers can use `NoopPos` which is a zero-size type with all
+/// Such serializers can use [`NoopAddr`] which is a zero-size type with all
 /// methods defined as no-ops. This should cause compiler to optimize out all
-/// code related to calculating position. Therefore `Serialize` implementations
-/// can include such code, and it has zero cost if it's not actually used.
+/// code related to calculating position. Therefore [`Serialize`]
+/// implementations can include such code, and it has zero cost if it's not
+/// actually used.
 ///
 /// The compiler doesn't seem to recognize it can make that optimization without
 /// this abstraction.
+///
+/// [`Serialize`]: crate::Serialize
 pub trait Addr: Copy {
-	/// Create `Addr` from a value reference.
+	/// Create [`Addr`] from a value reference.
 	fn from_ref<T>(value: &T) -> Self;
 
-	/// Create `Addr` from a value reference and offset.
+	/// Create [`Addr`] from a value reference and offset.
 	fn from_ref_offset<T>(value: &T, offset: usize) -> Self;
 
-	/// Get address of `Addr` as `usize`.
+	/// Get address of [`Addr`] as `usize`.
 	fn addr(&self) -> usize;
 }
 
-/// An `Addr` which does record addresses.
+/// An [`Addr`] which does record addresses.
 #[derive(Copy, Clone)]
 pub struct TrackingAddr {
 	addr: usize,
 }
 
 impl Addr for TrackingAddr {
-	/// Create `TrackingAddr` from a value reference.
+	/// Create [`TrackingAddr`] from a value reference.
 	#[inline]
 	fn from_ref<T>(value: &T) -> Self {
 		Self {
@@ -82,7 +94,7 @@ impl Addr for TrackingAddr {
 		}
 	}
 
-	/// Create `TrackingAddr` from a value reference and offset.
+	/// Create [`TrackingAddr`] from a value reference and offset.
 	#[inline]
 	fn from_ref_offset<T>(value: &T, offset: usize) -> Self {
 		Self {
@@ -90,34 +102,38 @@ impl Addr for TrackingAddr {
 		}
 	}
 
-	/// Get address of `TrackingAddr` as `usize`.
+	/// Get address of [`TrackingAddr`] as `usize`.
 	#[inline]
 	fn addr(&self) -> usize {
 		self.addr
 	}
 }
 
-/// A dummy no-op `Addr` which stores no information
+/// A dummy no-op [`Addr`] which stores no information
 /// and for which all methods are no-ops.
 ///
-/// See `Addr` trait for explanation of why this is useful.
+/// See [`Addr`] trait for explanation of why this is useful.
 #[derive(Copy, Clone)]
 pub struct NoopAddr;
 
 impl Addr for NoopAddr {
-	/// Create `NoopAddr` from a value reference.
+	/// Create [`NoopAddr`] from a value reference.
 	#[inline(always)]
 	fn from_ref<T>(_value: &T) -> Self {
 		Self
 	}
 
-	/// Create `NoopAddr` from a value reference and offset.
+	/// Create [`NoopAddr`] from a value reference and offset.
 	#[inline(always)]
 	fn from_ref_offset<T>(_value: &T, _offset: usize) -> Self {
 		Self
 	}
 
-	/// Get address of `NoopAddr` as `usize`.
+	/// Get address of [`NoopAddr`] as `usize`.
+	///
+	/// # Panics
+	///
+	/// This should never be called. Panics if it is!
 	#[inline(always)]
 	fn addr(&self) -> usize {
 		// TODO: Replace this with a compile-time error.
@@ -159,6 +175,8 @@ pub struct PtrGroup {
 }
 
 impl PtrGroup {
+	/// Create new [`PtrGroup`] at point where storage's memory location is
+	/// `storage_addr`.
 	#[inline]
 	pub fn new(storage_addr: usize) -> Self {
 		Self {
@@ -168,26 +186,31 @@ impl PtrGroup {
 		}
 	}
 
+	/// Create a dummy [`PtrGroup`]. Only used as a placeholder.
 	#[inline]
 	pub fn dummy() -> Self {
 		Self::new(0)
 	}
 
+	/// Returns `true` if no pointers in this [`PtrGroup`].
 	#[inline]
 	pub fn is_empty(&self) -> bool {
 		self.ptr_positions.len() == 0
 	}
 
+	/// Get storage address for this [`PtrGroup`].
 	#[inline]
 	pub fn addr(&self) -> usize {
 		self.storage_addr
 	}
 
+	/// Set storage address for this [`PtrGroup`].
 	#[inline]
 	pub fn set_addr(&mut self, storage_addr: usize) {
 		self.storage_addr = storage_addr;
 	}
 
+	/// Push a pointer position to this [`PtrGroup`].
 	#[inline]
 	pub fn push_pos(&mut self, pos: usize) {
 		self.ptr_positions.push(pos);

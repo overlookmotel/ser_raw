@@ -4,29 +4,138 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 
 /// Serializers implement this trait.
 ///
+/// # With derive macro
+///
+///	The simplest way to build a custom [`Serializer`] is with the derive macro.
+///
+/// * `#[derive(Serializer)]`
+/// * `#[ser_type(...)]` with the type of serializer you're building.
+/// * Add required fields and tag them e.g. `#[ser_storage]` (see examples
+///   below).
+///
+/// ## Pure copy serializer
+///
+/// [`PureCopySerializer`]-style serializer:
+///
+/// ```
+/// use ser_raw::{
+/// 	storage::{aligned_max_capacity, AlignedVec, Storage},
+/// 	Serializer,
+/// };
+///
+/// const MAX_CAPACITY: usize = aligned_max_capacity(16);
+/// type Store = AlignedVec<16, 8, 16, MAX_CAPACITY>;
+///
+/// #[derive(Serializer)]
+/// #[ser_type(pure_copy)]
+/// struct MySer {
+/// 	#[ser_storage(Store)]
+/// 	storage: Store,
+/// }
+///
+/// impl MySer {
+/// 	pub fn new() -> MySer {
+/// 		MySer {
+/// 			storage: Store::new(),
+/// 		}
+/// 	}
+/// }
+/// ```
+///
+/// ## Pointer offset serializer
+///
+/// [`PtrOffsetSerializer`]-style:
+///
+/// ```
+/// use ser_raw::{
+/// 	pos::PosMapping,
+/// 	storage::{aligned_max_capacity, AlignedVec, Storage},
+/// 	Serializer,
+/// };
+///
+/// const MAX_CAPACITY: usize = aligned_max_capacity(16);
+/// type Store = AlignedVec<16, 8, 16, MAX_CAPACITY>;
+///
+/// #[derive(Serializer)]
+/// #[ser_type(ptr_offset)]
+/// struct MySer {
+/// 	#[ser_storage(Store)]
+/// 	storage: Store,
+/// 	#[ser_pos_mapping]
+/// 	pos_mapping: PosMapping,
+/// }
+///
+/// impl MySer {
+/// 	pub fn new() -> MySer {
+/// 		MySer {
+/// 			storage: Store::new(),
+/// 			pos_mapping: PosMapping::dummy(),
+/// 		}
+/// 	}
+/// }
+/// ```
+///
+/// ## Complete serializer
+///
+/// [`CompleteSerializer`]-style:
+///
+/// ```
+/// use ser_raw::{
+/// 	pos::{PosMapping, Ptrs},
+/// 	storage::{aligned_max_capacity, AlignedVec, Storage},
+/// 	Serializer,
+/// };
+///
+/// const MAX_CAPACITY: usize = aligned_max_capacity(16);
+/// type Store = AlignedVec<16, 8, 16, MAX_CAPACITY>;
+///
+/// #[derive(Serializer)]
+/// #[ser_type(complete)]
+/// struct MySer {
+/// 	#[ser_storage(Store)]
+/// 	storage: Store,
+/// 	#[ser_pos_mapping]
+/// 	pos_mapping: PosMapping,
+/// 	#[ser_ptrs]
+/// 	ptrs: Ptrs,
+/// }
+///
+/// impl MySer {
+/// 	pub fn new() -> MySer {
+/// 		MySer {
+/// 			storage: Store::new(),
+/// 			pos_mapping: PosMapping::dummy(),
+/// 			ptrs: Ptrs::new(),
+/// 		}
+/// 	}
+/// }
+/// ```
+///
+/// # Manual implementation
+///
 /// Implementers only need to implement the methods to access storage:
 ///
-/// * `storage`
-/// * `storage_mut`
-/// * `into_storage`
+/// * [`storage`](Serializer::storage)
+/// * [`storage_mut`](Serializer::storage_mut)
+/// * [`into_storage`](Serializer::into_storage)
 ///
 /// and the associated types:
 ///
-/// * `Storage`
-/// * `BorrowedStorage`
-/// * `Addr`
+/// * [`Storage`](Serializer::Storage)
+/// * [`BorrowedStorage`](Serializer::BorrowedStorage)
+/// * [`Addr`](Serializer::Addr)
 ///
 /// Default implementation of all other methods delegates calls to the
-/// underlying `Storage`. This produces the behavior of a "pure copy" serializer
-/// (e.g. `PureCopySerializer` or `UnalignedSerializer` provided by this crate).
+/// underlying [`Storage`]. This produces the behavior of a "pure copy"
+/// serializer (e.g. [`PureCopySerializer`] or [`UnalignedSerializer`]).
 ///
 /// Other methods can be overriden to produce more complicated behavior, as is
 /// the case with other serializers this crate provides e.g.
-/// `CompleteSerializer`.
+/// [`CompleteSerializer`].
 ///
 /// # Example
 ///
-/// This is a slightly simplified version of `PureCopySerializer`:
+/// This is a slightly simplified version of [`PureCopySerializer`]:
 ///
 /// ```
 /// use ser_raw::{
@@ -58,19 +167,27 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// 	fn into_storage(self) -> Store { self.storage }
 /// }
 /// ```
+///
+/// [`PureCopySerializer`]: crate::PureCopySerializer
+/// [`UnalignedSerializer`]: crate::UnalignedSerializer
+/// [`PtrOffsetSerializer`]: crate::PtrOffsetSerializer
+/// [`CompleteSerializer`]: crate::CompleteSerializer
 pub trait Serializer: Sized {
-	/// `Storage` which backs this serializer.
+	/// [`Storage`] which backs this serializer.
 	type Storage: Storage;
+
+	/// `BorrowMut` of [`Storage`] which backs this serializer.
+	/// This enables creating a serializer from an existing [`Storage`].
 	type BorrowedStorage: BorrowMut<Self::Storage>;
 
-	/// `Addr` type this serializer uses.
+	/// [`Addr`] type this serializer uses.
 	type Addr: Addr;
 
 	/// Serialize a value and all its dependencies.
 	///
 	/// This is the entry point for serializing, when serializing a single value.
 	///
-	/// Consume `Serializer` and return backing storage as
+	/// Consume serializer and return backing storage as
 	/// `BorrowMut<Storage>`.
 	///
 	/// # Example
@@ -99,9 +216,10 @@ pub trait Serializer: Sized {
 	/// Serialize a value and all its dependencies.
 	///
 	/// This is the entry point for serializing, when serializing multiple values
-	/// with a single `Serializer`.
+	/// with a single [`Serializer`].
 	///
-	/// Call `serialize_value` multiple times, and then `finalize` to get output.
+	/// Call `serialize_value` multiple times, and then [`finalize`] to get
+	/// output.
 	///
 	/// # Example
 	///
@@ -123,6 +241,8 @@ pub trait Serializer: Sized {
 	/// let storage = ser.finalize();
 	/// assert_eq!(storage.len(), 16);
 	/// ```
+	///
+	/// [`finalize`]: Serializer::finalize
 	// TODO: This should return position of serialized value in output.
 	fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) {
 		self.push_raw(value);
@@ -133,7 +253,8 @@ pub trait Serializer: Sized {
 	///
 	/// This is a value in a separate allocation, reached by a pointer
 	/// (e.g. `Box<T>`), where `T` does not need further serialization.
-	/// If `T` does need further serialization, use `push_and_process` instead.
+	/// If `T` does need further serialization, use
+	/// [`push_and_process`](Serializer::push_and_process) instead.
 	///
 	/// Some Serializers may record/overwrite the pointer address.
 	#[inline]
@@ -145,8 +266,8 @@ pub trait Serializer: Sized {
 	///
 	/// This is a slice in a separate allocation, reached by a pointer
 	/// (e.g. `Vec<T>`), where `T` does not need further serialization.
-	/// If `T` does need further serialization, use `push_and_process_slice`
-	/// instead.
+	/// If `T` does need further serialization, use
+	/// [`push_and_process_slice`](Serializer::push_and_process_slice) instead.
 	///
 	/// Some Serializers may record/overwrite the pointer address.
 	#[inline]
@@ -155,6 +276,8 @@ pub trait Serializer: Sized {
 	}
 
 	/// Push a value to output and continue processing the value.
+	///
+	/// The value will be added to output, and then `process()` called.
 	///
 	/// This is a value in a separate allocation, reached by a pointer
 	/// (e.g. `Box<T>`).
@@ -167,6 +290,8 @@ pub trait Serializer: Sized {
 
 	/// Push a slice of values to output and continue processing content of the
 	/// slice.
+	///
+	/// The value will be added to output, and then `process()` called.
 	///
 	/// This is a slice in a separate allocation, reached by a pointer
 	/// (e.g. `Vec<T>`).
@@ -185,8 +310,9 @@ pub trait Serializer: Sized {
 
 	/// Push a value to output.
 	///
-	/// Unlike `push` and `push_and_process`, this is not for values for which a
-	/// Serializer may need to record a pointer address.
+	/// Unlike [`push`](Serializer::push) and
+	/// [`push_and_process`](Serializer::push_and_process), this is not for values
+	/// for which a Serializer may need to record a pointer address.
 	#[inline]
 	fn push_raw<T>(&mut self, value: &T) {
 		self.push_raw_slice(slice::from_ref(value));
@@ -194,8 +320,10 @@ pub trait Serializer: Sized {
 
 	/// Push a slice of values to output.
 	///
-	/// Unlike `push_slice` and `push_and_process_slice`, this is not for values
-	/// for which a Serializer may need to record a pointer address.
+	/// Unlike [`push_slice`](Serializer::push_slice) and
+	/// [`push_and_process_slice`](Serializer::push_and_process_slice), this is
+	/// not for values for which a Serializer may need to record a pointer
+	/// address.
 	#[inline]
 	fn push_raw_slice<T>(&mut self, slice: &[T]) {
 		self.storage_mut().push_slice(slice);
@@ -203,9 +331,11 @@ pub trait Serializer: Sized {
 
 	/// Push raw bytes to output.
 	///
-	/// Unlike `push`, `push_slice`, `push_and_process` and
-	/// `push_and_process_slice`, this is not for values for which a Serializer
-	/// may need to record a pointer address.
+	/// Unlike [`push`](Serializer::push), [`push_slice`](Serializer::push_slice),
+	/// [`push_and_process`](Serializer::push_and_process) and
+	/// [`push_and_process_slice`](Serializer::push_and_process_slice), this is
+	/// not for values for which a Serializer may need to record a pointer
+	/// address.
 	///
 	/// Mainly for use in custom serialization functions, where output
 	/// representation includes multiple parts, and Deserializer only
@@ -223,7 +353,9 @@ pub trait Serializer: Sized {
 	/// where S: Serializer
 	/// {
 	/// 	fn serialize_data_with(my_str: &MyString, serializer: &mut S) {
-	/// 		// Serializer may record pointer to this
+	/// 		// Serializer may record pointer to this.
+	/// 		// Actually next line is not quite right -
+	/// 		// We need address of the pointer inside `String`, not `String` itself.
 	/// 		let ptr_addr = S::Addr::from_ref(&my_str.inner);
 	/// 		serializer.push(&my_str.inner.len(), ptr_addr);
 	/// 		// No need to record pointer to this, as it's deductible from pointer to `len`
@@ -262,14 +394,15 @@ pub trait Serializer: Sized {
 	/// An example of a "correction" is: Serializing a `Vec` which has
 	/// `capacity` of 2, but `len` of 1. The correction is amending the `capacity`
 	/// field to 1, to reflect that the copy of the `Vec` in serialized output
-	/// only contains 1 element, and no additional capacity.
+	/// is shrunk to fit, and only contains 1 element, with no additional
+	/// capacity.
 	///
 	/// Default implementation is a no-op, and some serializers may not need to
 	/// implement a functional version of this, if they don't need corrections.
 	///
-	/// Method takes a closure, so that `Serialize::serialize_data`
+	/// Method takes a closure, so that [`Serialize::serialize_data`]
 	/// implementations can perform operations which may have some cost in the
-	/// closure, prior to performing writes. If the `Serializer` doesn't care
+	/// closure, prior to performing writes. If the [`Serializer`] doesn't care
 	/// about corrections and uses this default no-op implementation of
 	/// `write_correction`, the closure will not be called and the cost of those
 	/// operations is avoided. Hopefully the compiler will recognise this and
@@ -306,17 +439,17 @@ pub trait Serializer: Sized {
 		self.storage().len()
 	}
 
-	/// Get immutable ref to `Storage` backing this `Serializer`.
+	/// Get immutable ref to [`Storage`] backing this [`Serializer`].
 	fn storage(&self) -> &Self::Storage;
 
-	/// Get mutable ref to `Storage` backing this `Serializer`.
+	/// Get mutable ref to [`Storage`] backing this [`Serializer`].
 	fn storage_mut(&mut self) -> &mut Self::Storage;
 
 	/// Consume Serializer and return the backing storage as a
 	/// `BorrowMut<Storage>`.
 	///
-	/// Consumers should not call this method directly. Call `finalize` instead,
-	/// as some serializers need to make final changes to the output at the end of
-	/// serialization.
+	/// Consumers should not call this method directly. Call
+	/// [`finalize`](Serializer::finalize) instead, as some serializers need to
+	/// make final changes to the output at the end of serialization.
 	fn into_storage(self) -> Self::BorrowedStorage;
 }

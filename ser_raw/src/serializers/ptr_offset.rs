@@ -14,7 +14,7 @@ use crate::{
 ///
 /// Values in output will be correctly aligned for their types.
 ///
-/// See `AlignedStorage` for an explanation of the const parameters.
+/// See [`AlignedStorage`] for an explanation of the const parameters.
 ///
 /// # Example
 ///
@@ -34,6 +34,8 @@ use crate::{
 /// assert_eq!(offset, 8);
 /// assert_eq!(slice[offset], 123);
 /// ```
+///
+/// [`AlignedStorage`]: crate::storage::AlignedStorage
 // TODO: Set defaults for const params.
 // TODO: Reverse order of params - `MAX_VALUE_ALIGNMENT` before `VALUE_ALIGNMENT`.
 #[derive(Serializer)]
@@ -55,11 +57,13 @@ pub struct PtrOffsetSerializer<
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
 	PtrOffsetSerializer<SA, VA, MVA, MAX, AlignedVec<SA, VA, MVA, MAX>>
 {
-	/// Create new `PtrOffsetSerializer` with no memory pre-allocated.
+	/// Create new [`PtrOffsetSerializer`] with no memory pre-allocated.
 	///
 	/// If you know, or can estimate, the amount of buffer space that's going to
-	/// be needed in advance, allocating upfront with `with_capacity` can
+	/// be needed in advance, allocating upfront with [`with_capacity`] can
 	/// dramatically improve performance vs using `new`.
+	///
+	/// [`with_capacity`]: PtrOffsetSerializer::with_capacity
 	#[inline]
 	pub fn new() -> Self {
 		Self {
@@ -68,7 +72,7 @@ impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
 		}
 	}
 
-	/// Create new `PtrOffsetSerializer` with buffer pre-allocated with
+	/// Create new [`PtrOffsetSerializer`] with buffer pre-allocated with
 	/// capacity of at least `capacity` bytes.
 	///
 	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
@@ -102,7 +106,7 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	/// Maximum capacity of output buffer.
 	pub const MAX_CAPACITY: usize = MAX;
 
-	/// Create new `PtrOffsetSerializer` from an existing
+	/// Create new [`PtrOffsetSerializer`] from an existing
 	/// `BorrowMut<AlignedVec>`.
 	pub fn from_storage(storage: BorrowedStorage) -> Self {
 		Self {

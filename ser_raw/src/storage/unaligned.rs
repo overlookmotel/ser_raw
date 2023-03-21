@@ -2,14 +2,17 @@ use std::{mem, ptr, slice};
 
 use super::{ContiguousStorage, Storage};
 
-/// Trait for storage used by Serializers which has no specified alignment in
-/// memory.
+/// Trait for storage used by [`Serializer`]s which has no specified alignment
+/// in memory.
+///
+/// [`Serializer`]: crate::Serializer
 pub trait UnalignedStorage: Storage {}
 
 // TODO: Should use `Vec<MaybeUninit<u8>>` not `Vec<u8>` as output likely
 // includes uninitialized padding bytes
 
-/// Unaligned contiguous memory buffer. Used by `UnalignedSerializer`.
+/// Unaligned contiguous memory buffer. Used by
+/// [`UnalignedSerializer`](crate::UnalignedSerializer).
 ///
 /// Just a wrapper around `Vec<u8>`.
 pub struct UnalignedVec {
@@ -17,13 +20,13 @@ pub struct UnalignedVec {
 }
 
 impl Storage for UnalignedVec {
-	/// Create new `UnalignedVec` without allocating any memory.
+	/// Create new [`UnalignedVec`] without allocating any memory.
 	#[inline]
 	fn new() -> Self {
 		Self { inner: Vec::new() }
 	}
 
-	/// Create new `UnalignedVec` with pre-allocated capacity.
+	/// Create new [`UnalignedVec`] with pre-allocated capacity.
 	#[inline]
 	fn with_capacity(capacity: usize) -> Self {
 		Self {
@@ -31,16 +34,17 @@ impl Storage for UnalignedVec {
 		}
 	}
 
-	/// Create new `UnalignedVec` with pre-allocated capacity.
+	/// Create new [`UnalignedVec`] with pre-allocated capacity.
 	///
-	/// For `UnalignedVec`, there is no advantage to this method over the safe
-	/// method `with_capacity`. They both do exactly the same thing.
-	///
-	/// Prefer `with_capacity`.
+	/// For [`UnalignedVec`], there is no advantage to this method over the safe
+	/// method [`with_capacity`]. They both do exactly the same thing. Prefer
+	/// [`with_capacity`].
 	///
 	/// Despite being an unsafe method, there are no invariants which must be
 	/// satisfied. Method is unsafe purely because the trait method is unsafe,
-	/// because other `Storage` types may impose safety requirements.
+	/// because other [`Storage`] types may impose safety requirements.
+	///
+	/// [`with_capacity`]: Storage::with_capacity
 	#[inline]
 	unsafe fn with_capacity_unchecked(capacity: usize) -> Self {
 		Self {
@@ -73,14 +77,15 @@ impl Storage for UnalignedVec {
 
 	/// Push a slice of values `&T` to storage.
 	///
-	/// For `UnalignedVec`, there is no advantage to this method over the safe
-	/// method `push_slice`. They both do exactly the same thing.
-	///
-	/// Prefer `push_slice`.
+	/// For [`UnalignedVec`], there is no advantage to this method over the safe
+	/// method [`push_slice`]. They both do exactly the same thing. Prefer
+	/// [`push_slice`].
 	///
 	/// Despite being an unsafe method, there are no invariants which must be
 	/// satisfied. Method is unsafe purely because the trait method is unsafe,
-	/// because other `Storage` types may impose safety requirements.
+	/// because other [`Storage`] types may impose safety requirements.
+	///
+	/// [`push_slice`]: Storage::push_slice
 	#[inline]
 	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) {
 		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
@@ -95,9 +100,9 @@ impl Storage for UnalignedVec {
 
 	/// Push a slice of values `&T` to storage.
 	///
-	/// For `UnalignedVec`, there is no advantage to this method over `push_slice`
-	/// or `push_slice_unaligned`. They all do exactly the same thing.
-	/// Prefer `push_slice`.
+	/// For [`UnalignedVec`], there is no advantage to this method over
+	/// [`push_slice`] or [`push_slice_unaligned`]. They all do exactly the same
+	/// thing. Prefer [`push_slice`].
 	///
 	/// # Safety
 	///
@@ -106,6 +111,9 @@ impl Storage for UnalignedVec {
 	///
 	/// This invariant doesn't actually matter for `UnalignedVec` since `size` is
 	/// not used.
+	///
+	/// [`push_slice`]: Storage::push_slice
+	/// [`push_slice_unaligned`]: Storage::push_slice_unaligned
 	#[inline]
 	unsafe fn push_slice_unchecked<T>(&mut self, slice: &[T], size: usize) {
 		debug_assert_eq!(size, mem::size_of::<T>() * slice.len());
@@ -115,7 +123,8 @@ impl Storage for UnalignedVec {
 
 	/// Push a slice of raw bytes to storage.
 	///
-	/// Slightly more performant than `push_slice` or `push_slice_unaligned`.
+	/// Slightly more performant than [`push_slice`](Storage::push_slice) or
+	/// [`push_slice_unaligned`](Storage::push_slice_unaligned).
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) {
 		self.inner.extend_from_slice(bytes);
@@ -129,33 +138,33 @@ impl Storage for UnalignedVec {
 	}
 
 	/// Align position in storage to alignment of `T`.
-	/// `UnalignedVec` does not maintain alignment, so this is a no-op.
+	/// [`UnalignedVec`] does not maintain alignment, so this is a no-op.
 	#[inline(always)]
 	fn align_for<T>(&mut self) {}
 
 	/// Align position in storage after pushing a `T` or slice `&[T]` with
-	/// `push_slice_unaligned`.
-	/// `UnalignedVec` does not maintain alignment, so this is a no-op.
+	/// [`push_slice_unaligned`](Storage::push_slice_unaligned).
+	/// [`UnalignedVec`] does not maintain alignment, so this is a no-op.
 	#[inline(always)]
 	fn align_after<T>(&mut self) {}
 
 	/// Align position in storage after pushing values of any type with
-	/// `push_slice_unaligned`.
-	///	`UnalignedVec` does not maintain alignment, so this is a no-op.
+	/// [`push_slice_unaligned`](Storage::push_slice_unaligned).
+	///	[`UnalignedVec`] does not maintain alignment, so this is a no-op.
 	#[inline(always)]
 	fn align_after_any(&mut self) {}
 
 	/// Align position in storage to `alignment`.
 	///
-	/// `UnalignedVec` does not maintain alignment, so this is a no-op.
+	/// [`UnalignedVec`] does not maintain alignment, so this is a no-op.
 	///
 	/// # Safety
 	///
 	/// * `alignment` must be less than `isize::MAX`.
 	/// * `alignment` must be a power of 2.
 	///
-	/// These invariants don't actually matter for `UnalignedVec` since `align` is
-	/// a no-op.
+	/// These invariants don't actually matter for [`UnalignedVec`] since
+	/// `align()` is a no-op.
 	#[inline(always)]
 	unsafe fn align(&mut self, alignment: usize) {
 		debug_assert!(alignment <= isize::MAX as usize);

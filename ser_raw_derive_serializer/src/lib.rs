@@ -9,6 +9,13 @@ use ser_types::{
 	get_complete_ser_impl, get_pos_tracking_ser_impl, get_ptr_offset_ser_impl, get_pure_copy_ser_impl,
 };
 
+/// Derive macro for [`ser_raw::Serializer`]. See [`Serializer`] documentation
+/// for examples of usage.
+///
+/// NB: `__local` attribute is for internal use within `ser_raw` only.
+///
+/// [`ser_raw::Serializer`]: https://docs.rs/ser_raw/latest/ser_raw/trait.Serializer.html
+/// [`Serializer`]: https://docs.rs/ser_raw/latest/ser_raw/trait.Serializer.html
 #[proc_macro_derive(
 	Serializer,
 	attributes(ser_type, ser_storage, ser_pos_mapping, ser_ptrs, __local)

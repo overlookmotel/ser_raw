@@ -1,3 +1,5 @@
+//! Utility functions.
+
 /// Round up `pos` to alignment of `alignment`.
 ///
 /// `alignment` must be a power of 2.

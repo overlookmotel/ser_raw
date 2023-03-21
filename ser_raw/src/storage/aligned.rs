@@ -3,8 +3,8 @@ use std::{cmp, marker::PhantomData, mem, ptr};
 use super::{AlignedByteVec, ContiguousStorage, Storage};
 use crate::util::{align_up_to, is_aligned_to};
 
-/// Trait for storage used by Serializers which ensures values added to storage
-/// maintain correct alignment in memory for their types.
+/// Trait for storage used by [`Serializer`]s which ensures values added to
+/// storage maintain correct alignment in memory for their types.
 ///
 /// # Const parameters
 ///
@@ -65,6 +65,8 @@ use crate::util::{align_up_to, is_aligned_to};
 /// * Cannot be 0.
 /// * Cannot be greater than `isize::MAX + 1 - STORAGE_ALIGNMENT`.
 /// * Must be a multiple of `MAX_VALUE_ALIGNMENT`.
+///
+/// [`Serializer`]: crate::Serializer
 // TODO: Set defaults for const params.
 // TODO: Reverse order of params - `MAX_VALUE_ALIGNMENT` before
 // `VALUE_ALIGNMENT`.
@@ -136,12 +138,14 @@ pub trait AlignedStorage<
 }
 
 /// Aligned contiguous memory buffer. Used as backing storage by all of the
-/// Serializers provided by this crate, except for `UnalignedSerializer`.
+/// Serializers provided by this crate, except for [`UnalignedSerializer`].
 ///
 /// A wrapper around rkyv's `AlignedByteVec` which ensures all values pushed to
 /// the storage are correctly aligned.
 ///
-/// See `AlignedStorage` trait for details of the const parameters.
+/// See [`AlignedStorage`] trait for details of the const parameters.
+///
+/// [`UnalignedSerializer`]: crate::UnalignedSerializer
 pub struct AlignedVec<
 	const STORAGE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
@@ -158,7 +162,7 @@ impl<
 		const MAX_CAPACITY: usize,
 	> Storage for AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
 {
-	/// Create new `AlignedVec`.
+	/// Create new [`AlignedVec`].
 	#[inline]
 	fn new() -> Self {
 		// Ensure (at compile time) that const params are valid
@@ -169,7 +173,7 @@ impl<
 		}
 	}
 
-	/// Create new `AlignedVec` with pre-allocated capacity.
+	/// Create new [`AlignedVec`] with pre-allocated capacity.
 	///
 	/// # Panics
 	///
@@ -198,7 +202,7 @@ impl<
 		}
 	}
 
-	/// Create new `AlignedVec` with pre-allocated capacity,
+	/// Create new [`AlignedVec`] with pre-allocated capacity,
 	/// without safety checks.
 	///
 	/// # Safety
@@ -284,7 +288,7 @@ impl<
 	///
 	/// # Safety
 	///
-	/// Caller must ensure `AlignedVec` has sufficient capacity.
+	/// Caller must ensure [`AlignedVec`] has sufficient capacity.
 	///
 	/// `size` must be total size in bytes of `&[T]`.
 	/// i.e. `size = mem::size_of::<T>() * slice.len()`.
@@ -315,7 +319,7 @@ impl<
 	}
 
 	/// Reserve capacity for at least `additional` more bytes to be inserted into
-	/// the `AlignedVec`.
+	/// the [`AlignedVec`].
 	///
 	/// Growth of capacity occurs in powers of 2 up to `MAX_CAPACITY`, and is
 	/// always at minimum `MAX_VALUE_ALIGNMENT`.
@@ -548,15 +552,16 @@ impl<
 {
 }
 
-/// Get maximum maximum capacity for an `AlignedStorage` on this system.
+/// Get maximum maximum capacity for an [`AlignedStorage`] on this system.
 /// i.e. the maximum allowable value for `MAX_CAPACITY` const parameter.
 ///
 /// `alignment` must be a power of 2, less than `isize::MAX`.
 ///
 /// Max capacity is dictated by the requirements of [`std::alloc::Layout`]:
-/// "`size`, when rounded up to the nearest multiple of `align`, must not
-/// overflow `isize` (i.e. the rounded value must be less than or equal to
-/// `isize::MAX`)".
+///
+/// > "`size`, when rounded up to the nearest multiple of `align`, must not
+/// > overflow `isize` (i.e. the rounded value must be less than or equal to
+/// > `isize::MAX`)".
 ///
 /// [`std::alloc::Layout`]: https://doc.rust-lang.org/alloc/alloc/struct.Layout.html
 pub const fn aligned_max_capacity(alignment: usize) -> usize {
@@ -572,7 +577,7 @@ pub const fn aligned_max_capacity(alignment: usize) -> usize {
 	isize::MAX as usize - (alignment - 1)
 }
 
-/// Get maximum maximum capacity for an `AlignedStorage` on this system with a
+/// Get maximum maximum capacity for an [`AlignedStorage`] on this system with a
 /// cap of `u32::MAX + 1`.
 ///
 /// Can be used to calculate a value for `MAX_CAPACITY` const parameter whereby
@@ -586,9 +591,10 @@ pub const fn aligned_max_capacity(alignment: usize) -> usize {
 ///
 /// Cap at `i32::MAX + 1 - alignment` on 32-bit systems is dictated by the
 /// requirements of [`std::alloc::Layout`]:
-/// "`size`, when rounded up to the nearest multiple of `align`, must not
-/// overflow `isize` (i.e. the rounded value must be less than or equal to
-/// `isize::MAX`)".
+///
+/// > "`size`, when rounded up to the nearest multiple of `align`, must not
+/// > overflow `isize` (i.e. the rounded value must be less than or equal to
+/// > `isize::MAX`)".
 ///
 /// [`std::alloc::Layout`]: https://doc.rust-lang.org/alloc/alloc/struct.Layout.html
 pub const fn aligned_max_u32_capacity(alignment: usize) -> usize {

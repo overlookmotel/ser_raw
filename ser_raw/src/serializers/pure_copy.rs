@@ -19,10 +19,10 @@ use crate::{
 /// determininstic order in which they've been added to the output. However,
 /// this requires deserializing the "tree" in order.
 ///
-/// If you need to deserialize in arbitrary order, use `PtrOffsetSerializer` or
-/// `CompleteSerializer` instead.
+/// If you need to deserialize in arbitrary order, use [`PtrOffsetSerializer`]
+/// or [`CompleteSerializer`] instead.
 ///
-/// See `AlignedStorage` for an explanation of the const parameters.
+/// See [`AlignedStorage`] for an explanation of the const parameters.
 ///
 /// # Example
 ///
@@ -38,6 +38,10 @@ use crate::{
 /// The 1st 8 bytes of `storage` will be a pointer pointing to the original
 /// `&boxed as *const Box<u8>`. This is not useful data as `boxed` has been
 /// dropped.
+///
+/// [`AlignedStorage`]: crate::storage::AlignedStorage
+/// [`PtrOffsetSerializer`]: crate::PtrOffsetSerializer
+/// [`CompleteSerializer`]: crate::CompleteSerializer
 // TODO: Set defaults for const params.
 // TODO: Reverse order of params - `MAX_VALUE_ALIGNMENT` before `VALUE_ALIGNMENT`.
 #[derive(Serializer)]
@@ -57,11 +61,13 @@ pub struct PureCopySerializer<
 impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
 	PureCopySerializer<SA, VA, MVA, MAX, AlignedVec<SA, VA, MVA, MAX>>
 {
-	/// Create new `PureCopySerializer` with no memory pre-allocated.
+	/// Create new [`PureCopySerializer`] with no memory pre-allocated.
 	///
 	/// If you know, or can estimate, the amount of buffer space that's going to
-	/// be needed in advance, allocating upfront with `with_capacity` can
+	/// be needed in advance, allocating upfront with [`with_capacity`] can
 	/// dramatically improve performance vs using `new`.
+	///
+	/// [`with_capacity`]: PureCopySerializer::with_capacity
 	#[inline]
 	pub fn new() -> Self {
 		Self {
@@ -69,8 +75,8 @@ impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
 		}
 	}
 
-	/// Create new `PureCopySerializer` with buffer pre-allocated with capacity of
-	/// at least `capacity` bytes.
+	/// Create new [`PureCopySerializer`] with buffer pre-allocated with capacity
+	/// of at least `capacity` bytes.
 	///
 	/// `capacity` will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
 	///
@@ -102,7 +108,8 @@ where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
 	/// Maximum capacity of output buffer.
 	pub const MAX_CAPACITY: usize = MAX;
 
-	/// Create new `PureCopySerializer` from an existing `BorrowMut<AlignedVec>`.
+	/// Create new [`PureCopySerializer`] from an existing
+	/// `BorrowMut<AlignedVec>`.
 	pub fn from_storage(storage: BorrowedStorage) -> Self {
 		Self { storage }
 	}

@@ -8,6 +8,11 @@ use structs::derive_struct;
 mod enums;
 use enums::derive_enum;
 
+/// Derive macro for [`ser_raw::Serialize`]. See [`Serialize`] documentation
+/// for examples of usage.
+///
+/// [`ser_raw::Serialize`]: https://docs.rs/ser_raw/latest/ser_raw/trait.Serialize.html
+/// [`Serialize`]: https://docs.rs/ser_raw/latest/ser_raw/trait.Serialize.html
 #[proc_macro_derive(Serialize, attributes(ser_with, ser_bound))]
 pub fn serialize(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let input = parse_macro_input!(input as DeriveInput);
