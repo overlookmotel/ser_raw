@@ -6,7 +6,7 @@ use crate::{
 };
 
 /// Simple serializer that just copies values, with no position tracking or
-/// pointer correction.
+/// pointer correction, without respecting alignment.
 ///
 /// Unlike [`PureCopySerializer`], [`UnalignedSerializer`] does not respect
 /// alignment in the output. Values are likely not be aligned as their types
@@ -16,7 +16,36 @@ use crate::{
 /// same alignment, performance of [`PureCopySerializer`], which
 /// does respect alignment, is likely to be almost exactly the same.
 ///
+/// Any pointers in the input will be copied unchanged. They'll point to the
+/// input, and therefore may not remain valid if the input is dropped.
+/// Essentially the pointers in output are meaningless.
+///
+/// A deserializer can still understand and reconstruct the input from this
+/// serializer's output, based on its knownledge of the types' layouts, and the
+/// determininstic order in which they've been added to the output. However,
+/// this requires deserializing the "tree" in order.
+///
+/// If you need to deserialize in arbitrary order, use [`PtrOffsetSerializer`]
+/// or [`CompleteSerializer`] instead.
+///
+/// # Example
+///
+/// ```
+/// use ser_raw::{UnalignedSerializer, Serialize, Serializer};
+///
+/// let boxed: Box<u8> = Box::new(123);
+/// let mut ser = UnalignedSerializer::new();
+/// let storage = ser.serialize(&boxed);
+/// drop(boxed);
+/// ```
+///
+/// The 1st 8 bytes of `storage` will be a pointer pointing to the original
+/// `&boxed as *const Box<u8>`. This is not useful data as `boxed` has been
+/// dropped.
+///
 /// [`PureCopySerializer`]: crate::PureCopySerializer
+/// [`PtrOffsetSerializer`]: crate::PtrOffsetSerializer
+/// [`CompleteSerializer`]: crate::CompleteSerializer
 #[derive(Serializer)]
 #[ser_type(pure_copy)]
 #[__local]
