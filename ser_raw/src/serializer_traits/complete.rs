@@ -78,6 +78,7 @@ where Self::Storage: ContiguousStorage
 	///
 	/// After this, the serializer cannot be used any further, so this method
 	/// consumes it and returns the underlying `BorrowMut<Storage>`.
+	#[inline]
 	fn do_finalize(mut self) -> Self::BorrowedStorage {
 		let storage_ptr = self.storage_mut().as_mut_ptr();
 
