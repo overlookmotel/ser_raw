@@ -17,6 +17,17 @@ use crate::util::{align_up_to, is_aligned_to};
 ///
 /// * Must be a power of 2.
 ///
+/// ## `MAX_VALUE_ALIGNMENT`
+///
+/// Maximum alignment requirement of values which can be stored in `Storage`.
+/// Types with alignment greater than `MAX_VALUE_ALIGNMENT` cannot be stored in
+/// this `Storage`.
+///
+/// * Must be a power of 2.
+/// * Must be less than or equal to `STORAGE_ALIGNMENT`.
+///
+/// `capacity` will always be a multiple of this.
+///
 /// ## `VALUE_ALIGNMENT`
 ///
 /// Minimum alignment all values will have in `Storage`.
@@ -47,17 +58,6 @@ use crate::util::{align_up_to, is_aligned_to};
 /// * Must be a power of 2.
 /// * Must be less than or equal to `MAX_VALUE_ALIGNMENT`.
 ///
-/// ## `MAX_VALUE_ALIGNMENT`
-///
-/// Maximum alignment requirement of values which can be stored in `Storage`.
-/// Types with alignment greater than `MAX_VALUE_ALIGNMENT` cannot be stored in
-/// this `Storage`.
-///
-/// * Must be a power of 2.
-/// * Must be less than or equal to `STORAGE_ALIGNMENT`.
-///
-/// `capacity` will always be a multiple of this.
-///
 /// ## `MAX_CAPACITY`
 ///
 /// Maximum capacity of storage.
@@ -68,23 +68,21 @@ use crate::util::{align_up_to, is_aligned_to};
 ///
 /// [`Serializer`]: crate::Serializer
 // TODO: Set defaults for const params.
-// TODO: Reverse order of params - `MAX_VALUE_ALIGNMENT` before
-// `VALUE_ALIGNMENT`.
 pub trait AlignedStorage<
 	const STORAGE_ALIGNMENT: usize,
-	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
+	const VALUE_ALIGNMENT: usize,
 	const MAX_CAPACITY: usize,
 >: Storage
 {
 	/// Alignment of storage's memory buffer.
 	const STORAGE_ALIGNMENT: usize = STORAGE_ALIGNMENT;
 
-	/// Typical alignment of values being added to storage.
-	const VALUE_ALIGNMENT: usize = VALUE_ALIGNMENT;
-
 	/// Maximum alignment of values being added to storage.
 	const MAX_VALUE_ALIGNMENT: usize = MAX_VALUE_ALIGNMENT;
+
+	/// Typical alignment of values being added to storage.
+	const VALUE_ALIGNMENT: usize = VALUE_ALIGNMENT;
 
 	/// Maximum capacity of storage.
 	const MAX_CAPACITY: usize = MAX_CAPACITY;
@@ -148,8 +146,8 @@ pub trait AlignedStorage<
 /// [`UnalignedSerializer`]: crate::UnalignedSerializer
 pub struct AlignedVec<
 	const STORAGE_ALIGNMENT: usize,
-	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
+	const VALUE_ALIGNMENT: usize,
 	const MAX_CAPACITY: usize,
 > {
 	inner: AlignedByteVec<STORAGE_ALIGNMENT>,
@@ -157,10 +155,10 @@ pub struct AlignedVec<
 
 impl<
 		const STORAGE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
-	> Storage for AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	> Storage for AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Create new [`AlignedVec`].
 	#[inline]
@@ -429,10 +427,10 @@ impl<
 
 impl<
 		const STORAGE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
-	> AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	> AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Extend capacity after `reserve` has found it's necessary.
 	///
@@ -472,11 +470,11 @@ impl<
 
 impl<
 		const STORAGE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
 	> ContiguousStorage
-	for AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	for AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Write a slice of values at a specific position in storage's buffer.
 	///
@@ -544,11 +542,11 @@ impl<
 
 impl<
 		const STORAGE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
 		const MAX_VALUE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
-	> AlignedStorage<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
-	for AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>
+	> AlignedStorage<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
+	for AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 }
 

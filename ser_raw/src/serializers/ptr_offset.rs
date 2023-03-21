@@ -25,7 +25,7 @@ use crate::{
 /// };
 ///
 /// let boxed: Box<u8> = Box::new(123);
-/// let mut ser = PtrOffsetSerializer::<16, 8, 16, 1024, _>::new();
+/// let mut ser = PtrOffsetSerializer::<16, 16, 8, 1024, _>::new();
 /// let storage = ser.serialize(&boxed);
 /// let slice = storage.as_slice();
 ///
@@ -37,25 +37,24 @@ use crate::{
 ///
 /// [`AlignedStorage`]: crate::storage::AlignedStorage
 // TODO: Set defaults for const params.
-// TODO: Reverse order of params - `MAX_VALUE_ALIGNMENT` before `VALUE_ALIGNMENT`.
 #[derive(Serializer)]
 #[ser_type(ptr_offset)]
 #[__local]
 pub struct PtrOffsetSerializer<
 	const STORAGE_ALIGNMENT: usize,
-	const VALUE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
+	const VALUE_ALIGNMENT: usize,
 	const MAX_CAPACITY: usize,
-	BorrowedStorage: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>>,
+	BorrowedStorage: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>>,
 > {
-	#[ser_storage(AlignedVec<STORAGE_ALIGNMENT, VALUE_ALIGNMENT, MAX_VALUE_ALIGNMENT, MAX_CAPACITY>)]
+	#[ser_storage(AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>)]
 	storage: BorrowedStorage,
 	#[ser_pos_mapping]
 	pos_mapping: PosMapping,
 }
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
-	PtrOffsetSerializer<SA, VA, MVA, MAX, AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const MVA: usize, const VA: usize, const MAX: usize>
+	PtrOffsetSerializer<SA, MVA, VA, MAX, AlignedVec<SA, MVA, VA, MAX>>
 {
 	/// Create new [`PtrOffsetSerializer`] with no memory pre-allocated.
 	///
@@ -90,18 +89,18 @@ impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize>
 	}
 }
 
-impl<const SA: usize, const VA: usize, const MVA: usize, const MAX: usize, BorrowedStorage>
-	PtrOffsetSerializer<SA, VA, MVA, MAX, BorrowedStorage>
-where BorrowedStorage: BorrowMut<AlignedVec<SA, VA, MVA, MAX>>
+impl<const SA: usize, const MVA: usize, const VA: usize, const MAX: usize, BorrowedStorage>
+	PtrOffsetSerializer<SA, MVA, VA, MAX, BorrowedStorage>
+where BorrowedStorage: BorrowMut<AlignedVec<SA, MVA, VA, MAX>>
 {
 	/// Alignment of output buffer
 	pub const STORAGE_ALIGNMENT: usize = SA;
 
-	/// Typical alignment of values being serialized
-	pub const VALUE_ALIGNMENT: usize = VA;
-
 	/// Maximum alignment of values being serialized
 	pub const MAX_VALUE_ALIGNMENT: usize = MVA;
+
+	/// Typical alignment of values being serialized
+	pub const VALUE_ALIGNMENT: usize = VA;
 
 	/// Maximum capacity of output buffer.
 	pub const MAX_CAPACITY: usize = MAX;

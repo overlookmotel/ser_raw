@@ -24,7 +24,7 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// };
 ///
 /// const MAX_CAPACITY: usize = aligned_max_capacity(16);
-/// type Store = AlignedVec<16, 8, 16, MAX_CAPACITY>;
+/// type Store = AlignedVec<16, 16, 8, MAX_CAPACITY>;
 ///
 /// #[derive(Serializer)]
 /// #[ser_type(pure_copy)]
@@ -54,7 +54,7 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// };
 ///
 /// const MAX_CAPACITY: usize = aligned_max_capacity(16);
-/// type Store = AlignedVec<16, 8, 16, MAX_CAPACITY>;
+/// type Store = AlignedVec<16, 16, 8, MAX_CAPACITY>;
 ///
 /// #[derive(Serializer)]
 /// #[ser_type(ptr_offset)]
@@ -87,7 +87,7 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// };
 ///
 /// const MAX_CAPACITY: usize = aligned_max_capacity(16);
-/// type Store = AlignedVec<16, 8, 16, MAX_CAPACITY>;
+/// type Store = AlignedVec<16, 16, 8, MAX_CAPACITY>;
 ///
 /// #[derive(Serializer)]
 /// #[ser_type(complete)]
@@ -145,7 +145,7 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// };
 ///
 /// const MAX_CAPACITY: usize = aligned_max_capacity(16);
-/// type Store = AlignedVec<16, 8, 16, MAX_CAPACITY>;
+/// type Store = AlignedVec<16, 16, 8, MAX_CAPACITY>;
 ///
 /// struct MySerializer {
 /// 	storage: Store,
@@ -204,7 +204,7 @@ pub trait Serializer: Sized {
 	/// 	big: u32,
 	/// }
 	///
-	/// let mut ser = PureCopySerializer::<16, 8, 16, 1024, _>::new();
+	/// let mut ser = PureCopySerializer::<16, 16, 8, 1024, _>::new();
 	/// let storage = ser.serialize(&Foo { small: 1, big: 2 });
 	/// assert_eq!(storage.len(), 8);
 	/// ```
@@ -235,7 +235,7 @@ pub trait Serializer: Sized {
 	/// 	big: u32,
 	/// }
 	///
-	/// let mut ser = PureCopySerializer::<16, 8, 16, 1024, _>::new();
+	/// let mut ser = PureCopySerializer::<16, 16, 8, 1024, _>::new();
 	/// ser.serialize_value(&Foo { small: 1, big: 2 });
 	/// ser.serialize_value(&Foo { small: 3, big: 4 });
 	/// let storage = ser.finalize();
