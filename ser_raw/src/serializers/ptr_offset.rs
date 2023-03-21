@@ -21,11 +21,12 @@ use crate::{
 /// ```
 /// use ser_raw::{
 /// 	PtrOffsetSerializer, Serialize, Serializer,
-/// 	storage::ContiguousStorage
+/// 	storage::{aligned_max_capacity, ContiguousStorage},
 /// };
 ///
 /// let boxed: Box<u8> = Box::new(123);
-/// let mut ser = PtrOffsetSerializer::<16, 16, 8, 1024, _>::new();
+/// const MAX_CAPACITY: usize = aligned_max_capacity(16);
+/// let mut ser = PtrOffsetSerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
 /// let storage = ser.serialize(&boxed);
 /// let slice = storage.as_slice();
 ///

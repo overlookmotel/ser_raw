@@ -27,10 +27,14 @@ use crate::{
 /// # Example
 ///
 /// ```
-/// use ser_raw::{PureCopySerializer, Serialize, Serializer};
+/// use ser_raw::{
+/// 	storage::aligned_max_capacity,
+/// 	PureCopySerializer, Serialize, Serializer,
+/// };
 ///
 /// let boxed: Box<u8> = Box::new(123);
-/// let mut ser = PureCopySerializer::<16, 16, 8, 1024, _>::new();
+/// const MAX_CAPACITY: usize = aligned_max_capacity(16);
+/// let mut ser = PureCopySerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
 /// let storage = ser.serialize(&boxed);
 /// drop(boxed);
 /// ```
