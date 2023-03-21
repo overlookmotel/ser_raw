@@ -63,7 +63,6 @@ use crate::{
 /// ```
 ///
 /// [`AlignedStorage`]: crate::storage::AlignedStorage
-// TODO: Set defaults for const params.
 #[derive(Serializer)]
 #[ser_type(complete)]
 #[__local]

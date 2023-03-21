@@ -3,6 +3,11 @@ use std::{cmp, marker::PhantomData, mem, ptr};
 use super::{AlignedByteVec, ContiguousStorage, Storage};
 use crate::util::{align_up_to, aligned_max_capacity, is_aligned_to};
 
+const PTR_SIZE: usize = mem::size_of::<usize>();
+const DEFAULT_STORAGE_ALIGNMENT: usize = 16;
+const DEFAULT_VALUE_ALIGNMENT: usize = PTR_SIZE;
+const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNMENT);
+
 /// Trait for storage used by [`Serializer`]s which ensures values added to
 /// storage maintain correct alignment in memory for their types.
 ///
@@ -17,6 +22,8 @@ use crate::util::{align_up_to, aligned_max_capacity, is_aligned_to};
 ///
 /// * Must be a power of 2.
 ///
+/// Default: 16
+///
 /// ## `MAX_VALUE_ALIGNMENT`
 ///
 /// Maximum alignment requirement of values which can be stored in `Storage`.
@@ -27,6 +34,8 @@ use crate::util::{align_up_to, aligned_max_capacity, is_aligned_to};
 /// * Must be less than or equal to `STORAGE_ALIGNMENT`.
 ///
 /// `capacity` will always be a multiple of this.
+///
+/// Default: `STORAGE_ALIGNMENT`
 ///
 /// ## `VALUE_ALIGNMENT`
 ///
@@ -58,6 +67,11 @@ use crate::util::{align_up_to, aligned_max_capacity, is_aligned_to};
 /// * Must be a power of 2.
 /// * Must be less than or equal to `MAX_VALUE_ALIGNMENT`.
 ///
+/// Default:
+///
+/// * 64-bit systems: 8
+/// * 32-bit systems: 4
+///
 /// ## `MAX_CAPACITY`
 ///
 /// Maximum capacity of storage.
@@ -66,8 +80,12 @@ use crate::util::{align_up_to, aligned_max_capacity, is_aligned_to};
 /// * Cannot be greater than `isize::MAX + 1 - STORAGE_ALIGNMENT`.
 /// * Must be a multiple of `MAX_VALUE_ALIGNMENT`.
 ///
+/// Default:
+///
+/// * 64-bit systems: `u64::MAX - 15`
+/// * 32-bit systems: `u32::MAX - 15`
+///
 /// [`Serializer`]: crate::Serializer
-// TODO: Set defaults for const params.
 pub trait AlignedStorage<
 	const STORAGE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
@@ -145,10 +163,10 @@ pub trait AlignedStorage<
 ///
 /// [`UnalignedSerializer`]: crate::UnalignedSerializer
 pub struct AlignedVec<
-	const STORAGE_ALIGNMENT: usize,
-	const MAX_VALUE_ALIGNMENT: usize,
-	const VALUE_ALIGNMENT: usize,
-	const MAX_CAPACITY: usize,
+	const STORAGE_ALIGNMENT: usize = DEFAULT_STORAGE_ALIGNMENT,
+	const MAX_VALUE_ALIGNMENT: usize = STORAGE_ALIGNMENT,
+	const VALUE_ALIGNMENT: usize = DEFAULT_VALUE_ALIGNMENT,
+	const MAX_CAPACITY: usize = DEFAULT_MAX_CAPACITY,
 > {
 	inner: AlignedByteVec<STORAGE_ALIGNMENT>,
 }

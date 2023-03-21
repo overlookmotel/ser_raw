@@ -46,7 +46,6 @@ use crate::{
 /// [`AlignedStorage`]: crate::storage::AlignedStorage
 /// [`PtrOffsetSerializer`]: crate::PtrOffsetSerializer
 /// [`CompleteSerializer`]: crate::CompleteSerializer
-// TODO: Set defaults for const params.
 #[derive(Serializer)]
 #[ser_type(pure_copy)]
 #[__local]
