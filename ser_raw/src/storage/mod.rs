@@ -8,6 +8,12 @@ pub use aligned::{AlignedStorage, AlignedVec};
 mod unaligned;
 pub use unaligned::{UnalignedStorage, UnalignedVec};
 
+mod aligned_bytes;
+pub use aligned_bytes::AlignedBytes;
+
+mod aligned_blocks;
+pub use aligned_blocks::AlignedBlocks;
+
 mod aligned_vec;
 pub(crate) use aligned_vec::AlignedByteVec;
 
