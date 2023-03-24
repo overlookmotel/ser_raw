@@ -287,10 +287,18 @@ impl<
 	///
 	/// # Safety
 	///
+	/// The following constraints must be satisfied in order to leave the
+	/// [`AlignedVec`] in a consistent state:
+	///
+	/// * `alignment` must be `>= VALUE_ALIGNMENT`.
 	/// * `alignment` must be `<= MAX_VALUE_ALIGNMENT`.
+	///
+	/// For alignment calculation to be valid:
+	///
 	/// * `alignment` must be a power of 2.
 	#[inline]
 	unsafe fn align(&mut self, alignment: usize) {
+		debug_assert!(alignment >= VALUE_ALIGNMENT);
 		debug_assert!(alignment <= MAX_VALUE_ALIGNMENT);
 		debug_assert!(alignment.is_power_of_two());
 
