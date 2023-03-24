@@ -8,8 +8,8 @@ pub use aligned::{AlignedStorage, AlignedVec};
 mod unaligned;
 pub use unaligned::{UnalignedStorage, UnalignedVec};
 
-mod aligned_vec;
-pub(crate) use aligned_vec::AlignedByteVec;
+mod aligned_byte_vec;
+pub(crate) use aligned_byte_vec::AlignedByteVec;
 
 /// Trait for storage used by Serializers.
 ///
