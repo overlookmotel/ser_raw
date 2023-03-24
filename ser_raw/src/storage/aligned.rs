@@ -191,6 +191,8 @@ impl<
 
 	/// Create new [`AlignedVec`] with pre-allocated capacity.
 	///
+	/// Capacity will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
+	///
 	/// # Panics
 	///
 	/// Panics if `capacity` exceeds `MAX_CAPACITY`.
@@ -268,12 +270,16 @@ impl<
 
 	/// Push a slice of values `&T` to storage, without alignment checks.
 	///
+	/// # Panics
+	///
+	/// Panics if would require growing storage beyond `MAX_CAPACITY`.
+	///
 	/// # Safety
 	///
 	/// This method does *not* ensure 2 invariants relating to alignment:
 	///
-	/// * `len` must be aligned for the type before push
-	/// * `len` must be aligned to `VALUE_ALIGNMENT` after push
+	/// * `len` must be aligned for the type before push.
+	/// * `len` must be aligned to `VALUE_ALIGNMENT` after push.
 	///
 	/// Caller must uphold these invariants. It is sufficient to:
 	///
@@ -312,8 +318,8 @@ impl<
 	/// This method does *not* ensure 2 invariants of storage relating to
 	/// alignment:
 	///
-	/// * that `len` is aligned for the type before push
-	/// * that `len` is aligned to `VALUE_ALIGNMENT` after push
+	/// * that `len` is aligned for the type before push.
+	/// * that `len` is aligned to `VALUE_ALIGNMENT` after push.
 	///
 	/// Caller must uphold these invariants. It is sufficient to:
 	///
