@@ -469,6 +469,10 @@ impl<
 	/// and less than user-defined `MAX_CAPACITY`.
 	#[cold]
 	fn grow_for_reserve(&mut self, additional: usize) {
+		// Where `reserve` was called by `push_slice_unaligned`, we could actually avoid
+		// the checked add. A valid slice cannot be larger than `isize::MAX`, and ditto
+		// `capacity`, so this can't overflow.
+		// TODO: Maybe create a specialized version of this function for that usage?
 		let new_cap = self
 			.len()
 			.checked_add(additional)
