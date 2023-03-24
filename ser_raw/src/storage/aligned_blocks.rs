@@ -109,14 +109,13 @@ impl AlignedBlocks {
 
 		// Round up capacity to next power of 2.
 		// Cannot allocate `isize::MAX + 1` in a single allocation due to requirement of
-		// `std::alloc::Layout`.
+		// `std::alloc::Layout`, so limit first allocation to `(isize::MAX + 1) / 2`.
 		assert!(
 			capacity <= MAX_CAPACITY / 2,
 			"Requested capacity exceeds maximum for first allocation"
 		);
 		let capacity = capacity.next_power_of_two();
 
-		// TODO: Is `+1` correct?
 		let max_num_blocks = capacity.leading_zeros() as usize + 1;
 
 		Self {
