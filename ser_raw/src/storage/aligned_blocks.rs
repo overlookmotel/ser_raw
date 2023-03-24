@@ -1,11 +1,9 @@
-use std::mem;
+use std::{mem, num::NonZeroUsize};
 
 use super::AlignedBytes;
 
 const MAX_BLOCK_COUNT: usize = mem::size_of::<usize>() * 8;
 const MAX_CAPACITY: usize = (isize::MAX as usize) + 1;
-
-// TODO: The logic around magnitudes is broken. Needs more thought.
 
 /// Aligned storage which allocates memory in a series of blocks.
 ///
@@ -46,8 +44,12 @@ const MAX_CAPACITY: usize = (isize::MAX as usize) + 1;
 /// A position's `magnitude` is the number of leading zeros it has in its binary
 /// representation. Obtaining `magnitude` is a single processor instruction.
 ///
-/// Position is a `usize`, so `magnitude` has an upper bound of
-/// `mem::size_of::<usize>() * 8` (i.e. 64 on a 64-bit system).
+/// Position is a `usize`, so `magnitude` is between 0 and 64 (inclusive),
+/// (or 0-32 on 32-bit systems).
+/// So magnitude has 65 possible values (33 on 32-bit systems).
+/// But position 0 (`magnitude` 64) is handled as a special case.
+/// NB perhaps "magnitude" is a misleading name, as small numbers have high
+/// "magnitude", and large numbers have low "magnitude".
 ///
 /// `block_indexes` maps from `magnitude` to the the block index
 /// (`block_indexes[magnitude]`). `block_indexes` is only 64 bytes, so can be
@@ -57,6 +59,12 @@ const MAX_CAPACITY: usize = (isize::MAX as usize) + 1;
 /// The starting position of each block is recorded in `block_positions` so
 /// obtaining the offset from start of block for this position is just
 /// `pos - block_positions[block_index]`. Again, cheap.
+///
+/// A valid position can never have `magnitude` of 0, because that would
+/// require a position > `isize::MAX`, which is always out of bounds.
+/// So value in `block_indexes[0]` is redundant. We do not try to exploit this,
+/// to reduce size of `block_indexes` to 63, because would require an
+/// extra `- 1` operation on all lookups.
 ///
 /// </details>
 ///
@@ -76,6 +84,8 @@ pub struct AlignedBlocks {
 	block_positions: Box<[usize]>,
 	/// Mapping from position magnitude to block index.
 	// Boxed to avoid size of `AlignedBlocks` exceeding 128 bytes.
+	// TODO: Wrap `[u8; 64]` in a `#[repr(align(64))]` type
+	// so this always occupies a single cache line?
 	block_indexes: Box<[u8; MAX_BLOCK_COUNT]>,
 }
 
@@ -116,7 +126,8 @@ impl AlignedBlocks {
 		);
 		let capacity = capacity.next_power_of_two();
 
-		let max_num_blocks = capacity.leading_zeros() as usize + 1;
+		// `capacity` cannot be zero (checked above)
+		let max_num_blocks = unsafe { magnitude_for_non_zero(capacity) } + 1;
 
 		Self {
 			capacity,
@@ -167,11 +178,15 @@ impl AlignedBlocks {
 
 		let block_index = self.block_count;
 		debug_assert!((block_index as usize) < self.blocks.len());
+		debug_assert!((block_index as usize) < self.block_positions.len());
 
 		// Create new block
 		let new_block_capacity = new_capacity - old_capacity;
 		let new_block = AlignedBytes::with_capacity(new_block_capacity);
 		let old_block = mem::replace(&mut self.current_block, new_block);
+
+		self.block_count += 1;
+		self.capacity = new_capacity;
 
 		// Record position in storage this block starts at (which is `old_capacity`)
 		unsafe { *self.block_positions.get_unchecked_mut(block_index as usize) = old_capacity };
@@ -179,37 +194,86 @@ impl AlignedBlocks {
 		// Store previous current block in `blocks`, unless it was an empty dummy
 		if block_index > 0 {
 			unsafe { *self.blocks.get_unchecked_mut(block_index as usize - 1) = old_block };
-		}
 
-		self.block_count += 1;
-		self.capacity = new_capacity;
+			// Set `block_indexes` for all magnitudes within this new block.
+			// Skipped if `block_index == 0`, as `block_indexes` initialized as 0s anyway.
 
-		// Set `block_indexes` for all magnitudes within this new block
-		// TODO: `new_magnitude` will be wrong if capacity = `usize::MAX`
-		let new_magnitude = new_capacity.leading_zeros() as usize;
-		let old_magnitude = old_capacity.leading_zeros() as usize;
-		for magnitude in new_magnitude..old_magnitude {
-			// Impossible for `magnitude` to be out of bounds
-			unsafe { *self.block_indexes.get_unchecked_mut(magnitude) = block_index };
+			// Example to check logic:
+			// `old_capacity` = 4, `new_capacity` = 16, `block_index` = 1
+			// -> `old_magnitude` = 62, `new_magnitude` = 60
+			// -> Sets `block_indexes[60] = 1` and `block_indexes[61] = 1`.
+			//    All other `block_indexes` values are 0.
+			// Block index lookups with `get_block_index_and_offset_for_pos`:
+			// * pos  0 -> magnitude 64 -> block index 0 (special case)
+			// * pos  1 -> magnitude 63 -> block index 0
+			// * pos  2 -> magnitude 62 -> block index 0
+			// * pos  3 -> magnitude 62 -> block index 0
+			// * pos  4 -> magnitude 61 -> block index 1
+			// * pos  5 -> magnitude 61 -> block index 1
+			// * pos  8 -> magnitude 60 -> block index 1
+			// * pos 15 -> magnitude 60 -> block index 1
+			// * pos 16 -> magnitude 59 -> block index 0 (wrong because `pos` out of bounds)
+
+			// This isn't the first block, so both old and new capacity are non-zero
+			let new_magnitude = unsafe { magnitude_for_non_zero(new_capacity) } + 1;
+			let old_magnitude = unsafe { magnitude_for_non_zero(old_capacity) } + 1;
+			for magnitude in new_magnitude..old_magnitude {
+				// Impossible for `magnitude` to be out of bounds because `old_capacity` is
+				// non-zero, so max `old_magnitude` is 64. Highest `magnitude` therefore is 63.
+				unsafe { *self.block_indexes.get_unchecked_mut(magnitude) = block_index };
+			}
 		}
 	}
 
 	/// Translate position in storage to index of block holding that data,
-	/// and offset of the data within that block
+	/// and offset of the data within that block.
+	///
+	/// `pos` must be within the bounds of the storage
+	/// (i.e. `pos < storage.capacity()`).
+	///
+	/// `pos` where `pos == storage.capacity()` is specifically not supported.
+	///
+	/// Calling this method with a `pos` which violates above constraint will not
+	/// be UB in itself (so this method is safe), but a later attempt to read from
+	/// that invalid position may read the wrong data, or be an out of bounds
+	/// access (UB).
 	pub fn get_block_index_and_offset_for_pos(&self, pos: usize) -> (u8, usize) {
-		// TODO: This isn't right.
-		// If `pos = 0`, `magnitude = 64`, which is out of bounds.
-		let magnitude = pos.leading_zeros() as usize;
+		debug_assert!(pos < self.capacity());
+
+		// Handle 0 separately, to:
+		// 1. Avoid `block_indexes` having to have length 65 (instead of 64).
+		// 2. Allow using `NonZeroUsize::leading_zeros` which has better performance on
+		//    some platforms.
+		// `result_for_zero_pos` is in separate function to guide branch prediction.
+		if pos == 0 {
+			return result_for_zero_pos();
+		}
+
+		#[inline]
+		#[cold]
+		fn result_for_zero_pos() -> (u8, usize) {
+			// Position 0 is always in 1st block, and 1st block always starts at 0
+			(0, 0)
+		}
+
+		// `pos` cannot be 0 - that's handled above
+		let magnitude = unsafe { magnitude_for_non_zero(pos) };
 		unsafe {
+			// Safe because `magnitude` cannot be greater than `MAX_BLOCK_COUNT - 1`.
+			// Case where it would be (pos = 0) is handled above.
 			debug_assert!(magnitude < self.block_indexes.len());
 			let block_index = *self.block_indexes.get_unchecked(magnitude);
 
+			// Logic elsewhere ensures all values in `block_indexes` are `< block_count`,
+			// even for a `pos` which is out of bounds (`block_indexes` initialized as 0s).
+			// In turn, `block_count` is `<= block_positions.len()`.
+			// So this is safe for any value of `pos`, even invalid ones.
 			debug_assert!(block_index < self.block_count);
+			debug_assert!((block_index as usize) < self.block_positions.len());
 			let block_pos = *self.block_positions.get_unchecked(block_index as usize);
 
 			debug_assert!(pos >= block_pos);
-			let pos_in_block = pos - block_pos;
-			(block_index, pos_in_block)
+			(block_index, pos - block_pos)
 		}
 	}
 
@@ -227,4 +291,19 @@ fn create_default_boxed_slice<T: Default>(count: usize) -> Box<[T]> {
 		vec.set_len(count);
 	}
 	vec.into_boxed_slice()
+}
+
+/// Get `magnitude` of a non-zero position.
+///
+/// `magnitude` is max 64, but returns `usize` as that's how it's commonly used.
+///
+/// This uses `NonZeroUsize::leading_zeros` which is more performant on some
+/// platforms.
+///
+/// # Safety
+///
+/// `pos` cannot be 0.
+#[inline]
+const unsafe fn magnitude_for_non_zero(pos: usize) -> usize {
+	NonZeroUsize::new_unchecked(pos).leading_zeros() as usize
 }
