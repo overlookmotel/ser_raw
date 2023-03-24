@@ -11,9 +11,6 @@ pub use aligned_vec::AlignedVec;
 mod unaligned;
 pub use unaligned::{UnalignedStorage, UnalignedVec};
 
-mod aligned_byte_vec;
-pub(crate) use aligned_byte_vec::AlignedByteVec;
-
 /// Trait for storage used by Serializers.
 ///
 /// Types implementing `Storage` are usually simple wrappers around another data
