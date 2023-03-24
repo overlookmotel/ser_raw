@@ -46,3 +46,10 @@ impl AlignedBytes {
 
 	// TODO: Implement all `Storage` methods
 }
+
+impl Default for AlignedBytes {
+	fn default() -> Self {
+		// Dummy empty storage
+		Self::new()
+	}
+}

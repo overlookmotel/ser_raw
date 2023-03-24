@@ -1,8 +1,8 @@
 'use strict';
 
 const PTR_SIZE = 8;
-const MAX_CAPACITY = 1n << BigInt(PTR_SIZE);
-const MIN_CAPACITY = 2n;
+const MAX_CAPACITY = 1n << BigInt(PTR_SIZE - 1);
+const MIN_CAPACITY = 1n;
 
 let size = MIN_CAPACITY;
 const blockSizes = [size, size];
