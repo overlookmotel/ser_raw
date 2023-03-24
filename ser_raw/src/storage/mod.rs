@@ -3,7 +3,10 @@
 use std::{mem, slice};
 
 mod aligned;
-pub use aligned::{AlignedStorage, AlignedVec};
+pub use aligned::AlignedStorage;
+
+mod aligned_vec;
+pub use aligned_vec::AlignedVec;
 
 mod unaligned;
 pub use unaligned::{UnalignedStorage, UnalignedVec};
