@@ -580,10 +580,11 @@ impl<
 
 /// Type for static assertion that types being serialized do not have a higher
 /// alignment requirement than the alignment of the output buffer
-struct AlignmentCheck<T, const MAX_VALUE_ALIGNMENT: usize> {
+pub(crate) struct AlignmentCheck<T, const MAX_VALUE_ALIGNMENT: usize> {
 	_marker: PhantomData<T>,
 }
 
 impl<T, const MAX_VALUE_ALIGNMENT: usize> AlignmentCheck<T, MAX_VALUE_ALIGNMENT> {
-	const ASSERT_ALIGNMENT_DOES_NOT_EXCEED: () = assert!(mem::align_of::<T>() <= MAX_VALUE_ALIGNMENT);
+	pub const ASSERT_ALIGNMENT_DOES_NOT_EXCEED: () =
+		assert!(mem::align_of::<T>() <= MAX_VALUE_ALIGNMENT);
 }

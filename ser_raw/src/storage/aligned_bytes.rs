@@ -44,6 +44,11 @@ impl AlignedBytes {
 		self.len
 	}
 
+	#[allow(unused_variables)] // TODO: Delete once implemented
+	pub unsafe fn push_slice_unchecked<T>(&mut self, slice: &[T], size: usize) {
+		// TODO
+	}
+
 	// TODO: Implement all `Storage` methods
 }
 
