@@ -8,13 +8,43 @@ const DEFAULT_STORAGE_ALIGNMENT: usize = 16;
 const DEFAULT_VALUE_ALIGNMENT: usize = PTR_SIZE;
 const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNMENT);
 
-/// Aligned contiguous memory buffer. Used as backing storage by all of the
-/// Serializers provided by this crate, except for [`UnalignedSerializer`].
+/// Aligned contiguous memory buffer.
 ///
-/// A wrapper around rkyv's `AlignedByteVec` which ensures all values pushed to
-/// the storage are correctly aligned.
+/// Used as backing storage by all of the Serializers provided by this crate,
+/// except for [`UnalignedSerializer`].
+///
+/// Ensures all values pushed to storage are correctly aligned.
 ///
 /// See [`AlignedStorage`] trait for details of the const parameters.
+///
+/// # Example
+///
+/// ```
+/// use ser_raw::storage::{AlignedVec, ContiguousStorage, Storage};
+///
+/// let mut storage: AlignedVec = AlignedVec::with_capacity(8);
+///
+/// // Storage is aligned to `STORAGE_ALIGNMENT` (default 16)
+/// assert!(storage.as_ptr() as usize % 16 == 0);
+///
+/// // Initial capacity is rounded up to multiple of `MAX_VALUE_ALIGNMENT` (default 16)
+/// assert_eq!(storage.len(), 0);
+/// assert_eq!(storage.capacity(), 16);
+///
+/// let value: u32 = 100;
+/// storage.push(&value);
+///
+/// // `len` is rounded up to multiple of `VALUE_ALIGNMENT` (default 8)
+/// assert_eq!(storage.len(), 8);
+/// assert_eq!(storage.capacity(), 16);
+///
+/// let slice: &[u64] = &vec![200, 300];
+/// storage.push_slice(slice);
+///
+/// // Capacity grows in powers of 2
+/// assert_eq!(storage.len(), 24);
+/// assert_eq!(storage.capacity(), 32);
+/// ```
 ///
 /// [`UnalignedSerializer`]: crate::UnalignedSerializer
 pub struct AlignedVec<
