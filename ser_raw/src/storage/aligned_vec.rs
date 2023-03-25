@@ -20,8 +20,7 @@ const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNME
 
 /// Aligned contiguous memory buffer.
 ///
-/// Used as backing storage by all of the Serializers provided by this crate,
-/// except for [`UnalignedSerializer`].
+/// Used as backing storage by all of the Serializers provided by this crate.
 ///
 /// Ensures all values pushed to storage are correctly aligned.
 ///
@@ -55,8 +54,6 @@ const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNME
 /// assert_eq!(storage.len(), 24);
 /// assert_eq!(storage.capacity(), 32);
 /// ```
-///
-/// [`UnalignedSerializer`]: crate::UnalignedSerializer
 pub struct AlignedVec<
 	const STORAGE_ALIGNMENT: usize = DEFAULT_STORAGE_ALIGNMENT,
 	const MAX_VALUE_ALIGNMENT: usize = STORAGE_ALIGNMENT,

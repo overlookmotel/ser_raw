@@ -233,10 +233,7 @@ impl PtrGroup {
 		// e.g. `old = 4`, `new = 10` -> `shift_by = 6` -> each ptr has 6 added.
 		let shift_by = (storage_ptr as usize).wrapping_sub(self.storage_addr);
 		for ptr_pos in &self.ptr_positions {
-			// TODO: Use `storage.read()` and `storage.write()` instead of this.
-			// Currently, this is UB if using `UnalignedVec` as storage, because the pointer
-			// read+write may be unaligned. Need to write as
-			// `[u8; mem::size_of::<usize>()]` instead.
+			// TODO: Use `storage.read()` and `storage.write()` instead of this
 			let ptr = storage_ptr.add(*ptr_pos) as *mut usize;
 			*ptr = (*ptr).wrapping_add(shift_by);
 		}

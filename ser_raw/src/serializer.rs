@@ -130,7 +130,7 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 ///
 /// Default implementation of all other methods delegates calls to the
 /// underlying [`Storage`]. This produces the behavior of a "pure copy"
-/// serializer (e.g. [`PureCopySerializer`] or [`UnalignedSerializer`]).
+/// serializer (e.g. [`PureCopySerializer`]).
 ///
 /// Other methods can be overriden to produce more complicated behavior, as is
 /// the case with other serializers this crate provides e.g.
@@ -173,7 +173,6 @@ use crate::{pos::Addr, storage::Storage, Serialize};
 /// ```
 ///
 /// [`PureCopySerializer`]: crate::PureCopySerializer
-/// [`UnalignedSerializer`]: crate::UnalignedSerializer
 /// [`PtrOffsetSerializer`]: crate::PtrOffsetSerializer
 /// [`CompleteSerializer`]: crate::CompleteSerializer
 pub trait Serializer: Sized {

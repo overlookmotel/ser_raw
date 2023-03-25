@@ -26,16 +26,13 @@
 //!
 //! # Serializers
 //!
-//! This crate provides 4 different serializers for different use cases. They
+//! This crate provides 3 different serializers for different use cases. They
 //! offer a range of options, between doing work during serialization, or during
 //! deserialization. They mostly differ in how they deal with pointers.
 //!
 //! [`PureCopySerializer`] is the fastest and simplest serializer. Does not
 //! correct pointers, so the data can only be deserialized by traversing the
 //! tree of values in order.
-//!
-//! [`UnalignedSerializer`] is identical to [`PureCopySerializer`], except that
-//! it doesn't attempt to correctly align data.
 //!
 //! [`PtrOffsetSerializer`] replaces pointers in the input (e.g. in `Box`, `Vec`
 //! or `String`) with offsets. i.e. what byte index the pointee is located in
@@ -56,7 +53,7 @@
 //! [`Serializer`]s, based on any of the above.
 //!
 //! Serializers can also choose between different backing storage options.
-//! This crate provides two - [`AlignedVec`] and [`UnalignedVec`] - or it's
+//! This crate provides only one at present - [`AlignedVec`] - but it's
 //! possible to build your own [`Storage`] implementation.
 //!
 //! # Serializable types
@@ -135,7 +132,6 @@
 //! the same name.
 //!
 //! [`AlignedVec`]: storage::AlignedVec
-//! [`UnalignedVec`]: storage::UnalignedVec
 //! [`Storage`]: storage::Storage
 //! [SWC]: https://swc.rs/
 //! [napi-rs]: https://napi.rs/
@@ -155,9 +151,7 @@ mod serializer;
 pub use serializer::Serializer;
 
 mod serializers;
-pub use serializers::{
-	CompleteSerializer, PtrOffsetSerializer, PureCopySerializer, UnalignedSerializer,
-};
+pub use serializers::{CompleteSerializer, PtrOffsetSerializer, PureCopySerializer};
 
 mod serializer_traits;
 pub mod ser_traits {
