@@ -82,8 +82,8 @@ const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNME
 ///
 /// Default:
 ///
-/// * 64-bit systems: `u64::MAX - 15`
-/// * 32-bit systems: `u32::MAX - 15`
+/// * 64-bit systems: `i64::MAX - 15`
+/// * 32-bit systems: `i32::MAX - 15`
 ///
 /// [`Serializer`]: crate::Serializer
 pub trait AlignedStorage<
