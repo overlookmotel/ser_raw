@@ -559,3 +559,23 @@ impl<
 		}
 	}
 }
+
+// Safe to be `Send` and `Sync` because pointer is not aliased and does not use
+// interior mutability.
+unsafe impl<
+		const STORAGE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+	> Send for AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
+{
+}
+
+unsafe impl<
+		const STORAGE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+	> Sync for AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
+{
+}
