@@ -133,14 +133,8 @@ impl<
 		);
 		debug_assert!(is_aligned_to(capacity, MAX_VALUE_ALIGNMENT));
 
-		let layout = Layout::from_size_align_unchecked(capacity, STORAGE_ALIGNMENT);
-		let ptr = alloc::alloc(layout);
-		if ptr.is_null() {
-			alloc::handle_alloc_error(layout);
-		}
-
 		Self {
-			ptr: NonNull::new_unchecked(ptr),
+			ptr: Self::alloc(capacity),
 			capacity,
 			len: 0,
 		}
@@ -355,22 +349,16 @@ impl<
 		// Ensure capacity remains a multiple of `MAX_VALUE_ALIGNMENT`
 		let new_cap = align_up_to(self.len, MAX_VALUE_ALIGNMENT);
 
-		if new_cap == self.capacity {
-			return;
-		}
-
-		if new_cap == 0 {
-			unsafe {
-				alloc::dealloc(
-					self.ptr.as_ptr(),
-					Layout::from_size_align_unchecked(self.capacity, STORAGE_ALIGNMENT),
-				);
-			}
-			self.capacity = 0;
-			self.ptr = NonNull::dangling();
-		} else {
-			// New capacity cannot exceed max as it's shrinking
-			unsafe { self.change_capacity(new_cap) };
+		if new_cap != self.capacity {
+			self.ptr = unsafe {
+				if new_cap == 0 {
+					self.dealloc();
+					NonNull::dangling()
+				} else {
+					self.realloc(new_cap)
+				}
+			};
+			self.capacity = new_cap;
 		}
 	}
 }
@@ -391,16 +379,18 @@ impl<
 	/// This is the same trick that Rust's `Vec::reserve` uses.
 	#[cold]
 	fn grow_for_reserve(&mut self, additional: usize) {
+		debug_assert!(additional > 0);
+
 		// Where `reserve` was called by `push_slice_unaligned`, we could actually avoid
 		// the checked add. A valid slice cannot be larger than `isize::MAX`, and ditto
 		// `capacity`, so this can't overflow.
 		// TODO: Maybe create a specialized version of this function for that usage?
-		let new_cap = self
+		let mut new_cap = self
 			.len
 			.checked_add(additional)
 			.expect("Cannot grow AlignedVec further");
 
-		let new_cap = if new_cap > MAX_CAPACITY.next_power_of_two() / 2 {
+		new_cap = if new_cap > MAX_CAPACITY.next_power_of_two() / 2 {
 			// Rounding up to next power of 2 would result in more than `MAX_CAPACITY`,
 			// so cap at max instead.
 			assert!(new_cap <= MAX_CAPACITY, "Cannot grow AlignedVec further");
@@ -410,51 +400,76 @@ impl<
 			new_cap.next_power_of_two()
 		};
 
-		// Above calculation ensures `change_capacity`'s requirements are met
-		unsafe { self.change_capacity(new_cap) };
+		// Above calculation ensures `alloc` / `realloc`'s requirements are met
+		self.ptr = unsafe {
+			if self.capacity == 0 {
+				// Ensuring at least `MAX_VALUE_ALIGNMENT` here makes sure capacity will always
+				// remain a multiple of `MAX_VALUE_ALIGNMENT` hereafter, as growth after this
+				// will be in powers of 2. `shrink_to_fit` also enforces this invariant.
+				new_cap = cmp::max(new_cap, MAX_VALUE_ALIGNMENT);
+				Self::alloc(new_cap)
+			} else {
+				self.realloc(new_cap)
+			}
+		};
+		self.capacity = new_cap;
 	}
 
-	/// Change capacity of vector to a non-zero size.
+	/// Allocate backing memory.
 	///
 	/// # Safety
 	///
-	/// * `new_cap` must not be 0.
-	/// * `new_cap` must be less than or equal to
-	///   [`MAX_CAPACITY`](AlignedVec::MAX_CAPACITY).
-	/// * `new_cap` must be greater than or equal to [`len()`](AlignedVec::len).
-	unsafe fn change_capacity(&mut self, new_cap: usize) {
-		debug_assert!(new_cap > 0);
-		debug_assert!(new_cap <= MAX_CAPACITY);
-		debug_assert!(new_cap >= self.len);
+	/// * `capacity` must not be 0.
+	/// * `capacity` must not exceed `isize::MAX + 1 - STORAGE_ALIGNMENT`.
+	unsafe fn alloc(capacity: usize) -> NonNull<u8> {
+		debug_assert!(capacity > 0);
+		debug_assert!(capacity <= aligned_max_capacity(STORAGE_ALIGNMENT));
 
-		let mut new_cap = new_cap;
-		let new_ptr = if self.capacity > 0 {
-			let new_ptr = alloc::realloc(
-				self.ptr.as_ptr(),
-				Layout::from_size_align_unchecked(self.capacity, STORAGE_ALIGNMENT),
+		let layout = Layout::from_size_align_unchecked(capacity, STORAGE_ALIGNMENT);
+		let ptr = alloc::alloc(layout);
+		if ptr.is_null() {
+			alloc::handle_alloc_error(layout);
+		}
+		NonNull::new_unchecked(ptr)
+	}
+
+	/// Reallocate backing memory.
+	///
+	/// # Safety
+	///
+	/// * `self.capacity` must not be 0 (i.e. already has memory allocated).
+	/// * `new_cap` must not be 0.
+	/// * `new_cap` must not exceed `isize::MAX + 1 - STORAGE_ALIGNMENT`.
+	unsafe fn realloc(&mut self, new_cap: usize) -> NonNull<u8> {
+		debug_assert!(self.capacity > 0);
+		debug_assert!(new_cap > 0);
+		debug_assert!(new_cap <= aligned_max_capacity(STORAGE_ALIGNMENT));
+
+		let new_ptr = alloc::realloc(self.ptr.as_ptr(), self.layout(), new_cap);
+		if new_ptr.is_null() {
+			alloc::handle_alloc_error(Layout::from_size_align_unchecked(
 				new_cap,
-			);
-			if new_ptr.is_null() {
-				alloc::handle_alloc_error(Layout::from_size_align_unchecked(
-					new_cap,
-					STORAGE_ALIGNMENT,
-				));
-			}
-			new_ptr
-		} else {
-			// Ensuring at least `MAX_VALUE_ALIGNMENT` here makes sure capacity will always
-			// remain a multiple of `MAX_VALUE_ALIGNMENT` hereafter, as growth after this
-			// will be in powers of 2, and `shrink_to_fit` also enforces this invariant.
-			new_cap = cmp::max(new_cap, MAX_VALUE_ALIGNMENT);
-			let layout = Layout::from_size_align_unchecked(new_cap, STORAGE_ALIGNMENT);
-			let new_ptr = alloc::alloc(layout);
-			if new_ptr.is_null() {
-				alloc::handle_alloc_error(layout);
-			}
-			new_ptr
-		};
-		self.ptr = NonNull::new_unchecked(new_ptr);
-		self.capacity = new_cap;
+				STORAGE_ALIGNMENT,
+			));
+		}
+		NonNull::new_unchecked(new_ptr)
+	}
+
+	/// Deallocate backing memory.
+	///
+	/// # Safety
+	///
+	/// `self.capacity` must not be 0 (i.e. has memory allocated)
+	unsafe fn dealloc(&mut self) {
+		debug_assert!(self.capacity > 0);
+		alloc::dealloc(self.ptr.as_ptr(), self.layout());
+	}
+
+	/// Get current memory layout.
+	fn layout(&self) -> Layout {
+		// Rest of implementation ensures `self.capacity` cannot exceed
+		// `isize::MAX + 1 - STORAGE_ALIGNMENT`
+		unsafe { Layout::from_size_align_unchecked(self.capacity, STORAGE_ALIGNMENT) }
 	}
 }
 
@@ -550,12 +565,7 @@ impl<
 	#[inline]
 	fn drop(&mut self) {
 		if self.capacity > 0 {
-			unsafe {
-				alloc::dealloc(
-					self.ptr.as_ptr(),
-					Layout::from_size_align_unchecked(self.capacity, STORAGE_ALIGNMENT),
-				);
-			}
+			unsafe { self.dealloc() };
 		}
 	}
 }
