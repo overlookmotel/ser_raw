@@ -50,7 +50,7 @@ use crate::{
 ///
 /// // Serialize
 /// const MAX_CAPACITY: usize = aligned_max_capacity(16);
-/// let mut ser = CompleteSerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
+/// let mut ser = CompleteSerializer::<_, 16, 16, 8, MAX_CAPACITY>::new();
 /// let storage = ser.serialize(&boxed);
 ///
 /// // Deserialize
@@ -65,11 +65,11 @@ use crate::{
 #[ser_type(complete)]
 #[__local]
 pub struct CompleteSerializer<
+	BorrowedStorage: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>>,
 	const STORAGE_ALIGNMENT: usize,
 	const MAX_VALUE_ALIGNMENT: usize,
 	const VALUE_ALIGNMENT: usize,
 	const MAX_CAPACITY: usize,
-	BorrowedStorage: BorrowMut<AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>>,
 > {
 	#[ser_storage(AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>)]
 	storage: BorrowedStorage,
@@ -80,7 +80,7 @@ pub struct CompleteSerializer<
 }
 
 impl<const SA: usize, const MVA: usize, const VA: usize, const MAX: usize>
-	CompleteSerializer<SA, MVA, VA, MAX, AlignedVec<SA, MVA, VA, MAX>>
+	CompleteSerializer<AlignedVec<SA, MVA, VA, MAX>, SA, MVA, VA, MAX>
 {
 	/// Create new [`CompleteSerializer`] with no memory pre-allocated.
 	///
@@ -117,8 +117,8 @@ impl<const SA: usize, const MVA: usize, const VA: usize, const MAX: usize>
 	}
 }
 
-impl<const SA: usize, const MVA: usize, const VA: usize, const MAX: usize, BorrowedStorage>
-	CompleteSerializer<SA, MVA, VA, MAX, BorrowedStorage>
+impl<BorrowedStorage, const SA: usize, const MVA: usize, const VA: usize, const MAX: usize>
+	CompleteSerializer<BorrowedStorage, SA, MVA, VA, MAX>
 where BorrowedStorage: BorrowMut<AlignedVec<SA, MVA, VA, MAX>>
 {
 	/// Alignment of output buffer

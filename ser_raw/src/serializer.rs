@@ -209,7 +209,7 @@ pub trait Serializer: Sized {
 	/// }
 	///
 	/// const MAX_CAPACITY: usize = aligned_max_capacity(16);
-	/// let mut ser = PureCopySerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
+	/// let mut ser = PureCopySerializer::<_, 16, 16, 8, MAX_CAPACITY>::new();
 	/// let storage = ser.serialize(&Foo { small: 1, big: 2 });
 	/// assert_eq!(storage.len(), 8);
 	/// ```
@@ -242,7 +242,7 @@ pub trait Serializer: Sized {
 	/// }
 	///
 	/// const MAX_CAPACITY: usize = aligned_max_capacity(16);
-	/// let mut ser = PureCopySerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
+	/// let mut ser = PureCopySerializer::<_, 16, 16, 8, MAX_CAPACITY>::new();
 	/// ser.serialize_value(&Foo { small: 1, big: 2 });
 	/// ser.serialize_value(&Foo { small: 3, big: 4 });
 	/// let storage = ser.finalize();
