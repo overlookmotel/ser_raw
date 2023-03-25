@@ -54,7 +54,7 @@
 //!
 //! Serializers can also choose between different backing storage options.
 //! This crate provides only one at present - [`AlignedVec`] - but it's
-//! possible to build your own [`Storage`] implementation.
+//! possible to create your own [`Storage`] implementation.
 //!
 //! # Serializable types
 //!

@@ -14,7 +14,7 @@ use crate::{
 ///
 /// Values in output will be correctly aligned for their types.
 ///
-/// See [`AlignedStorage`] for an explanation of the const parameters.
+/// See [`Storage`] for an explanation of the const parameters.
 ///
 /// # Example
 ///
@@ -36,8 +36,6 @@ use crate::{
 /// assert_eq!(offset, 8);
 /// assert_eq!(slice[offset], 123);
 /// ```
-///
-/// [`AlignedStorage`]: crate::storage::AlignedStorage
 #[derive(Serializer)]
 #[ser_type(ptr_offset)]
 #[__local]

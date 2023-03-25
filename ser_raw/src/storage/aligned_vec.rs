@@ -10,7 +10,7 @@ use std::{
 	slice,
 };
 
-use super::{aligned::AlignmentCheck, AlignedStorage, ContiguousStorage, Storage};
+use super::{ContiguousStorage, Storage};
 use crate::util::{align_up_to, aligned_max_capacity, is_aligned_to};
 
 const PTR_SIZE: usize = mem::size_of::<usize>();
@@ -18,13 +18,13 @@ const DEFAULT_STORAGE_ALIGNMENT: usize = 16;
 const DEFAULT_VALUE_ALIGNMENT: usize = PTR_SIZE;
 const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNMENT);
 
-/// Aligned contiguous memory buffer.
+/// Aligned contiguous memory buffer which can grow.
 ///
 /// Used as backing storage by all of the Serializers provided by this crate.
 ///
 /// Ensures all values pushed to storage are correctly aligned.
 ///
-/// See [`AlignedStorage`] trait for details of the const parameters.
+/// See [`Storage`] trait for details of the const parameters.
 ///
 /// # Example
 ///
@@ -72,6 +72,18 @@ impl<
 		const MAX_CAPACITY: usize,
 	> Storage for AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
 {
+	/// Alignment of storage's memory buffer.
+	const STORAGE_ALIGNMENT: usize = STORAGE_ALIGNMENT;
+
+	/// Maximum alignment of values being added to storage.
+	const MAX_VALUE_ALIGNMENT: usize = MAX_VALUE_ALIGNMENT;
+
+	/// Typical alignment of values being added to storage.
+	const VALUE_ALIGNMENT: usize = VALUE_ALIGNMENT;
+
+	/// Maximum capacity of storage.
+	const MAX_CAPACITY: usize = MAX_CAPACITY;
+
 	/// Create new [`AlignedVec`] with no pre-allocated capacity.
 	#[inline]
 	fn new() -> Self {
@@ -83,34 +95,6 @@ impl<
 			capacity: 0,
 			len: 0,
 		}
-	}
-
-	/// Create new [`AlignedVec`] with pre-allocated capacity.
-	///
-	/// Capacity will be rounded up to a multiple of `MAX_VALUE_ALIGNMENT`.
-	///
-	/// # Panics
-	///
-	/// Panics if `capacity` exceeds `MAX_CAPACITY`.
-	fn with_capacity(capacity: usize) -> Self {
-		// Ensure (at compile time) that const params are valid
-		let _ = Self::ASSERT_ALIGNMENTS_VALID;
-
-		if capacity == 0 {
-			return Self::new();
-		}
-
-		// Round up capacity to multiple of `MAX_VALUE_ALIGNMENT`.
-		// Assertion ensures overflow in `align_up_to()` is not possible.
-		assert!(
-			capacity <= MAX_CAPACITY,
-			"capacity cannot exceed MAX_CAPACITY"
-		);
-		let capacity = align_up_to(capacity, MAX_VALUE_ALIGNMENT);
-
-		// Above assertion and `align_up_to` call satisfy `with_capacity_unchecked`'s
-		// requirements
-		unsafe { Self::with_capacity_unchecked(capacity) }
 	}
 
 	/// Create new [`AlignedVec`] with pre-allocated capacity,
@@ -163,43 +147,6 @@ impl<
 		debug_assert!(is_aligned_to(new_len, VALUE_ALIGNMENT));
 
 		self.len = new_len;
-	}
-
-	/// Push a slice of values `&T` to storage, without alignment checks.
-	///
-	/// # Panics
-	///
-	/// Panics if would require growing storage beyond `MAX_CAPACITY`.
-	///
-	/// # Safety
-	///
-	/// This method does *not* ensure 2 invariants relating to alignment:
-	///
-	/// * `len` must be aligned for the type before push.
-	/// * `len` must be aligned to `VALUE_ALIGNMENT` after push.
-	///
-	/// Caller must uphold these invariants. It is sufficient to:
-	///
-	/// * call `align_for::<T>()` before and
-	/// * call `align_after::<T>()` after.
-	#[inline]
-	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) {
-		debug_assert!(is_aligned_to(self.len, mem::align_of::<T>()));
-
-		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
-		if mem::size_of::<T>() == 0 {
-			return;
-		}
-
-		// Calculating `size` can't overflow as that would imply this is a slice of
-		// `usize::MAX + 1` or more bytes, which can't be possible.
-		let size = mem::size_of::<T>() * slice.len();
-		self.reserve(size);
-
-		// `reserve()` ensures sufficient capacity.
-		// `size` is calculated correctly above.
-		// Ensuring alignment is a requirment of this method.
-		self.push_slice_unchecked(slice, size);
 	}
 
 	/// Push a slice of values `&T` to storage, without alignment checks and
@@ -255,90 +202,6 @@ impl<
 		if additional > remaining {
 			self.grow_for_reserve(additional);
 		}
-	}
-
-	/// Align position in storage to alignment of `T`.
-	#[inline(always)] // Because this is generally a no-op
-	fn align_for<T>(&mut self) {
-		// Ensure (at compile time) that `T`'s alignment does not exceed
-		// `MAX_VALUE_ALIGNMENT`
-		let _ = AlignmentCheck::<T, MAX_VALUE_ALIGNMENT>::ASSERT_ALIGNMENT_DOES_NOT_EXCEED;
-
-		// Align position in output buffer to alignment of `T`.
-		// If `T`'s alignment requirement is less than or equal to `VALUE_ALIGNMENT`,
-		// this can be skipped, as position is always left aligned to `VALUE_ALIGNMENT`
-		// after each push.
-		// This should be optimized away for types with alignment of `VALUE_ALIGNMENT`
-		// or less, in which case this function becomes a no-op.
-		// Hopefully this is the majority of types.
-		if mem::align_of::<T>() > VALUE_ALIGNMENT {
-			// Static assertion above ensures `align()`'s constraints are satisfied
-			unsafe { self.align(mem::align_of::<T>()) }
-		}
-	}
-
-	/// Align position in output buffer to `alignment`.
-	///
-	/// # Safety
-	///
-	/// The following constraints must be satisfied in order to leave the
-	/// [`AlignedVec`] in a consistent state:
-	///
-	/// * `alignment` must be `>= VALUE_ALIGNMENT`.
-	/// * `alignment` must be `<= MAX_VALUE_ALIGNMENT`.
-	///
-	/// For alignment calculation to be valid:
-	///
-	/// * `alignment` must be a power of 2.
-	#[inline]
-	unsafe fn align(&mut self, alignment: usize) {
-		debug_assert!(alignment >= VALUE_ALIGNMENT);
-		debug_assert!(alignment <= MAX_VALUE_ALIGNMENT);
-		debug_assert!(alignment.is_power_of_two());
-
-		// Round up buffer position to multiple of `alignment`.
-		// `align_up_to`'s constraints are satisfied by:
-		// * `self.len` is always less than `MAX_CAPACITY`, which is `< isize::MAX`.
-		// * `alignment <= MAX_VALUE_ALIGNMENT` satisfies `alignment < isize::MAX`
-		//   because `MAX_VALUE_ALIGNMENT < isize::MAX`.
-		// * `alignment` being a power of 2 is part of this function's contract.
-		let new_len = align_up_to(self.len, alignment);
-
-		// `new_len > capacity` can't happen because of 2 guarantees:
-		// 1. `alignment <= MAX_VALUE_ALIGNMENT`
-		// 2. `capacity` is a multiple of `MAX_VALUE_ALIGNMENT`
-		self.set_len(new_len);
-	}
-
-	/// Align position in storage after pushing a `T` or slice `&[T]`.
-	#[inline(always)] // Because this is generally a no-op
-	fn align_after<T>(&mut self) {
-		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value.
-		// This should be optimized away for types with alignment of `VALUE_ALIGNMENT`
-		// or greater. Ditto for types which have lower alignment, but happen to have
-		// size divisible by `VALUE_ALIGNMENT`. Hopefully this is the majority of types.
-		if mem::size_of::<T>() % VALUE_ALIGNMENT > 0 {
-			self.align_after_any();
-		}
-	}
-
-	/// Align position in storage after pushing values with
-	/// `push_slice_unaligned`.
-	///
-	/// `align_after<T>` is often more efficient and can often be compiled down to
-	/// a no-op, so is preferred.
-	#[inline]
-	fn align_after_any(&mut self) {
-		// `VALUE_ALIGNMENT` trivially fulfills `align()`'s requirements
-		unsafe { self.align(VALUE_ALIGNMENT) };
-	}
-
-	/// Clear contents of storage.
-	///
-	/// Does not reduce the storage's capacity, just resets `len` back to 0.
-	#[inline]
-	fn clear(&mut self) {
-		self.len = 0;
 	}
 
 	/// Shrink the capacity of the storage as much as possible.
@@ -543,16 +406,6 @@ impl<
 	fn as_mut_slice(&mut self) -> &mut [u8] {
 		unsafe { slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len) }
 	}
-}
-
-impl<
-		const STORAGE_ALIGNMENT: usize,
-		const MAX_VALUE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
-		const MAX_CAPACITY: usize,
-	> AlignedStorage<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
-	for AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
-{
 }
 
 impl<

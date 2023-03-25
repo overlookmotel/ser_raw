@@ -26,7 +26,7 @@ pub const fn is_aligned_to(pos: usize, alignment: usize) -> bool {
 	pos & (alignment - 1) == 0
 }
 
-/// Get maximum maximum capacity for an [`AlignedStorage`] on this system.
+/// Get maximum maximum capacity for a [`Storage`] on this system.
 ///
 /// i.e. the maximum allowable value for [`MAX_CAPACITY`] const parameter, given
 /// the value chosen for [`MAX_VALUE_ALIGNMENT`] const parameter.
@@ -39,9 +39,9 @@ pub const fn is_aligned_to(pos: usize, alignment: usize) -> bool {
 /// > overflow `isize` (i.e. the rounded value must be less than or equal to
 /// > `isize::MAX`)".
 ///
-/// [`AlignedStorage`]: crate::storage::AlignedStorage
-/// [`MAX_CAPACITY`]: crate::storage::AlignedStorage::MAX_CAPACITY
-/// [`MAX_VALUE_ALIGNMENT`]: crate::storage::AlignedStorage::MAX_VALUE_ALIGNMENT
+/// [`Storage`]: crate::storage::Storage
+/// [`MAX_CAPACITY`]: crate::storage::Storage::MAX_CAPACITY
+/// [`MAX_VALUE_ALIGNMENT`]: crate::storage::Storage::MAX_VALUE_ALIGNMENT
 /// [`std::alloc::Layout`]: https://doc.rust-lang.org/alloc/alloc/struct.Layout.html
 pub const fn aligned_max_capacity(alignment: usize) -> usize {
 	assert!(alignment != 0, "`alignment` cannot be 2");
@@ -56,8 +56,8 @@ pub const fn aligned_max_capacity(alignment: usize) -> usize {
 	isize::MAX as usize - (alignment - 1)
 }
 
-/// Get maximum maximum capacity for an [`AlignedStorage`] on this system with a
-/// cap of `u32::MAX + 1`.
+/// Get maximum maximum capacity for an [`Storage`] on this system with a cap of
+/// `u32::MAX + 1`.
 ///
 /// Can be used to calculate a value for [`MAX_CAPACITY`] const parameter
 /// whereby storage positions can always be expressed as a `u32`.
@@ -66,8 +66,8 @@ pub const fn aligned_max_capacity(alignment: usize) -> usize {
 /// * On 64-bit systems: `u32::MAX + 1` (i.e. 4 GiB)
 /// * On 32-bit systems: `i32::MAX + 1 - alignment` (i.e. slighty below 2 GiB)
 ///
-/// `alignment` must be a power of 2, less than `u32::MAX` and `isize::MAX`. It
-/// should be the value used as [`MAX_VALUE_ALIGNMENT`] const parameter.
+/// `alignment` must be a power of 2, less than `u32::MAX` and `isize::MAX`.
+/// It should be the value used as [`MAX_VALUE_ALIGNMENT`] const parameter.
 ///
 /// Cap at `i32::MAX + 1 - alignment` on 32-bit systems is dictated by the
 /// requirements of [`std::alloc::Layout`]:
@@ -76,9 +76,9 @@ pub const fn aligned_max_capacity(alignment: usize) -> usize {
 /// > overflow `isize` (i.e. the rounded value must be less than or equal to
 /// > `isize::MAX`)".
 ///
-/// [`AlignedStorage`]: crate::storage::AlignedStorage
-/// [`MAX_CAPACITY`]: crate::storage::AlignedStorage::MAX_CAPACITY
-/// [`MAX_VALUE_ALIGNMENT`]: crate::storage::AlignedStorage::MAX_VALUE_ALIGNMENT
+/// [`Storage`]: crate::storage::Storage
+/// [`MAX_CAPACITY`]: crate::storage::Storage::MAX_CAPACITY
+/// [`MAX_VALUE_ALIGNMENT`]: crate::storage::Storage::MAX_VALUE_ALIGNMENT
 /// [`std::alloc::Layout`]: https://doc.rust-lang.org/alloc/alloc/struct.Layout.html
 pub const fn aligned_max_u32_capacity(alignment: usize) -> usize {
 	assert!(alignment != 0, "`alignment` cannot be 0");

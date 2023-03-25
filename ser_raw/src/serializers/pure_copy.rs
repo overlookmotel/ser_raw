@@ -22,7 +22,7 @@ use crate::{
 /// If you need to deserialize in arbitrary order, use [`PtrOffsetSerializer`]
 /// or [`CompleteSerializer`] instead.
 ///
-/// See [`AlignedStorage`] for an explanation of the const parameters.
+/// See [`Storage`] for an explanation of the const parameters.
 ///
 /// # Example
 ///
@@ -43,7 +43,6 @@ use crate::{
 /// `&boxed as *const Box<u8>`. This is not useful data as `boxed` has been
 /// dropped.
 ///
-/// [`AlignedStorage`]: crate::storage::AlignedStorage
 /// [`PtrOffsetSerializer`]: crate::PtrOffsetSerializer
 /// [`CompleteSerializer`]: crate::CompleteSerializer
 #[derive(Serializer)]

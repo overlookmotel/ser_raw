@@ -9,7 +9,7 @@ use crate::{
 /// Serializer that produces a buffer which is a complete valid representation
 /// of the input, which can be cast to a `&T` without any deserialization.
 ///
-/// See [`AlignedStorage`] for an explanation of the const parameters.
+/// See [`Storage`] trait for an explanation of the const parameters.
 ///
 /// # Safety
 ///
@@ -61,8 +61,6 @@ use crate::{
 /// let boxed_out: &Box<u8> = unsafe { &*storage.as_ptr().cast() };
 /// assert_eq!(boxed_out, &boxed);
 /// ```
-///
-/// [`AlignedStorage`]: crate::storage::AlignedStorage
 #[derive(Serializer)]
 #[ser_type(complete)]
 #[__local]
