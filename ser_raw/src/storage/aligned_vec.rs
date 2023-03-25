@@ -118,12 +118,14 @@ impl<
 	///
 	/// # Safety
 	///
+	/// * `capacity` must not be 0.
 	/// * `capacity` must be less than or equal to `MAX_CAPACITY`.
 	/// * `capacity` must be a multiple of `MAX_VALUE_ALIGNMENT`.
 	unsafe fn with_capacity_unchecked(capacity: usize) -> Self {
 		// Ensure (at compile time) that const params are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
 
+		debug_assert!(capacity > 0, "capacity cannot be 0");
 		debug_assert!(
 			capacity <= MAX_CAPACITY,
 			"capacity cannot exceed MAX_CAPACITY"
