@@ -574,7 +574,7 @@ fn create_default_boxed_slice<T: Default>(count: usize) -> Box<[T]> {
 	let ptr = vec.as_mut_ptr();
 	unsafe {
 		for i in 0..count {
-			*ptr.add(i) = Default::default();
+			ptr.add(i).write(Default::default());
 		}
 		vec.set_len(count);
 	}
