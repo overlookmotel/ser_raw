@@ -14,9 +14,20 @@ use super::{ContiguousStorage, Storage};
 use crate::util::{align_up_to, aligned_max_capacity, is_aligned_to};
 
 const PTR_SIZE: usize = mem::size_of::<usize>();
-const DEFAULT_STORAGE_ALIGNMENT: usize = 16;
-const DEFAULT_VALUE_ALIGNMENT: usize = PTR_SIZE;
-const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNMENT);
+
+/// Default for [`STORAGE_ALIGNMENT`](Storage::STORAGE_ALIGNMENT) const
+/// parameter.
+pub const DEFAULT_STORAGE_ALIGNMENT: usize = 16;
+
+/// Default for [`MAX_VALUE_ALIGNMENT`](Storage::MAX_VALUE_ALIGNMENT) const
+/// parameter.
+pub const DEFAULT_MAX_VALUE_ALIGNMENT: usize = DEFAULT_STORAGE_ALIGNMENT;
+
+/// Default for [`VALUE_ALIGNMENT`](Storage::VALUE_ALIGNMENT) const parameter.
+pub const DEFAULT_VALUE_ALIGNMENT: usize = PTR_SIZE;
+
+/// Default for [`MAX_CAPACITY`](Storage::MAX_CAPACITY) const parameter.
+pub const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNMENT);
 
 /// Aligned contiguous memory buffer which can grow.
 ///

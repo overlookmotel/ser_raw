@@ -5,7 +5,10 @@ use std::{marker::PhantomData, mem, slice};
 use crate::util::{align_up_to, aligned_max_capacity, is_aligned_to};
 
 mod aligned_vec;
-pub use aligned_vec::AlignedVec;
+pub use aligned_vec::{
+	AlignedVec, DEFAULT_MAX_CAPACITY, DEFAULT_MAX_VALUE_ALIGNMENT, DEFAULT_STORAGE_ALIGNMENT,
+	DEFAULT_VALUE_ALIGNMENT,
+};
 
 /// Trait for storage used by [`Serializer`]s which ensures values added to
 /// storage maintain correct alignment in memory for their types.

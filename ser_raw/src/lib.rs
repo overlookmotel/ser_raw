@@ -165,6 +165,10 @@ pub use serialize::{Serialize, SerializeWith};
 
 pub mod pos;
 pub mod storage;
+pub use storage::{
+	DEFAULT_MAX_CAPACITY, DEFAULT_MAX_VALUE_ALIGNMENT, DEFAULT_STORAGE_ALIGNMENT,
+	DEFAULT_VALUE_ALIGNMENT,
+};
 pub mod util;
 
 // `Serialize` implementations for Rust internal types
