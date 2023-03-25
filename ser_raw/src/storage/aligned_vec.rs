@@ -72,7 +72,7 @@ impl<
 		const MAX_CAPACITY: usize,
 	> Storage for AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
 {
-	/// Create new [`AlignedVec`].
+	/// Create new [`AlignedVec`] with no pre-allocated capacity.
 	#[inline]
 	fn new() -> Self {
 		// Ensure (at compile time) that const params are valid
@@ -212,7 +212,7 @@ impl<
 	/// `size` must be total size in bytes of `&[T]`.
 	/// i.e. `size = mem::size_of::<T>() * slice.len()`.
 	///
-	/// This method does *not* ensure 2 invariants of storage relating to
+	/// This method does **not** ensure 2 invariants of storage relating to
 	/// alignment:
 	///
 	/// * that `len` is aligned for the type before push.
@@ -245,7 +245,8 @@ impl<
 	///
 	/// # Panics
 	///
-	/// Panics if the new capacity exceeds `isize::MAX - ALIGNMENT` bytes.
+	/// Panics if this reservation would cause [`AlignedVec`] to exceed
+	/// `MAX_CAPACITY`.
 	#[inline]
 	fn reserve(&mut self, additional: usize) {
 		// Cannot wrap because capacity always exceeds len,
