@@ -394,6 +394,8 @@ pub trait Serializer: Sized {
 	#[inline(always)]
 	unsafe fn write<T>(&mut self, addr: usize, value: &T) {
 		// TODO: Would be better to take an `Addr`
+		// TODO: The doc comment above is wrong. `addr` is an address of an original
+		// value, not position in the output.
 	}
 
 	/// Write a correction to storage.
