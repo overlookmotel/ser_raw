@@ -395,6 +395,30 @@ pub trait Serializer: Sized {
 		self.storage_mut().push_bytes(bytes);
 	}
 
+	/// Advance storage position to leave space to write a `T` at current position
+	/// later.
+	///
+	/// Will also insert padding as required, to ensure the `T` can be written
+	/// with correct alignment.
+	#[inline]
+	fn push_empty<T>(&mut self) {
+		self.storage_mut().push_empty::<T>();
+	}
+
+	/// Advance storage position to leave space to write a slice `&[T]` at current
+	/// position later.
+	///
+	/// Will also insert padding as required, to ensure the `&[T]` can be written
+	/// with correct alignment.
+	///
+	/// If the size of the slice is known statically, prefer
+	/// `push_empty::<[T; N]>()` to `push_empty_slice::<T>(N)`,
+	/// as the former is slightly more efficient.
+	#[inline]
+	fn push_empty_slice<T>(&mut self, len: usize) {
+		self.storage_mut().push_empty_slice::<T>(len);
+	}
+
 	/// Write a value to storage at a specific position.
 	///
 	/// Default implementation is a no-op, and some serializers may not need to
