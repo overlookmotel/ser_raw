@@ -44,7 +44,7 @@ fn vecs_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.len(), PTR_SIZE * 3);
+	assert_eq!(storage.pos(), PTR_SIZE * 3);
 	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
@@ -59,7 +59,7 @@ fn vecs_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.len(), PTR_SIZE * 3);
+	assert_eq!(storage.pos(), PTR_SIZE * 3);
 	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
@@ -75,7 +75,7 @@ fn vecs_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.len(), PTR_SIZE * 3);
+	assert_eq!(storage.pos(), PTR_SIZE * 3);
 	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 4, 0]);
 
@@ -120,7 +120,7 @@ fn strings_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.len(), PTR_SIZE * 3);
+	assert_eq!(storage.pos(), PTR_SIZE * 3);
 	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
@@ -135,7 +135,7 @@ fn strings_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.len(), PTR_SIZE * 3);
+	assert_eq!(storage.pos(), PTR_SIZE * 3);
 	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
@@ -151,7 +151,7 @@ fn strings_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.len(), PTR_SIZE * 3);
+	assert_eq!(storage.pos(), PTR_SIZE * 3);
 	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 

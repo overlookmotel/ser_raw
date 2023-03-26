@@ -212,7 +212,7 @@ pub trait Serializer: Sized {
 	/// let mut ser = PureCopySerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
 	/// let (pos, storage) = ser.serialize(&Foo { small: 1, big: 2 });
 	/// assert_eq!(pos, 0);
-	/// assert_eq!(storage.len(), 8);
+	/// assert_eq!(storage.pos(), 8);
 	/// ```
 	fn serialize<T: Serialize<Self>>(mut self, value: &T) -> (usize, Self::BorrowedStorage) {
 		let pos = self.serialize_value(value);
@@ -251,7 +251,7 @@ pub trait Serializer: Sized {
 	/// let pos2 = ser.serialize_value(&Foo { small: 3, big: 4 });
 	/// let storage = ser.finalize();
 	///
-	/// assert_eq!(storage.len(), 16);
+	/// assert_eq!(storage.pos(), 16);
 	/// assert_eq!(pos1, 0);
 	/// assert_eq!(pos2, 8);
 	/// ```
@@ -489,7 +489,7 @@ pub trait Serializer: Sized {
 	/// Get current position in output.
 	#[inline]
 	fn pos(&self) -> usize {
-		self.storage().len()
+		self.storage().pos()
 	}
 
 	/// Get immutable ref to [`Storage`] backing this [`Serializer`].

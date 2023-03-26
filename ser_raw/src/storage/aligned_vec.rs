@@ -38,21 +38,21 @@ const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNME
 /// assert!(storage.as_ptr() as usize % 16 == 0);
 ///
 /// // Initial capacity is rounded up to multiple of `MAX_VALUE_ALIGNMENT` (default 16)
-/// assert_eq!(storage.len(), 0);
+/// assert_eq!(storage.pos(), 0);
 /// assert_eq!(storage.capacity(), 16);
 ///
 /// let value: u32 = 100;
 /// storage.push(&value);
 ///
-/// // `len` is rounded up to multiple of `VALUE_ALIGNMENT` (default 8)
-/// assert_eq!(storage.len(), 8);
+/// // `pos` is rounded up to multiple of `VALUE_ALIGNMENT` (default 8)
+/// assert_eq!(storage.pos(), 8);
 /// assert_eq!(storage.capacity(), 16);
 ///
 /// let slice: &[u64] = &vec![200, 300];
 /// storage.push_slice(slice);
 ///
 /// // Capacity grows in powers of 2
-/// assert_eq!(storage.len(), 24);
+/// assert_eq!(storage.pos(), 24);
 /// assert_eq!(storage.capacity(), 32);
 /// ```
 pub struct AlignedVec<
@@ -63,7 +63,7 @@ pub struct AlignedVec<
 > {
 	ptr: NonNull<u8>,
 	capacity: usize,
-	len: usize,
+	pos: usize,
 }
 
 impl<
@@ -94,7 +94,7 @@ impl<
 		Self {
 			ptr: NonNull::dangling(),
 			capacity: 0,
-			len: 0,
+			pos: 0,
 		}
 	}
 
@@ -120,7 +120,7 @@ impl<
 		Self {
 			ptr: Self::alloc(capacity),
 			capacity,
-			len: 0,
+			pos: 0,
 		}
 	}
 
@@ -130,24 +130,24 @@ impl<
 		self.capacity
 	}
 
-	/// Returns amount of storage currently used in bytes.
+	/// Returns current position in storage.
 	#[inline]
-	fn len(&self) -> usize {
-		self.len
+	fn pos(&self) -> usize {
+		self.pos
 	}
 
-	/// Set amount of storage space used (in bytes).
+	/// Set current position in storage.
 	///
 	/// # Safety
 	///
-	/// * `new_len` must be less than or equal to `capacity()`.
-	/// * `new_len` must be a multiple of `VALUE_ALIGNMENT`.
+	/// * `new_pos` must be less than or equal to `capacity()`.
+	/// * `new_pos` must be a multiple of `VALUE_ALIGNMENT`.
 	#[inline]
-	unsafe fn set_len(&mut self, new_len: usize) {
-		debug_assert!(new_len <= self.capacity);
-		debug_assert!(is_aligned_to(new_len, VALUE_ALIGNMENT));
+	unsafe fn set_pos(&mut self, new_pos: usize) {
+		debug_assert!(new_pos <= self.capacity);
+		debug_assert!(is_aligned_to(new_pos, VALUE_ALIGNMENT));
 
-		self.len = new_len;
+		self.pos = new_pos;
 	}
 
 	/// Push a slice of values `&T` to storage, without alignment checks and
@@ -163,26 +163,29 @@ impl<
 	/// This method does **not** ensure 2 invariants of storage relating to
 	/// alignment:
 	///
-	/// * that `len` is aligned for the type before push.
-	/// * that `len` is aligned to `VALUE_ALIGNMENT` after push.
+	/// * that [`pos()`] is aligned for the type before push.
+	/// * that [`pos()`] is aligned to [`VALUE_ALIGNMENT`] after push.
 	///
 	/// Caller must uphold these invariants. It is sufficient to:
 	///
 	/// * call [`align_for::<T>()`](Storage::align_for) before and
 	/// * call [`align_after::<T>()`](Storage::align_after) after.
+	///
+	/// [`pos()`]: Storage::pos
+	/// [`VALUE_ALIGNMENT`]: Storage::VALUE_ALIGNMENT
 	#[inline]
 	unsafe fn push_slice_unchecked<T>(&mut self, slice: &[T], size: usize) {
-		debug_assert!(self.capacity - self.len >= size);
+		debug_assert!(self.capacity - self.pos >= size);
 		debug_assert_eq!(size, mem::size_of::<T>() * slice.len());
-		debug_assert!(is_aligned_to(self.len, mem::align_of::<T>()));
+		debug_assert!(is_aligned_to(self.pos, mem::align_of::<T>()));
 
 		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
 		if mem::size_of::<T>() == 0 {
 			return;
 		}
 
-		self.write_slice(self.len, slice);
-		self.len += size;
+		self.write_slice(self.pos, slice);
+		self.pos += size;
 	}
 
 	/// Reserve capacity for at least `additional` more bytes to be inserted into
@@ -197,9 +200,9 @@ impl<
 	/// `MAX_CAPACITY`.
 	#[inline]
 	fn reserve(&mut self, additional: usize) {
-		// Cannot wrap because capacity always exceeds len,
+		// Cannot wrap because capacity always exceeds pos,
 		// but avoids having to handle potential overflow here
-		let remaining = self.capacity.wrapping_sub(self.len);
+		let remaining = self.capacity.wrapping_sub(self.pos);
 		if additional > remaining {
 			self.grow_for_reserve(additional);
 		}
@@ -211,7 +214,7 @@ impl<
 	#[inline]
 	fn shrink_to_fit(&mut self) {
 		// Ensure capacity remains a multiple of `MAX_VALUE_ALIGNMENT`
-		let new_cap = align_up_to(self.len, MAX_VALUE_ALIGNMENT);
+		let new_cap = align_up_to(self.pos, MAX_VALUE_ALIGNMENT);
 
 		if new_cap != self.capacity {
 			self.ptr = unsafe {
@@ -250,7 +253,7 @@ impl<
 		// `capacity`, so this can't overflow.
 		// TODO: Maybe create a specialized version of this function for that usage?
 		let mut new_cap = self
-			.len
+			.pos
 			.checked_add(additional)
 			.expect("Cannot grow AlignedVec further");
 
@@ -379,7 +382,7 @@ impl<
 	/// * A `T` must be present at this position in the storage.
 	/// * `pos` must be correctly aligned for `T`.
 	unsafe fn read_ref<T>(&self, pos: usize) -> &T {
-		debug_assert!(pos + mem::size_of::<T>() <= self.len);
+		debug_assert!(pos + mem::size_of::<T>() <= self.pos);
 		debug_assert!(is_aligned_to(pos, mem::align_of::<T>()));
 
 		let ptr = self.ptr.as_ptr().add(pos) as *const T;
@@ -393,7 +396,7 @@ impl<
 	/// * A `T` must be present at this position in the storage.
 	/// * `pos` must be correctly aligned for `T`.
 	unsafe fn read_mut<T>(&mut self, pos: usize) -> &mut T {
-		debug_assert!(pos + mem::size_of::<T>() <= self.len);
+		debug_assert!(pos + mem::size_of::<T>() <= self.pos);
 		debug_assert!(is_aligned_to(pos, mem::align_of::<T>()));
 
 		let ptr = self.ptr.as_ptr().add(pos) as *mut T;

@@ -221,19 +221,20 @@ pub trait Storage: Sized {
 	/// Returns current capacity of storage in bytes.
 	fn capacity(&self) -> usize;
 
-	/// Returns amount of storage currently used in bytes.
-	fn len(&self) -> usize;
+	/// Returns current position in storage.
+	fn pos(&self) -> usize;
 
-	/// Set amount of storage currently used.
+	/// Set current position in storage.
 	///
 	/// # Safety
 	///
-	/// * `new_len` must be less than or equal [`capacity()`](Storage::capacity).
-	/// * `new_len` must be a multiple of
-	///   [`VALUE_ALIGNMENT`](Storage::VALUE_ALIGNMENT).
+	/// * `new_pos` must be less than or equal [`capacity()`](Storage::capacity).
+	/// * `new_pos` must be a multiple of [`VALUE_ALIGNMENT`].
 	///
 	/// [`Storage`] implementations can impose further constraints.
-	unsafe fn set_len(&mut self, new_len: usize) -> ();
+	///
+	/// [`VALUE_ALIGNMENT`]: Storage::VALUE_ALIGNMENT
+	unsafe fn set_pos(&mut self, new_pos: usize) -> ();
 
 	/// Push a value of type `T` to storage.
 	#[inline]
@@ -270,9 +271,8 @@ pub trait Storage: Sized {
 	///
 	/// This method does **not** ensure 2 invariants relating to alignment:
 	///
-	/// * `len` must be aligned for the type before push.
-	/// * `len` must be aligned to [`VALUE_ALIGNMENT`](Storage::VALUE_ALIGNMENT)
-	///   after push.
+	/// * [`pos()`] must be aligned for the type before push.
+	/// * [`pos()`] must be aligned to [`VALUE_ALIGNMENT`] after push.
 	///
 	/// Caller must uphold these invariants. It is sufficient to:
 	///
@@ -282,10 +282,12 @@ pub trait Storage: Sized {
 	/// [`Storage`] implementations must ensure that alignment requirements can be
 	/// satisfied by the above.
 	///
+	/// [`pos()`]: Storage::pos
+	/// [`VALUE_ALIGNMENT`]: Storage::VALUE_ALIGNMENT
 	/// [`MAX_CAPACITY`]: Storage::MAX_CAPACITY
 	#[inline]
 	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) {
-		debug_assert!(is_aligned_to(self.len(), mem::align_of::<T>()));
+		debug_assert!(is_aligned_to(self.pos(), mem::align_of::<T>()));
 
 		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
 		if mem::size_of::<T>() == 0 {
@@ -316,9 +318,8 @@ pub trait Storage: Sized {
 	/// This method does **not** ensure 2 invariants of storage relating to
 	/// alignment:
 	///
-	/// * that `len` is aligned for the type before push.
-	/// * that `len` is aligned to [`VALUE_ALIGNMENT`](Storage::VALUE_ALIGNMENT)
-	///   after push.
+	/// * that [`pos()`] is aligned for the type before push.
+	/// * that [`pos()`] is aligned to [`VALUE_ALIGNMENT`] after push.
 	///
 	/// Caller must uphold these invariants. It is sufficient to:
 	///
@@ -327,6 +328,9 @@ pub trait Storage: Sized {
 	///
 	/// [`Storage`] implementations must ensure that alignment requirements can be
 	/// satisfied by the above.
+	///
+	/// [`pos()`]: Storage::pos
+	/// [`VALUE_ALIGNMENT`]: Storage::VALUE_ALIGNMENT
 	unsafe fn push_slice_unchecked<T>(&mut self, slice: &[T], size: usize) -> ();
 
 	/// Advance buffer position to leave space to write a `T` at current position
@@ -354,7 +358,7 @@ pub trait Storage: Sized {
 
 		let size = mem::size_of::<T>() * len;
 		self.reserve(size);
-		unsafe { self.set_len(self.len() + size) };
+		unsafe { self.set_pos(self.pos() + size) };
 
 		self.align_after::<T>();
 	}
@@ -437,26 +441,26 @@ pub trait Storage: Sized {
 
 		// Round up buffer position to multiple of `alignment`.
 		// `align_up_to`'s constraints are satisfied by:
-		// * `self.len` is always less than `MAX_CAPACITY`, which is `< isize::MAX`.
+		// * `self.pos` is always less than `MAX_CAPACITY`, which is `< isize::MAX`.
 		// * `alignment <= MAX_VALUE_ALIGNMENT` satisfies `alignment < isize::MAX`
 		//   because `MAX_VALUE_ALIGNMENT < isize::MAX`.
 		// * `alignment` being a power of 2 is part of this function's contract.
-		let new_len = align_up_to(self.len(), alignment);
+		let new_pos = align_up_to(self.pos(), alignment);
 
-		// `new_len > capacity` can't happen because of 2 guarantees:
+		// `new_pos > capacity` can't happen because of 2 guarantees:
 		// 1. `alignment <= MAX_VALUE_ALIGNMENT`
 		// 2. `capacity` is a multiple of `MAX_VALUE_ALIGNMENT`
-		self.set_len(new_len);
+		self.set_pos(new_pos);
 	}
 
 	/// Clear contents of storage.
 	///
 	/// Does not reduce the storage's capacity, just resets
-	/// [`len()`](Storage::len) back to 0.
+	/// [`pos()`](Storage::pos) back to 0.
 	#[inline]
 	fn clear(&mut self) {
-		// 0 trivially satisfies requirement that `new_len < self.capacity()`
-		unsafe { self.set_len(0) };
+		// 0 trivially satisfies requirement that `new_pos < self.capacity()`
+		unsafe { self.set_pos(0) };
 	}
 
 	/// Shrink the capacity of the storage as much as possible.

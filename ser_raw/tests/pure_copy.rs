@@ -56,7 +56,7 @@ where T: Serialize<Ser> + Debug + PartialEq {
 	};
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.len(), expected_size);
+	assert_eq!(storage.pos(), expected_size);
 }
 
 tests!(test_serialize);
