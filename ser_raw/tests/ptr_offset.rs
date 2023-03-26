@@ -13,10 +13,9 @@ use ser_raw::{
 // compile time, not runtime.
 
 const MAX_CAPACITY: usize = aligned_max_capacity(16);
-type AlVec = AlignedVec<16, 16, 8, MAX_CAPACITY>;
-type Ser = PtrOffsetSerializer<16, 16, 8, MAX_CAPACITY, AlVec>;
+type Ser = PtrOffsetSerializer<16, 16, 8, MAX_CAPACITY, AlignedVec>;
 
-fn serialize<T: Serialize<Ser>>(value: &T) -> AlVec {
+fn serialize<T: Serialize<Ser>>(value: &T) -> AlignedVec {
 	let ser = Ser::new();
 	ser.serialize(value)
 }

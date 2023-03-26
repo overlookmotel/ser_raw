@@ -14,16 +14,14 @@ use ser_raw::{
 
 const MAX_CAPACITY: usize = aligned_max_capacity(16);
 const PTR_SIZE: usize = mem::size_of::<usize>();
+type Ser = CompleteSerializer<16, 16, 8, MAX_CAPACITY, AlignedVec>;
 
-type AlVec = AlignedVec<16, 16, 8, MAX_CAPACITY>;
-type Ser = CompleteSerializer<16, 16, 8, MAX_CAPACITY, AlVec>;
-
-fn serialize<T: Serialize<Ser>>(value: &T) -> AlVec {
+fn serialize<T: Serialize<Ser>>(value: &T) -> AlignedVec {
 	let ser = Ser::new();
 	ser.serialize(value)
 }
 
-fn deserialize<T>(storage: &AlVec) -> &T {
+fn deserialize<T>(storage: &AlignedVec) -> &T {
 	unsafe { &*storage.as_ptr().cast() }
 }
 
