@@ -25,6 +25,8 @@ pub enum Test {
 	StringsWithExcessCapacity,
 	StringsWithExcessCapacity2,
 	Options,
+	BigUint,
+	BigInt,
 	StructureWhereStorageGrowsAfterLastPointerWritten,
 	MinecraftData,
 }
@@ -511,6 +513,63 @@ macro_rules! tests {
 				Test::Options,
 				3,
 			);
+		}
+
+		#[cfg(feature = "num_bigint")]
+		#[test]
+		fn biguints() {
+			use num_bigint::BigUint;
+
+			let input: [BigUint; 4] = [
+				// Zero
+				BigUint::default(),
+				// 4 bytes
+				BigUint::new(vec![0x01020304]),
+				// 8 bytes
+				BigUint::new(vec![0x05060708, 0x05060708]),
+				// Large
+				BigUint::new(vec![
+					0x090a0b0c, 0x0d0e0f10, 0x11121314, 0x15161718, 0x191a1b1c, 0x1d1e1f20, 0x21222324,
+					0x25262728, 0x292a2b2c,
+				]),
+			];
+			$test_serialize(&input, Test::BigUint, 0);
+		}
+
+		#[cfg(feature = "num_bigint")]
+		#[test]
+		fn bigints() {
+			use num_bigint::{BigInt, Sign};
+
+			let input: [BigInt; 7] = [
+				// Zero
+				BigInt::default(),
+				// Positive, 4 bytes
+				BigInt::new(Sign::Plus, vec![0x01020304]),
+				// Positive, 8 bytes
+				BigInt::new(Sign::Plus, vec![0x05060708, 0x05060708]),
+				// Positive, large
+				BigInt::new(
+					Sign::Plus,
+					vec![
+						0x090a0b0c, 0x0d0e0f10, 0x11121314, 0x15161718, 0x191a1b1c, 0x1d1e1f20, 0x21222324,
+						0x25262728, 0x292a2b2c,
+					],
+				),
+				// Negative, 4 bytes
+				BigInt::new(Sign::Minus, vec![0x31323334]),
+				// Negative, 8 bytes
+				BigInt::new(Sign::Minus, vec![0x35363738, 0x35363738]),
+				// Negative, large
+				BigInt::new(
+					Sign::Minus,
+					vec![
+						0x393a3b3c, 0x3d3e3f40, 0x41424344, 0x45464748, 0x494a4b4c, 0x4d4e4f50, 0x51525354,
+						0x55565758, 0x595a5b5c,
+					],
+				),
+			];
+			$test_serialize(&input, Test::BigInt, 0);
 		}
 
 		#[test]

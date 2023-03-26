@@ -51,6 +51,8 @@ where T: Serialize<Ser> + Debug + PartialEq {
 		Test::StringsWithExcessCapacity => 32,
 		Test::StringsWithExcessCapacity2 => 32,
 		Test::Options => [72, 72, 104, 96][test_num],
+		Test::BigUint => 152,
+		Test::BigInt => 336,
 		Test::StructureWhereStorageGrowsAfterLastPointerWritten => 136,
 		Test::MinecraftData => 1375104,
 	};

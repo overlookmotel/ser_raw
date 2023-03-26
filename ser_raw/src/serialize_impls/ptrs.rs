@@ -121,7 +121,7 @@ impl<T, const SIZE: usize> SizeCheck<T, SIZE> {
 ///
 /// Godbolt shows all of these are compiled down to static integers:
 /// https://godbolt.org/z/78MzTKo6f
-struct VecOffsets<T> {
+pub(crate) struct VecOffsets<T> {
 	_marker: PhantomData<T>,
 }
 
@@ -146,7 +146,7 @@ impl<T> VecOffsets<T> {
 		}
 	};
 
-	const PTR_OFFSET: usize = Self::PTR_INDEX * PTR_SIZE;
+	pub(crate) const PTR_OFFSET: usize = Self::PTR_INDEX * PTR_SIZE;
 
 	// `OFFSETS_VEC` is not a valid `Vec<T>` as it violates `Vec`'s invariants.
 	// Either `len` > `capacity`, or `capacity` > 0 and ptr dangling.
@@ -155,7 +155,7 @@ impl<T> VecOffsets<T> {
 	// 2. We never read or write to the vec, or access its pointer.
 	// 3. `ManuallyDrop` prevents it ever being dropped (which would be UB).
 	// So this hack is *probably* sound.
-	const OFFSETS_VEC: mem::ManuallyDrop<Vec<T>> = {
+	pub(crate) const OFFSETS_VEC: mem::ManuallyDrop<Vec<T>> = {
 		let dangle = mem::align_of::<T>();
 		let bytes = match Self::PTR_INDEX {
 			0 => [dangle, PTR_SIZE, PTR_SIZE * 2],

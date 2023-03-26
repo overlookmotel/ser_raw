@@ -131,6 +131,7 @@ dependencies = [
  "num-bigint",
  "rand",
  "rand_pcg",
+ "ser_raw",
  "ser_raw_derive",
  "ser_raw_derive_serializer",
 ]

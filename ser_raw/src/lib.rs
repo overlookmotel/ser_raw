@@ -107,6 +107,9 @@
 //!
 //! `derive` feature enables the [`Serialize`] derive macro. Enabled by default.
 //!
+//! `num_bigint` feature enables serialization of [`num-bigint`]'s [`BigInt`]
+//! and [`BigUint`] types.
+//!
 //! # Future direction and motivation
 //!
 //! The primary motivator for creating this library is to enable fast sharing of
@@ -140,6 +143,9 @@
 //! [layout_inspect]: https://github.com/overlookmotel/layout_inspect
 //! [abomonation]: https://github.com/TimelyDataflow/abomonation
 //! [rkyv]: https://rkyv.org/
+//! [`num-bigint`]: https://crates.io/crates/num-bigint
+//! [`BigInt`]: https://docs.rs/num-bigint/latest/num_bigint/struct.BigInt.html
+//! [`BigUint`]: https://docs.rs/num-bigint/latest/num_bigint/struct.BigUint.html
 
 // Derive macros
 #[cfg(feature = "derive")]
