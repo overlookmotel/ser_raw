@@ -496,6 +496,35 @@ pub trait ContiguousStorage: Storage {
 	/// [`capacity()`]: Storage::capacity
 	unsafe fn write_slice<T>(&mut self, pos: usize, slice: &[T]) -> ();
 
+	/// Read a value at a specific position in storage.
+	///
+	/// Returns an owned `T`. `T` must be `Copy`.
+	///
+	/// # Safety
+	///
+	/// * A `T` must be present at this position in the storage.
+	/// * `pos` must be correctly aligned for `T`.
+	#[inline]
+	unsafe fn read<T: Copy>(&self, pos: usize) -> T {
+		*self.read_ref(pos)
+	}
+
+	/// Get immutable reference for a value at a specific position in storage.
+	///
+	/// # Safety
+	///
+	/// * A `T` must be present at this position in the storage.
+	/// * `pos` must be correctly aligned for `T`.
+	unsafe fn read_ref<T>(&self, pos: usize) -> &T;
+
+	/// Get mutable reference for a value at a specific position in storage.
+	///
+	/// # Safety
+	///
+	/// * A `T` must be present at this position in the storage.
+	/// * `pos` must be correctly aligned for `T`.
+	unsafe fn read_mut<T>(&mut self, pos: usize) -> &mut T;
+
 	/// Returns a raw pointer to the storage's buffer, or a dangling raw pointer
 	/// valid for zero sized reads if the storage didn't allocate.
 	///

@@ -233,7 +233,7 @@ impl PtrGroup {
 		// e.g. `old = 4`, `new = 10` -> `shift_by = 6` -> each ptr has 6 added.
 		let shift_by = (storage_ptr as usize).wrapping_sub(self.storage_addr);
 		for ptr_pos in &self.ptr_positions {
-			// TODO: Use `storage.read()` and `storage.write()` instead of this
+			// TODO: Use `storage.read_mut()` instead of this
 			let ptr = storage_ptr.add(*ptr_pos) as *mut usize;
 			*ptr = (*ptr).wrapping_add(shift_by);
 		}

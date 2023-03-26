@@ -29,13 +29,13 @@ use crate::{
 /// const MAX_CAPACITY: usize = aligned_max_capacity(16);
 /// let mut ser = PtrOffsetSerializer::<16, 16, 8, MAX_CAPACITY, _>::new();
 /// let (pos, storage) = ser.serialize(&boxed);
-/// let slice = storage.as_slice();
 /// assert_eq!(pos, 0);
 ///
 /// const PTR_SIZE: usize = std::mem::size_of::<usize>();
-/// let offset = usize::from_ne_bytes(slice[..PTR_SIZE].try_into().unwrap());
+/// let offset: usize = unsafe { storage.read(pos) };
+/// let value: u8 = unsafe { storage.read(pos + offset) };
 /// assert_eq!(offset, 8);
-/// assert_eq!(slice[offset], 123);
+/// assert_eq!(value, 123);
 /// ```
 #[derive(Serializer)]
 #[ser_type(ptr_offset)]

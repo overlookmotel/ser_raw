@@ -3,7 +3,7 @@ use std::{fmt::Debug, mem};
 mod common;
 use common::{generate_minecraft_data, tests, Test};
 use ser_raw::{
-	storage::{AlignedVec, ContiguousStorage},
+	storage::{AlignedVec, ContiguousStorage, Storage},
 	util::aligned_max_capacity,
 	CompleteSerializer, Serialize, Serializer,
 };
@@ -22,7 +22,7 @@ fn serialize<T: Serialize<Ser>>(value: &T) -> (usize, AlignedVec) {
 }
 
 fn deserialize<T>(storage: &AlignedVec, pos: usize) -> &T {
-	unsafe { &*storage.as_ptr().add(pos).cast() }
+	unsafe { storage.read_ref(pos) }
 }
 
 fn test_serialize<T>(input: &T, _test: Test, _test_num: usize)
@@ -44,8 +44,8 @@ fn vecs_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.as_slice().len(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { &*storage.as_ptr().cast() };
+	assert_eq!(storage.len(), PTR_SIZE * 3);
+	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
 	let output: &Vec<u8> = deserialize(&storage, pos);
@@ -59,8 +59,8 @@ fn vecs_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.as_slice().len(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { &*storage.as_ptr().cast() };
+	assert_eq!(storage.len(), PTR_SIZE * 3);
+	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
 	let output: &Vec<u8> = deserialize(&storage, pos);
@@ -75,8 +75,8 @@ fn vecs_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.as_slice().len(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { &*storage.as_ptr().cast() };
+	assert_eq!(storage.len(), PTR_SIZE * 3);
+	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 4, 0]);
 
 	let output: &Vec<u32> = deserialize(&storage, pos);
@@ -120,8 +120,8 @@ fn strings_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.as_slice().len(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { &*storage.as_ptr().cast() };
+	assert_eq!(storage.len(), PTR_SIZE * 3);
+	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
 	let output: &String = deserialize(&storage, pos);
@@ -135,8 +135,8 @@ fn strings_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.as_slice().len(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { &*storage.as_ptr().cast() };
+	assert_eq!(storage.len(), PTR_SIZE * 3);
+	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
 	let output: &String = deserialize(&storage, pos);
@@ -151,8 +151,8 @@ fn strings_with_zero_len_represented_correctly() {
 	let (pos, storage) = serialize(&input);
 
 	assert_eq!(pos, 0);
-	assert_eq!(storage.as_slice().len(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { &*storage.as_ptr().cast() };
+	assert_eq!(storage.len(), PTR_SIZE * 3);
+	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
 	let output: &String = deserialize(&storage, pos);

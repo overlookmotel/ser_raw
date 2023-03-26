@@ -56,9 +56,9 @@ use crate::{
 /// // Deserialize
 /// // This is safe because:
 /// // 1. Serialization and deserialization are performed
-/// //    on same system with same binary
-/// // 2. `storage` has not been mutated after serialization completed
-/// let boxed_out: &Box<u8> = unsafe { &*storage.as_ptr().add(pos).cast() };
+/// //    on same system with same binary.
+/// // 2. `storage` has not been mutated after serialization completed.
+/// let boxed_out: &Box<u8> = unsafe { storage.read_ref(pos) };
 /// assert_eq!(boxed_out, &boxed);
 /// ```
 #[derive(Serializer)]

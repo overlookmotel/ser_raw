@@ -371,6 +371,34 @@ impl<
 		ptr::copy_nonoverlapping(src, dst, slice.len());
 	}
 
+	/// Get immutable reference for a value at a specific position in storage.
+	///
+	/// # Safety
+	///
+	/// * A `T` must be present at this position in the storage.
+	/// * `pos` must be correctly aligned for `T`.
+	unsafe fn read_ref<T>(&self, pos: usize) -> &T {
+		debug_assert!(pos + mem::size_of::<T>() <= self.len);
+		debug_assert!(is_aligned_to(pos, mem::align_of::<T>()));
+
+		let ptr = self.ptr.as_ptr().add(pos) as *const T;
+		&*ptr.cast()
+	}
+
+	/// Get mutable reference for a value at a specific position in storage.
+	///
+	/// # Safety
+	///
+	/// * A `T` must be present at this position in the storage.
+	/// * `pos` must be correctly aligned for `T`.
+	unsafe fn read_mut<T>(&mut self, pos: usize) -> &mut T {
+		debug_assert!(pos + mem::size_of::<T>() <= self.len);
+		debug_assert!(is_aligned_to(pos, mem::align_of::<T>()));
+
+		let ptr = self.ptr.as_ptr().add(pos) as *mut T;
+		&mut *ptr.cast()
+	}
+
 	/// Returns a raw pointer to the storage's buffer, or a dangling raw pointer
 	/// valid for zero sized reads if the storage didn't allocate.
 	///
