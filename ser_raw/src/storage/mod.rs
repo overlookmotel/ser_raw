@@ -264,8 +264,7 @@ pub trait Storage: Sized {
 	///
 	/// # Panics
 	///
-	/// Panics if would require growing storage beyond
-	/// [`MAX_CAPACITY`](Storage::MAX_CAPACITY).
+	/// Panics if would require growing storage beyond [`MAX_CAPACITY`].
 	///
 	/// # Safety
 	///
@@ -282,6 +281,8 @@ pub trait Storage: Sized {
 	///
 	/// [`Storage`] implementations must ensure that alignment requirements can be
 	/// satisfied by the above.
+	///
+	/// [`MAX_CAPACITY`]: Storage::MAX_CAPACITY
 	#[inline]
 	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) {
 		debug_assert!(is_aligned_to(self.len(), mem::align_of::<T>()));

@@ -168,8 +168,8 @@ impl<
 	///
 	/// Caller must uphold these invariants. It is sufficient to:
 	///
-	/// * call `align_for::<T>()` before and
-	/// * call `align_after::<T>()` after.
+	/// * call [`align_for::<T>()`](Storage::align_for) before and
+	/// * call [`align_after::<T>()`](Storage::align_after) after.
 	#[inline]
 	unsafe fn push_slice_unchecked<T>(&mut self, slice: &[T], size: usize) {
 		debug_assert!(self.capacity - self.len >= size);
