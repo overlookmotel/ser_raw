@@ -525,8 +525,8 @@ pub trait ContiguousStorage: Storage {
 	/// * `pos` must be correctly aligned for `T`.
 	unsafe fn read_mut<T>(&mut self, pos: usize) -> &mut T;
 
-	/// Returns a raw pointer to the storage's buffer, or a dangling raw pointer
-	/// valid for zero sized reads if the storage didn't allocate.
+	/// Returns a raw pointer to the start of the storage's buffer, or a dangling
+	/// raw pointer valid for zero sized reads if the storage didn't allocate.
 	///
 	/// The caller must ensure that the storage outlives the pointer this function
 	/// returns, or else it will end up pointing to garbage. Modifying the storage
@@ -534,14 +534,47 @@ pub trait ContiguousStorage: Storage {
 	/// to it invalid.
 	fn as_ptr(&self) -> *const u8;
 
-	/// Returns an unsafe mutable pointer to the storage's buffer, or a dangling
-	/// raw pointer valid for zero sized reads if the storage didn't allocate.
+	/// Returns an unsafe mutable pointer to the start of the storage's buffer, or
+	/// a dangling raw pointer valid for zero sized reads if the storage didn't
+	/// allocate.
 	///
 	/// The caller must ensure that the storage outlives the pointer this function
 	/// returns, or else it will end up pointing to garbage. Modifying the storage
 	/// may cause its buffer to be reallocated, which would also make any pointers
 	/// to it invalid.
 	fn as_mut_ptr(&mut self) -> *mut u8;
+
+	/// Returns a raw pointer to a position in the storage.
+	///
+	/// The caller must ensure that the storage outlives the pointer this function
+	/// returns, or else it will end up pointing to garbage. Modifying the storage
+	/// may cause its buffer to be reallocated, which would also make any pointers
+	/// to it invalid.
+	///
+	/// # Safety
+	///
+	/// * Storage must have allocated (i.e. initialized with [`with_capacity`], or
+	///   have had some values pushed to it).
+	/// * `pos` must be a valid position within the storage's allocation.
+	///
+	/// [`with_capacity`]: Storage::with_capacity
+	unsafe fn ptr(&self, pos: usize) -> *const u8;
+
+	/// Returns an unsafe mutable pointer a position in the storage.
+	///
+	/// The caller must ensure that the storage outlives the pointer this function
+	/// returns, or else it will end up pointing to garbage. Modifying the storage
+	/// may cause its buffer to be reallocated, which would also make any pointers
+	/// to it invalid.
+	///
+	/// # Safety
+	///
+	/// * Storage must have allocated (i.e. initialized with [`with_capacity`], or
+	///   have had some values pushed to it).
+	/// * `pos` must be a valid position within the storage's allocation.
+	///
+	/// [`with_capacity`]: Storage::with_capacity
+	unsafe fn mut_ptr(&mut self, pos: usize) -> *mut u8;
 }
 
 /// Type for static assertion that types being serialized do not have a higher

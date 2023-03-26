@@ -363,7 +363,7 @@ impl<
 		}
 
 		let src = slice.as_ptr();
-		let dst = self.as_mut_ptr().add(pos) as *mut T;
+		let dst = self.ptr.as_ptr().add(pos) as *mut T;
 		// `src` must be correctly aligned as derived from a valid `&[T]`.
 		// Ensuring sufficient capacity is a requirement of this method.
 		// `dst` being correctly aligned is a requirement of this method.
@@ -398,8 +398,8 @@ impl<
 		&mut *ptr.cast()
 	}
 
-	/// Returns a raw pointer to the storage's buffer, or a dangling raw pointer
-	/// valid for zero sized reads if the storage didn't allocate.
+	/// Returns a raw pointer to the start of the storage's buffer, or a dangling
+	/// raw pointer valid for zero sized reads if the storage didn't allocate.
 	///
 	/// The caller must ensure that the storage outlives the pointer this function
 	/// returns, or else it will end up pointing to garbage. Modifying the storage
@@ -410,8 +410,9 @@ impl<
 		self.ptr.as_ptr()
 	}
 
-	/// Returns an unsafe mutable pointer to the storage's buffer, or a dangling
-	/// raw pointer valid for zero sized reads if the storage didn't allocate.
+	/// Returns an unsafe mutable pointer to the start of the storage's buffer, or
+	/// a dangling raw pointer valid for zero sized reads if the storage didn't
+	/// allocate.
 	///
 	/// The caller must ensure that the storage outlives the pointer this function
 	/// returns, or else it will end up pointing to garbage. Modifying the storage
@@ -420,6 +421,50 @@ impl<
 	#[inline]
 	fn as_mut_ptr(&mut self) -> *mut u8 {
 		self.ptr.as_ptr()
+	}
+
+	/// Returns a raw pointer to a position in the storage.
+	///
+	/// The caller must ensure that the storage outlives the pointer this function
+	/// returns, or else it will end up pointing to garbage. Modifying the storage
+	/// may cause its buffer to be reallocated, which would also make any pointers
+	/// to it invalid.
+	///
+	/// # Safety
+	///
+	/// * Storage must have allocated (i.e. initialized with [`with_capacity`], or
+	///   have had some values pushed to it).
+	/// * `pos` must be a valid position within the storage's allocation.
+	///
+	/// [`with_capacity`]: AlignedVec::with_capacity
+	#[inline]
+	unsafe fn ptr(&self, pos: usize) -> *const u8 {
+		debug_assert!(self.capacity > 0);
+		debug_assert!(pos <= self.capacity);
+
+		self.ptr.as_ptr().add(pos)
+	}
+
+	/// Returns an unsafe mutable pointer a position in the storage.
+	///
+	/// The caller must ensure that the storage outlives the pointer this function
+	/// returns, or else it will end up pointing to garbage. Modifying the storage
+	/// may cause its buffer to be reallocated, which would also make any pointers
+	/// to it invalid.
+	///
+	/// # Safety
+	///
+	/// * Storage must have allocated (i.e. initialized with [`with_capacity`], or
+	///   have had some values pushed to it).
+	/// * `pos` must be a valid position within the storage's allocation.
+	///
+	/// [`with_capacity`]: AlignedVec::with_capacity
+	#[inline]
+	unsafe fn mut_ptr(&mut self, pos: usize) -> *mut u8 {
+		debug_assert!(self.capacity > 0);
+		debug_assert!(pos <= self.capacity);
+
+		self.ptr.as_ptr().add(pos)
 	}
 }
 
