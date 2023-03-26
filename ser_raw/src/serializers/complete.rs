@@ -42,7 +42,7 @@ use crate::{
 /// ```
 /// use ser_raw::{
 /// 	CompleteSerializer, Serialize, Serializer,
-/// 	storage::ContiguousStorage,
+/// 	storage::RandomAccessStorage,
 /// 	util::aligned_max_capacity,
 /// };
 ///

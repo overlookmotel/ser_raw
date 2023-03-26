@@ -462,11 +462,10 @@ pub trait Storage: Sized {
 	fn shrink_to_fit(&mut self) -> ();
 }
 
-/// Trait for storage used by [`Serializer`]s which store data in a contiguous
-/// memory region.
+/// Trait for [`Storage`] which supports random access read and writes.
 ///
 /// [`Serializer`]: crate::Serializer
-pub trait ContiguousStorage: Storage {
+pub trait RandomAccessStorage: Storage {
 	/// Write a value at a specific position in storage's buffer.
 	///
 	/// # Safety
@@ -525,25 +524,6 @@ pub trait ContiguousStorage: Storage {
 	/// * `pos` must be correctly aligned for `T`.
 	unsafe fn read_mut<T>(&mut self, pos: usize) -> &mut T;
 
-	/// Returns a raw pointer to the start of the storage's buffer, or a dangling
-	/// raw pointer valid for zero sized reads if the storage didn't allocate.
-	///
-	/// The caller must ensure that the storage outlives the pointer this function
-	/// returns, or else it will end up pointing to garbage. Modifying the storage
-	/// may cause its buffer to be reallocated, which would also make any pointers
-	/// to it invalid.
-	fn as_ptr(&self) -> *const u8;
-
-	/// Returns an unsafe mutable pointer to the start of the storage's buffer, or
-	/// a dangling raw pointer valid for zero sized reads if the storage didn't
-	/// allocate.
-	///
-	/// The caller must ensure that the storage outlives the pointer this function
-	/// returns, or else it will end up pointing to garbage. Modifying the storage
-	/// may cause its buffer to be reallocated, which would also make any pointers
-	/// to it invalid.
-	fn as_mut_ptr(&mut self) -> *mut u8;
-
 	/// Returns a raw pointer to a position in the storage.
 	///
 	/// The caller must ensure that the storage outlives the pointer this function
@@ -575,6 +555,28 @@ pub trait ContiguousStorage: Storage {
 	///
 	/// [`with_capacity`]: Storage::with_capacity
 	unsafe fn mut_ptr(&mut self, pos: usize) -> *mut u8;
+}
+
+/// Trait for [`Storage`] which stores data in a contiguous memory region.
+pub trait ContiguousStorage: Storage {
+	/// Returns a raw pointer to the start of the storage's buffer, or a dangling
+	/// raw pointer valid for zero sized reads if the storage didn't allocate.
+	///
+	/// The caller must ensure that the storage outlives the pointer this function
+	/// returns, or else it will end up pointing to garbage. Modifying the storage
+	/// may cause its buffer to be reallocated, which would also make any pointers
+	/// to it invalid.
+	fn as_ptr(&self) -> *const u8;
+
+	/// Returns an unsafe mutable pointer to the start of the storage's buffer, or
+	/// a dangling raw pointer valid for zero sized reads if the storage didn't
+	/// allocate.
+	///
+	/// The caller must ensure that the storage outlives the pointer this function
+	/// returns, or else it will end up pointing to garbage. Modifying the storage
+	/// may cause its buffer to be reallocated, which would also make any pointers
+	/// to it invalid.
+	fn as_mut_ptr(&mut self) -> *mut u8;
 }
 
 /// Type for static assertion that types being serialized do not have a higher

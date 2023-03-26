@@ -3,7 +3,7 @@ use std::{fmt::Debug, mem};
 mod common;
 use common::{generate_minecraft_data, tests, Test};
 use ser_raw::{
-	storage::{AlignedVec, ContiguousStorage, Storage},
+	storage::{AlignedVec, RandomAccessStorage, Storage},
 	util::aligned_max_capacity,
 	CompleteSerializer, Serialize, Serializer,
 };

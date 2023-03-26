@@ -1,13 +1,13 @@
 use std::mem;
 
-use crate::{ser_traits::PosTracking, storage::ContiguousStorage, util::is_aligned_to};
+use crate::{ser_traits::PosTracking, storage::RandomAccessStorage, util::is_aligned_to};
 
 /// Trait for serializers which overwrite pointers in output with position
 /// offsets relative to start of output.
 ///
 /// Used by `PtrOffsetSerializer` serializer, provided by this crate.
 pub trait PtrOffset: PosTracking
-where Self::Storage: ContiguousStorage
+where Self::Storage: RandomAccessStorage
 {
 	/// Overwrite pointer.
 	///

@@ -1,8 +1,8 @@
-use crate::{ser_traits::PosTracking, storage::ContiguousStorage};
+use crate::{ser_traits::PosTracking, storage::RandomAccessStorage};
 
 /// Trait for serializers which can write at arbitrary positions in output.
 pub trait Writable: PosTracking
-where Self::Storage: ContiguousStorage
+where Self::Storage: RandomAccessStorage
 {
 	#[inline]
 	unsafe fn do_write<T>(&mut self, addr: usize, value: &T) {

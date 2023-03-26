@@ -9,7 +9,7 @@ use std::{
 	ptr::{self, NonNull},
 };
 
-use super::{ContiguousStorage, Storage};
+use super::{ContiguousStorage, RandomAccessStorage, Storage};
 use crate::util::{align_up_to, aligned_max_capacity, is_aligned_to};
 
 const PTR_SIZE: usize = mem::size_of::<usize>();
@@ -22,6 +22,8 @@ const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNME
 /// Used as backing storage by all of the Serializers provided by this crate.
 ///
 /// Ensures all values pushed to storage are correctly aligned.
+///
+/// Supports random access reads and writes via [`RandomAccessStorage`] trait.
 ///
 /// See [`Storage`] trait for details of the const parameters.
 ///
@@ -340,7 +342,7 @@ impl<
 		const MAX_VALUE_ALIGNMENT: usize,
 		const VALUE_ALIGNMENT: usize,
 		const MAX_CAPACITY: usize,
-	> ContiguousStorage
+	> RandomAccessStorage
 	for AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Write a slice of values at a specific position in storage's buffer.
@@ -398,31 +400,6 @@ impl<
 		&mut *ptr.cast()
 	}
 
-	/// Returns a raw pointer to the start of the storage's buffer, or a dangling
-	/// raw pointer valid for zero sized reads if the storage didn't allocate.
-	///
-	/// The caller must ensure that the storage outlives the pointer this function
-	/// returns, or else it will end up pointing to garbage. Modifying the storage
-	/// may cause its buffer to be reallocated, which would also make any pointers
-	/// to it invalid.
-	#[inline]
-	fn as_ptr(&self) -> *const u8 {
-		self.ptr.as_ptr()
-	}
-
-	/// Returns an unsafe mutable pointer to the start of the storage's buffer, or
-	/// a dangling raw pointer valid for zero sized reads if the storage didn't
-	/// allocate.
-	///
-	/// The caller must ensure that the storage outlives the pointer this function
-	/// returns, or else it will end up pointing to garbage. Modifying the storage
-	/// may cause its buffer to be reallocated, which would also make any pointers
-	/// to it invalid.
-	#[inline]
-	fn as_mut_ptr(&mut self) -> *mut u8 {
-		self.ptr.as_ptr()
-	}
-
 	/// Returns a raw pointer to a position in the storage.
 	///
 	/// The caller must ensure that the storage outlives the pointer this function
@@ -465,6 +442,40 @@ impl<
 		debug_assert!(pos <= self.capacity);
 
 		self.ptr.as_ptr().add(pos)
+	}
+}
+
+impl<
+		const STORAGE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+	> ContiguousStorage
+	for AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
+{
+	/// Returns a raw pointer to the start of the storage's buffer, or a dangling
+	/// raw pointer valid for zero sized reads if the storage didn't allocate.
+	///
+	/// The caller must ensure that the storage outlives the pointer this function
+	/// returns, or else it will end up pointing to garbage. Modifying the storage
+	/// may cause its buffer to be reallocated, which would also make any pointers
+	/// to it invalid.
+	#[inline]
+	fn as_ptr(&self) -> *const u8 {
+		self.ptr.as_ptr()
+	}
+
+	/// Returns an unsafe mutable pointer to the start of the storage's buffer, or
+	/// a dangling raw pointer valid for zero sized reads if the storage didn't
+	/// allocate.
+	///
+	/// The caller must ensure that the storage outlives the pointer this function
+	/// returns, or else it will end up pointing to garbage. Modifying the storage
+	/// may cause its buffer to be reallocated, which would also make any pointers
+	/// to it invalid.
+	#[inline]
+	fn as_mut_ptr(&mut self) -> *mut u8 {
+		self.ptr.as_ptr()
 	}
 }
 
