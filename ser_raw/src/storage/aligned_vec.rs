@@ -7,7 +7,6 @@ use std::{
 	alloc::{self, Layout},
 	cmp, mem,
 	ptr::{self, NonNull},
-	slice,
 };
 
 use super::{ContiguousStorage, Storage};
@@ -421,18 +420,6 @@ impl<
 	#[inline]
 	fn as_mut_ptr(&mut self) -> *mut u8 {
 		self.ptr.as_ptr()
-	}
-
-	/// Extracts a slice containing the entire storage buffer.
-	#[inline]
-	fn as_slice(&self) -> &[u8] {
-		unsafe { slice::from_raw_parts(self.ptr.as_ptr(), self.len) }
-	}
-
-	/// Extracts a mutable slice of the entire storage buffer.
-	#[inline]
-	fn as_mut_slice(&mut self) -> &mut [u8] {
-		unsafe { slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len) }
 	}
 }
 

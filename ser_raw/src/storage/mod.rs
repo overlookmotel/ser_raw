@@ -542,12 +542,6 @@ pub trait ContiguousStorage: Storage {
 	/// may cause its buffer to be reallocated, which would also make any pointers
 	/// to it invalid.
 	fn as_mut_ptr(&mut self) -> *mut u8;
-
-	/// Extracts a slice containing the entire storage buffer.
-	fn as_slice(&self) -> &[u8];
-
-	/// Extracts a mutable slice of the entire storage buffer.
-	fn as_mut_slice(&mut self) -> &mut [u8];
 }
 
 /// Type for static assertion that types being serialized do not have a higher
