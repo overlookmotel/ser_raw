@@ -180,7 +180,7 @@ impl<
 			return;
 		}
 
-		self.write_slice(slice, self.len);
+		self.write_slice(self.len, slice);
 		self.len += size;
 	}
 
@@ -353,7 +353,7 @@ impl<
 	/// 	i.e. write is within storage's allocation.
 	/// * `pos` must be aligned for `T`.
 	#[inline]
-	unsafe fn write_slice<T>(&mut self, slice: &[T], pos: usize) {
+	unsafe fn write_slice<T>(&mut self, pos: usize, slice: &[T]) {
 		debug_assert!(pos <= self.capacity);
 		debug_assert!(self.capacity - pos >= mem::size_of::<T>() * slice.len());
 		debug_assert!(is_aligned_to(pos, mem::align_of::<T>()));

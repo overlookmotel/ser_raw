@@ -40,9 +40,9 @@ fn get_methods() -> TokenStream {
 		}
 
 		#[inline]
-		unsafe fn write<T>(&mut self, value: &T, addr: usize) {
+		unsafe fn write<T>(&mut self, addr: usize, value: &T) {
 			// Delegate to `Writable` trait's implementation
-			ser_traits::Writable::do_write(self, value, addr);
+			ser_traits::Writable::do_write(self, addr, value);
 		}
 
 		#[inline]

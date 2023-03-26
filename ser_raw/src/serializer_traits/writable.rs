@@ -5,8 +5,8 @@ pub trait Writable: PosTracking
 where Self::Storage: ContiguousStorage
 {
 	#[inline]
-	unsafe fn do_write<T>(&mut self, value: &T, addr: usize) {
+	unsafe fn do_write<T>(&mut self, addr: usize, value: &T) {
 		let pos = self.pos_mapping().pos_for_addr(addr);
-		self.storage_mut().write(value, pos);
+		self.storage_mut().write(pos, value);
 	}
 }

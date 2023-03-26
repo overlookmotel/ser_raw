@@ -58,7 +58,7 @@ where
 			if self.capacity() != self.len() {
 				let cap_offset = VecOffsets::<T>::OFFSETS_VEC.capacity();
 				let cap_addr = S::Addr::from_ref_offset(self, cap_offset).addr();
-				unsafe { serializer.write(&self.len(), cap_addr) };
+				unsafe { serializer.write(cap_addr, &self.len()) };
 			}
 		});
 
@@ -94,7 +94,7 @@ where S: Serializer
 			if self.capacity() != self.len() {
 				let cap_offset = OFFSETS_STRING.capacity();
 				let cap_addr = S::Addr::from_ref_offset(self, cap_offset).addr();
-				unsafe { serializer.write(&self.len(), cap_addr) };
+				unsafe { serializer.write(cap_addr, &self.len()) };
 			}
 		});
 
@@ -214,7 +214,7 @@ const OFFSETS_STRING: mem::ManuallyDrop<String> = {
 /// `VecOffsets::<T>::OFFSETS_VEC.capacity()`, `VecOffsets::<T>::PTR_OFFSET`,
 /// and `mem::align_of::<T>()` can all be statically evaluated.
 /// So compiler should remove all but one branch and reduce this whole function
-/// down to e.g. `serializer.write(&[0, 8], v as *const Vec<T> as usize)`.
+/// down to e.g. `serializer.write(v as *const Vec<T> as usize, &[0, 8])`.
 /// Godbolt seems to confirm this: https://godbolt.org/z/nr5b5jn3x
 #[inline]
 unsafe fn write_capacity_and_ptr_for_empty_vec<T, Ser: Serializer>(
@@ -228,16 +228,16 @@ unsafe fn write_capacity_and_ptr_for_empty_vec<T, Ser: Serializer>(
 	let ptr_offset = VecOffsets::<T>::PTR_OFFSET;
 
 	if cap_offset == 0 && ptr_offset == PTR_SIZE {
-		serializer.write(&[0, dangle], Ser::Addr::from_ref(v).addr());
+		serializer.write(Ser::Addr::from_ref(v).addr(), &[0, dangle]);
 	} else if cap_offset == PTR_SIZE && ptr_offset == 0 {
-		serializer.write(&[dangle, 0], Ser::Addr::from_ref(v).addr());
+		serializer.write(Ser::Addr::from_ref(v).addr(), &[dangle, 0]);
 	} else if cap_offset == PTR_SIZE && ptr_offset == PTR_SIZE * 2 {
-		serializer.write(&[0, dangle], Ser::Addr::from_ref_offset(v, PTR_SIZE).addr());
+		serializer.write(Ser::Addr::from_ref_offset(v, PTR_SIZE).addr(), &[0, dangle]);
 	} else if cap_offset == PTR_SIZE * 2 && ptr_offset == PTR_SIZE {
-		serializer.write(&[dangle, 0], Ser::Addr::from_ref_offset(v, PTR_SIZE).addr());
+		serializer.write(Ser::Addr::from_ref_offset(v, PTR_SIZE).addr(), &[dangle, 0]);
 	} else {
-		serializer.write(&0usize, Ser::Addr::from_ref_offset(v, cap_offset).addr());
-		serializer.write(&dangle, Ser::Addr::from_ref_offset(v, ptr_offset).addr());
+		serializer.write(Ser::Addr::from_ref_offset(v, cap_offset).addr(), &0usize);
+		serializer.write(Ser::Addr::from_ref_offset(v, ptr_offset).addr(), &dangle);
 	}
 }
 
@@ -250,7 +250,7 @@ unsafe fn write_capacity_and_ptr_for_empty_vec<T, Ser: Serializer>(
 /// `OFFSETS_STRING.capacity()` and `STRING_PTR_OFFSET` can both be statically
 /// evaluated.
 /// So compiler should remove all but one branch and reduce this whole function
-/// down to e.g. `serializer.write(&[0, 8], s as *const String as usize)`.
+/// down to e.g. `serializer.write(s as *const String as usize, &[0, 8])`.
 #[inline]
 unsafe fn write_capacity_and_ptr_for_empty_string<Ser: Serializer>(
 	s: &String,
@@ -262,18 +262,18 @@ unsafe fn write_capacity_and_ptr_for_empty_string<Ser: Serializer>(
 	let cap_offset = OFFSETS_STRING.capacity();
 
 	if cap_offset == 0 && STRING_PTR_OFFSET == PTR_SIZE {
-		serializer.write(&[0, dangle], Ser::Addr::from_ref(s).addr());
+		serializer.write(Ser::Addr::from_ref(s).addr(), &[0, dangle]);
 	} else if cap_offset == PTR_SIZE && STRING_PTR_OFFSET == 0 {
-		serializer.write(&[dangle, 0], Ser::Addr::from_ref(s).addr());
+		serializer.write(Ser::Addr::from_ref(s).addr(), &[dangle, 0]);
 	} else if cap_offset == PTR_SIZE && STRING_PTR_OFFSET == PTR_SIZE * 2 {
-		serializer.write(&[0, dangle], Ser::Addr::from_ref_offset(s, PTR_SIZE).addr());
+		serializer.write(Ser::Addr::from_ref_offset(s, PTR_SIZE).addr(), &[0, dangle]);
 	} else if cap_offset == PTR_SIZE * 2 && STRING_PTR_OFFSET == PTR_SIZE {
-		serializer.write(&[dangle, 0], Ser::Addr::from_ref_offset(s, PTR_SIZE).addr());
+		serializer.write(Ser::Addr::from_ref_offset(s, PTR_SIZE).addr(), &[dangle, 0]);
 	} else {
-		serializer.write(&0usize, Ser::Addr::from_ref_offset(s, cap_offset).addr());
+		serializer.write(Ser::Addr::from_ref_offset(s, cap_offset).addr(), &0usize);
 		serializer.write(
-			&dangle,
 			Ser::Addr::from_ref_offset(s, STRING_PTR_OFFSET).addr(),
+			&dangle,
 		);
 	}
 }

@@ -20,9 +20,9 @@ where Self::Storage: ContiguousStorage
 	fn ptrs_mut(&mut self) -> &mut Ptrs;
 
 	#[inline]
-	unsafe fn do_write<T>(&mut self, value: &T, addr: usize) {
+	unsafe fn do_write<T>(&mut self, addr: usize, value: &T) {
 		let pos = self.pos_mapping().pos_for_addr(addr);
-		self.storage_mut().write(value, pos);
+		self.storage_mut().write(pos, value);
 	}
 
 	#[inline]
@@ -48,7 +48,7 @@ where Self::Storage: ContiguousStorage
 		// Write pointer to storage (pointing to real address of target)
 		let storage_addr = self.storage().as_ptr() as usize;
 		let target_addr = storage_addr + target_pos;
-		self.storage_mut().write(&target_addr, ptr_pos);
+		self.storage_mut().write(ptr_pos, &target_addr);
 
 		// Record position of this pointer in storage so can be adjusted later if
 		// storage grows and so moves

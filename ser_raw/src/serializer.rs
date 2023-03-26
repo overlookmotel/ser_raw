@@ -392,7 +392,7 @@ pub trait Serializer: Sized {
 	/// i.e. `pos` must be within bounds of the currently allocated storage.
 	#[allow(unused_variables)]
 	#[inline(always)]
-	unsafe fn write<T>(&mut self, value: &T, addr: usize) {
+	unsafe fn write<T>(&mut self, addr: usize, value: &T) {
 		// TODO: Would be better to take an `Addr`
 	}
 

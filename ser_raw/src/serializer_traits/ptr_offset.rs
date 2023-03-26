@@ -24,6 +24,6 @@ where Self::Storage: ContiguousStorage
 		debug_assert!(is_aligned_to(ptr_pos, mem::align_of::<usize>()));
 		debug_assert!(target_pos <= self.capacity());
 
-		self.storage_mut().write(&target_pos, ptr_pos)
+		self.storage_mut().write(ptr_pos, &target_pos);
 	}
 }

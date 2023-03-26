@@ -479,8 +479,8 @@ pub trait ContiguousStorage: Storage {
 	///
 	/// [`capacity()`]: Storage::capacity
 	#[inline]
-	unsafe fn write<T>(&mut self, value: &T, pos: usize) {
-		self.write_slice(slice::from_ref(value), pos);
+	unsafe fn write<T>(&mut self, pos: usize, value: &T) {
+		self.write_slice(pos, slice::from_ref(value));
 	}
 
 	/// Write a slice of values at a specific position in storage's buffer.
@@ -494,7 +494,7 @@ pub trait ContiguousStorage: Storage {
 	/// `pos` must be correctly aligned for `T`.
 	///
 	/// [`capacity()`]: Storage::capacity
-	unsafe fn write_slice<T>(&mut self, slice: &[T], pos: usize) -> ();
+	unsafe fn write_slice<T>(&mut self, pos: usize, slice: &[T]) -> ();
 
 	/// Returns a raw pointer to the storage's buffer, or a dangling raw pointer
 	/// valid for zero sized reads if the storage didn't allocate.
