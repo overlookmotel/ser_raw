@@ -46,7 +46,7 @@ where
 			// Overwrite `capacity = 0` and `ptr = <dangling>` if it's not already
 			serializer.overwrite_with(|serializer| {
 				if self.capacity() != 0 {
-					unsafe { write_capacity_and_ptr_for_empty_vec(self, serializer) };
+					unsafe { overwrite_capacity_and_ptr_for_empty_vec(self, serializer) };
 				}
 			});
 
@@ -82,7 +82,7 @@ where S: Serializer
 			// Overwrite `capacity = 0` and `ptr = <dangling>` if it's not already
 			serializer.overwrite_with(|serializer| {
 				if self.capacity() != 0 {
-					unsafe { write_capacity_and_ptr_for_empty_string(self, serializer) };
+					unsafe { overwrite_capacity_and_ptr_for_empty_string(self, serializer) };
 				}
 			});
 
@@ -217,7 +217,7 @@ const OFFSETS_STRING: mem::ManuallyDrop<String> = {
 /// down to e.g. `serializer.write(v as *const Vec<T> as usize, &[0, 8])`.
 /// Godbolt seems to confirm this: https://godbolt.org/z/nr5b5jn3x
 #[inline]
-unsafe fn write_capacity_and_ptr_for_empty_vec<T, Ser: Serializer>(
+unsafe fn overwrite_capacity_and_ptr_for_empty_vec<T, Ser: Serializer>(
 	v: &Vec<T>,
 	serializer: &mut Ser,
 ) {
@@ -252,7 +252,7 @@ unsafe fn write_capacity_and_ptr_for_empty_vec<T, Ser: Serializer>(
 /// So compiler should remove all but one branch and reduce this whole function
 /// down to e.g. `serializer.write(s as *const String as usize, &[0, 8])`.
 #[inline]
-unsafe fn write_capacity_and_ptr_for_empty_string<Ser: Serializer>(
+unsafe fn overwrite_capacity_and_ptr_for_empty_string<Ser: Serializer>(
 	s: &String,
 	serializer: &mut Ser,
 ) {
