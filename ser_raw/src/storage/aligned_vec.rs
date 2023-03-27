@@ -34,17 +34,17 @@ const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNME
 ///
 /// let mut storage: AlignedVec = AlignedVec::with_capacity(8);
 ///
-/// // Storage is aligned to `STORAGE_ALIGNMENT` (default 16)
+/// // Storage is aligned to [`STORAGE_ALIGNMENT`] (default 16)
 /// assert!(storage.as_ptr() as usize % 16 == 0);
 ///
-/// // Initial capacity is rounded up to multiple of `MAX_VALUE_ALIGNMENT` (default 16)
+/// // Initial capacity is rounded up to multiple of [`MAX_VALUE_ALIGNMENT`] (default 16)
 /// assert_eq!(storage.pos(), 0);
 /// assert_eq!(storage.capacity(), 16);
 ///
 /// let value: u32 = 100;
 /// storage.push(&value);
 ///
-/// // `pos` is rounded up to multiple of `VALUE_ALIGNMENT` (default 8)
+/// // `pos` is rounded up to multiple of [`VALUE_ALIGNMENT`] (default 8)
 /// assert_eq!(storage.pos(), 8);
 /// assert_eq!(storage.capacity(), 16);
 ///
@@ -55,6 +55,10 @@ const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNME
 /// assert_eq!(storage.pos(), 24);
 /// assert_eq!(storage.capacity(), 32);
 /// ```
+///
+/// [`STORAGE_ALIGNMENT`]: AlignedVec::STORAGE_ALIGNMENT
+/// [`MAX_VALUE_ALIGNMENT`]: AlignedVec::MAX_VALUE_ALIGNMENT
+/// [`VALUE_ALIGNMENT`]: AlignedVec::VALUE_ALIGNMENT
 pub struct AlignedVec<
 	const STORAGE_ALIGNMENT: usize = DEFAULT_STORAGE_ALIGNMENT,
 	const MAX_VALUE_ALIGNMENT: usize = STORAGE_ALIGNMENT,
@@ -74,15 +78,23 @@ impl<
 	> Storage for AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
 {
 	/// Alignment of storage's memory buffer.
+	///
+	/// See [`Storage`] trait for explanation.
 	const STORAGE_ALIGNMENT: usize = STORAGE_ALIGNMENT;
 
 	/// Maximum alignment of values being added to storage.
+	///
+	/// See [`Storage`] trait for explanation.
 	const MAX_VALUE_ALIGNMENT: usize = MAX_VALUE_ALIGNMENT;
 
 	/// Typical alignment of values being added to storage.
+	///
+	/// See [`Storage`] trait for explanation.
 	const VALUE_ALIGNMENT: usize = VALUE_ALIGNMENT;
 
 	/// Maximum capacity of storage.
+	///
+	/// See [`Storage`] trait for explanation.
 	const MAX_CAPACITY: usize = MAX_CAPACITY;
 
 	/// Create new [`AlignedVec`] with no pre-allocated capacity.
@@ -104,8 +116,11 @@ impl<
 	/// # Safety
 	///
 	/// * `capacity` must not be 0.
-	/// * `capacity` must be less than or equal to `MAX_CAPACITY`.
-	/// * `capacity` must be a multiple of `MAX_VALUE_ALIGNMENT`.
+	/// * `capacity` must be less than or equal to [`MAX_CAPACITY`].
+	/// * `capacity` must be a multiple of [`MAX_VALUE_ALIGNMENT`].
+	///
+	/// [`MAX_CAPACITY`]: AlignedVec::MAX_CAPACITY
+	/// [`MAX_VALUE_ALIGNMENT`]: AlignedVec::MAX_VALUE_ALIGNMENT
 	unsafe fn with_capacity_unchecked(capacity: usize) -> Self {
 		// Ensure (at compile time) that const params are valid
 		let _ = Self::ASSERT_ALIGNMENTS_VALID;
@@ -140,8 +155,11 @@ impl<
 	///
 	/// # Safety
 	///
-	/// * `new_pos` must be less than or equal to `capacity()`.
-	/// * `new_pos` must be a multiple of `VALUE_ALIGNMENT`.
+	/// * `new_pos` must be less than or equal to [`capacity()`].
+	/// * `new_pos` must be a multiple of [`VALUE_ALIGNMENT`].
+	///
+	/// [`capacity()`]: AlignedVec::capacity
+	/// [`VALUE_ALIGNMENT`]: AlignedVec::VALUE_ALIGNMENT
 	#[inline]
 	unsafe fn set_pos(&mut self, new_pos: usize) {
 		debug_assert!(new_pos <= self.capacity);
@@ -191,13 +209,16 @@ impl<
 	/// Reserve capacity for at least `additional` more bytes to be inserted into
 	/// the [`AlignedVec`].
 	///
-	/// Growth of capacity occurs in powers of 2 up to `MAX_CAPACITY`, and is
-	/// always at minimum `MAX_VALUE_ALIGNMENT`.
+	/// Growth of capacity occurs in powers of 2 up to [`MAX_CAPACITY`], and is
+	/// always at minimum [`MAX_VALUE_ALIGNMENT`].
 	///
 	/// # Panics
 	///
 	/// Panics if this reservation would cause [`AlignedVec`] to exceed
-	/// `MAX_CAPACITY`.
+	/// [`MAX_CAPACITY`].
+	///
+	/// [`MAX_CAPACITY`]: AlignedVec::MAX_CAPACITY
+	/// [`MAX_VALUE_ALIGNMENT`]: AlignedVec::MAX_VALUE_ALIGNMENT
 	#[inline]
 	fn reserve(&mut self, additional: usize) {
 		// Cannot wrap because capacity always exceeds pos,
@@ -210,7 +231,9 @@ impl<
 
 	/// Shrink the capacity of the storage as much as possible.
 	///
-	/// `capacity` will be be a multiple of `MAX_VALUE_ALIGNMENT`.
+	/// `capacity` will be be a multiple of [`MAX_VALUE_ALIGNMENT`].
+	///
+	/// [`MAX_VALUE_ALIGNMENT`]: AlignedVec::MAX_VALUE_ALIGNMENT
 	#[inline]
 	fn shrink_to_fit(&mut self) {
 		// Ensure capacity remains a multiple of `MAX_VALUE_ALIGNMENT`

@@ -113,15 +113,23 @@ pub use aligned_vec::AlignedVec;
 /// [`VALUE_ALIGNMENT`]: Storage::VALUE_ALIGNMENT
 pub trait Storage: Sized {
 	/// Alignment of storage's memory buffer.
+	///
+	/// See [`Storage`] trait for explanation.
 	const STORAGE_ALIGNMENT: usize;
 
 	/// Maximum alignment of values being added to storage.
+	///
+	/// See [`Storage`] trait for explanation.
 	const MAX_VALUE_ALIGNMENT: usize;
 
 	/// Typical alignment of values being added to storage.
+	///
+	/// See [`Storage`] trait for explanation.
 	const VALUE_ALIGNMENT: usize;
 
 	/// Maximum capacity of storage.
+	///
+	/// See [`Storage`] trait for explanation.
 	const MAX_CAPACITY: usize;
 
 	/// Assertions for validity of alignment const parameters.
@@ -310,7 +318,7 @@ pub trait Storage: Sized {
 	///
 	/// # Safety
 	///
-	/// Caller must ensure `Storage` has sufficient capacity.
+	/// Caller must ensure [`Storage`] has sufficient capacity.
 	///
 	/// `size` must be total size in bytes of `&[T]`.
 	/// i.e. `size = mem::size_of::<T>() * slice.len()`.
@@ -343,8 +351,8 @@ pub trait Storage: Sized {
 		self.push_empty_slice::<T>(1);
 	}
 
-	/// Advance buffer position to leave space to write a slice `&[T]` at current
-	/// position later.
+	/// Advance buffer position to leave space to write a slice `&[T]`
+	/// (`T` x `len`) at current position later.
 	///
 	/// Will also insert padding as required, to ensure the `&[T]` can be written
 	/// with correct alignment.
