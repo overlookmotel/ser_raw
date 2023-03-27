@@ -436,9 +436,7 @@ pub trait Serializer: Sized {
 	/// original memory address, **not** the position in serializer's storage).
 	#[allow(unused_variables)]
 	#[inline(always)]
-	unsafe fn overwrite<T>(&mut self, addr: usize, value: &T) {
-		// TODO: Would be better to take an `Addr`
-	}
+	unsafe fn overwrite<T>(&mut self, addr: Self::Addr, value: &T) {}
 
 	/// Overwrite part of a serialized value with a correction.
 	///

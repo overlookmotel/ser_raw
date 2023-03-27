@@ -57,7 +57,7 @@ where
 		serializer.overwrite_with(|serializer| {
 			if self.capacity() != self.len() {
 				let cap_offset = VecOffsets::<T>::OFFSETS_VEC.capacity();
-				let cap_addr = S::Addr::from_ref_offset(self, cap_offset).addr();
+				let cap_addr = S::Addr::from_ref_offset(self, cap_offset);
 				unsafe { serializer.overwrite(cap_addr, &self.len()) };
 			}
 		});
@@ -93,7 +93,7 @@ where S: Serializer
 		serializer.overwrite_with(|serializer| {
 			if self.capacity() != self.len() {
 				let cap_offset = OFFSETS_STRING.capacity();
-				let cap_addr = S::Addr::from_ref_offset(self, cap_offset).addr();
+				let cap_addr = S::Addr::from_ref_offset(self, cap_offset);
 				unsafe { serializer.overwrite(cap_addr, &self.len()) };
 			}
 		});
@@ -228,16 +228,16 @@ unsafe fn overwrite_capacity_and_ptr_for_empty_vec<T, Ser: Serializer>(
 	let ptr_offset = VecOffsets::<T>::PTR_OFFSET;
 
 	if cap_offset == 0 && ptr_offset == PTR_SIZE {
-		serializer.overwrite(Ser::Addr::from_ref(v).addr(), &[0, dangle]);
+		serializer.overwrite(Ser::Addr::from_ref(v), &[0, dangle]);
 	} else if cap_offset == PTR_SIZE && ptr_offset == 0 {
-		serializer.overwrite(Ser::Addr::from_ref(v).addr(), &[dangle, 0]);
+		serializer.overwrite(Ser::Addr::from_ref(v), &[dangle, 0]);
 	} else if cap_offset == PTR_SIZE && ptr_offset == PTR_SIZE * 2 {
-		serializer.overwrite(Ser::Addr::from_ref_offset(v, PTR_SIZE).addr(), &[0, dangle]);
+		serializer.overwrite(Ser::Addr::from_ref_offset(v, PTR_SIZE), &[0, dangle]);
 	} else if cap_offset == PTR_SIZE * 2 && ptr_offset == PTR_SIZE {
-		serializer.overwrite(Ser::Addr::from_ref_offset(v, PTR_SIZE).addr(), &[dangle, 0]);
+		serializer.overwrite(Ser::Addr::from_ref_offset(v, PTR_SIZE), &[dangle, 0]);
 	} else {
-		serializer.overwrite(Ser::Addr::from_ref_offset(v, cap_offset).addr(), &0usize);
-		serializer.overwrite(Ser::Addr::from_ref_offset(v, ptr_offset).addr(), &dangle);
+		serializer.overwrite(Ser::Addr::from_ref_offset(v, cap_offset), &0usize);
+		serializer.overwrite(Ser::Addr::from_ref_offset(v, ptr_offset), &dangle);
 	}
 }
 
@@ -262,18 +262,15 @@ unsafe fn overwrite_capacity_and_ptr_for_empty_string<Ser: Serializer>(
 	let cap_offset = OFFSETS_STRING.capacity();
 
 	if cap_offset == 0 && STRING_PTR_OFFSET == PTR_SIZE {
-		serializer.overwrite(Ser::Addr::from_ref(s).addr(), &[0, dangle]);
+		serializer.overwrite(Ser::Addr::from_ref(s), &[0, dangle]);
 	} else if cap_offset == PTR_SIZE && STRING_PTR_OFFSET == 0 {
-		serializer.overwrite(Ser::Addr::from_ref(s).addr(), &[dangle, 0]);
+		serializer.overwrite(Ser::Addr::from_ref(s), &[dangle, 0]);
 	} else if cap_offset == PTR_SIZE && STRING_PTR_OFFSET == PTR_SIZE * 2 {
-		serializer.overwrite(Ser::Addr::from_ref_offset(s, PTR_SIZE).addr(), &[0, dangle]);
+		serializer.overwrite(Ser::Addr::from_ref_offset(s, PTR_SIZE), &[0, dangle]);
 	} else if cap_offset == PTR_SIZE * 2 && STRING_PTR_OFFSET == PTR_SIZE {
-		serializer.overwrite(Ser::Addr::from_ref_offset(s, PTR_SIZE).addr(), &[dangle, 0]);
+		serializer.overwrite(Ser::Addr::from_ref_offset(s, PTR_SIZE), &[dangle, 0]);
 	} else {
-		serializer.overwrite(Ser::Addr::from_ref_offset(s, cap_offset).addr(), &0usize);
-		serializer.overwrite(
-			Ser::Addr::from_ref_offset(s, STRING_PTR_OFFSET).addr(),
-			&dangle,
-		);
+		serializer.overwrite(Ser::Addr::from_ref_offset(s, cap_offset), &0usize);
+		serializer.overwrite(Ser::Addr::from_ref_offset(s, STRING_PTR_OFFSET), &dangle);
 	}
 }
