@@ -104,7 +104,7 @@ where S: Serializer
 	}
 }
 
-/// Type for static assertion of size of type
+/// Type for static assertion of size of type.
 struct SizeCheck<T, const SIZE: usize> {
 	_marker: PhantomData<T>,
 }
