@@ -22,7 +22,7 @@ pub trait PtrWriting: PosTracking {
 	///
 	/// Some serializers may also impose requirements concerning alignment which
 	/// caller must satisfy.
-	unsafe fn write_ptr(&mut self, ptr_pos: usize, target_pos: usize) -> ();
+	unsafe fn overwrite_ptr(&mut self, ptr_pos: usize, target_pos: usize) -> ();
 
 	// Skip recording position mapping here because no further processing of the
 	// slice, but still write pointer
@@ -32,7 +32,7 @@ pub trait PtrWriting: PosTracking {
 		self.storage_mut().align_for::<T>();
 
 		// Overwrite pointer with position within output (relative to start of output)
-		unsafe { self.write_ptr(self.pos_mapping().pos_for_addr(ptr_addr.addr()), self.pos()) };
+		unsafe { self.overwrite_ptr(self.pos_mapping().pos_for_addr(ptr_addr.addr()), self.pos()) };
 
 		// Push slice to storage.
 		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
@@ -55,7 +55,7 @@ pub trait PtrWriting: PosTracking {
 		self.storage_mut().align_for::<T>();
 
 		// Overwrite pointer with position within output (relative to start of output)
-		unsafe { self.write_ptr(pos_mapping_before.pos_for_addr(ptr_addr.addr()), self.pos()) };
+		unsafe { self.overwrite_ptr(pos_mapping_before.pos_for_addr(ptr_addr.addr()), self.pos()) };
 
 		// Record position mapping for this slice
 		self.set_pos_mapping(PosMapping::new(slice.as_ptr() as usize, self.pos()));

@@ -77,9 +77,9 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
 			#[automatically_derived]
 			impl #impl_generics PtrWriting for #ser #type_generics #where_clause {
 				#[inline]
-				unsafe fn write_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
+				unsafe fn overwrite_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
 					// Delegate to `Complete` trait's implementation
-					Complete::do_write_ptr(self, ptr_pos, target_pos);
+					Complete::do_overwrite_ptr(self, ptr_pos, target_pos);
 				}
 			}
 

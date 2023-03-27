@@ -39,7 +39,7 @@ where Self::Storage: ContiguousStorage + RandomAccessStorage
 	///   pointed to.
 	/// * `ptr_pos` must be aligned for a pointer.
 	#[inline]
-	unsafe fn do_write_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
+	unsafe fn do_overwrite_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
 		// Cannot fully check validity of `target_pos` because its type isn't known
 		debug_assert!(ptr_pos <= self.capacity() - mem::size_of::<usize>());
 		debug_assert!(is_aligned_to(ptr_pos, mem::align_of::<usize>()));

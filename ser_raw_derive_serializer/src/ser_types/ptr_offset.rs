@@ -63,9 +63,9 @@ fn get_impls(input: &DeriveInput, fields: &Vec<Field>) -> TokenStream {
 				///   pointed to.
 				/// * `ptr_pos` must be aligned for a pointer.
 				#[inline]
-				unsafe fn write_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
+				unsafe fn overwrite_ptr(&mut self, ptr_pos: usize, target_pos: usize) {
 					// Delegate to `PtrOffset` trait's implementation
-					PtrOffset::do_write_ptr(self, ptr_pos, target_pos);
+					PtrOffset::do_overwrite_ptr(self, ptr_pos, target_pos);
 				}
 			}
 
