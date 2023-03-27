@@ -419,11 +419,11 @@ pub trait Serializer: Sized {
 		self.storage_mut().push_empty_slice::<T>(len);
 	}
 
-	/// Write a value to storage at a specific position.
+	/// Overwrite a value in storage at a specific position.
 	///
 	/// Default implementation is a no-op, and some serializers may not need to
-	/// implement a functional version of this, if they don't need/support writing
-	/// to storage at arbitrary positions.
+	/// implement a functional version of this, if they don't need/support
+	/// overwriting values.
 	///
 	/// A Serializer can also opt to implement this method not by writing to the
 	/// storage immediately, but instead storing the details of what need to be
@@ -432,14 +432,12 @@ pub trait Serializer: Sized {
 	///
 	/// # Safety
 	///
-	/// `pos + mem::size_of::<T>()` must be less than or equal to `capacity()`.
-	/// i.e. `pos` must be within bounds of the currently allocated storage.
+	/// `addr` must be the memory address of a value already serialized (its
+	/// original memory address, **not** the position in serializer's storage).
 	#[allow(unused_variables)]
 	#[inline(always)]
-	unsafe fn write<T>(&mut self, addr: usize, value: &T) {
+	unsafe fn overwrite<T>(&mut self, addr: usize, value: &T) {
 		// TODO: Would be better to take an `Addr`
-		// TODO: The doc comment above is wrong. `addr` is an address of an original
-		// value, not position in the output.
 	}
 
 	/// Write a correction to storage.

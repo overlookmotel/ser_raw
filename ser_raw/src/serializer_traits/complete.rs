@@ -20,7 +20,7 @@ where Self::Storage: ContiguousStorage + RandomAccessStorage
 	fn ptrs_mut(&mut self) -> &mut Ptrs;
 
 	#[inline]
-	unsafe fn do_write<T>(&mut self, addr: usize, value: &T) {
+	unsafe fn do_overwrite<T>(&mut self, addr: usize, value: &T) {
 		let pos = self.pos_mapping().pos_for_addr(addr);
 		self.storage_mut().write(pos, value);
 	}
