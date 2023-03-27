@@ -40,8 +40,9 @@ impl PosMapping {
 	/// That value must have been serialized in an allocation which this
 	/// [`PosMapping`] represents the start of.
 	#[inline]
-	pub fn pos_for_addr(&self, addr: usize) -> usize {
-		addr - self.input_addr + self.output_pos
+	pub fn pos_for_addr<A: Addr>(&self, addr: A) -> usize {
+		// TODO: Should take `TrackingAddr` only
+		addr.addr() - self.input_addr + self.output_pos
 	}
 
 	/// Get position in output for a value which has been serialized.
@@ -49,7 +50,7 @@ impl PosMapping {
 	/// [`PosMapping`] represents the start of.
 	#[inline]
 	pub fn pos_for<T>(&self, value: &T) -> usize {
-		self.pos_for_addr(value as *const T as usize)
+		self.pos_for_addr(TrackingAddr::from_ref(value))
 	}
 }
 

@@ -1,7 +1,7 @@
 use std::mem;
 
 use crate::{
-	pos::{Addr, PtrGroup, Ptrs},
+	pos::{PtrGroup, Ptrs},
 	ser_traits::{PosTracking, Writable},
 	storage::{ContiguousStorage, RandomAccessStorage},
 	util::is_aligned_to,
@@ -21,7 +21,7 @@ where Self::Storage: ContiguousStorage + RandomAccessStorage
 
 	#[inline]
 	unsafe fn do_overwrite<T>(&mut self, addr: Self::Addr, value: &T) {
-		let pos = self.pos_mapping().pos_for_addr(addr.addr());
+		let pos = self.pos_mapping().pos_for_addr(addr);
 		self.storage_mut().write(pos, value);
 	}
 
