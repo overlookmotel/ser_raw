@@ -1,7 +1,7 @@
 use std::mem;
 
 use crate::{
-	pos::{PtrGroup, Ptrs},
+	pos::{ActiveAddr, PtrGroup, Ptrs},
 	ser_traits::{PosTracking, Writable},
 	storage::{ContiguousStorage, RandomAccessStorage},
 	util::is_aligned_to,
@@ -11,7 +11,9 @@ use crate::{
 /// representation of the input, which can be cast to a `&T` without any
 /// deserialization.
 pub trait Complete: PosTracking + Writable
-where Self::Storage: ContiguousStorage + RandomAccessStorage
+where
+	Self::Storage: ContiguousStorage + RandomAccessStorage,
+	Self::Addr: ActiveAddr,
 {
 	// Get reference to record of pointers written.
 	fn ptrs(&self) -> &Ptrs;

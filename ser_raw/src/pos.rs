@@ -40,8 +40,7 @@ impl PosMapping {
 	/// That value must have been serialized in an allocation which this
 	/// [`PosMapping`] represents the start of.
 	#[inline]
-	pub fn pos_for_addr<A: Addr>(&self, addr: A) -> usize {
-		// TODO: Should take `TrackingAddr` only
+	pub fn pos_for_addr<A: ActiveAddr>(&self, addr: A) -> usize {
 		addr.addr() - self.input_addr + self.output_pos
 	}
 
@@ -68,6 +67,9 @@ impl PosMapping {
 /// The compiler doesn't seem to recognize it can make that optimization without
 /// this abstraction.
 ///
+/// Serializers which *do* need to know output addresses can use
+/// [`TrackingAddr`].
+///
 /// [`Serialize`]: crate::Serialize
 pub trait Addr: Copy {
 	/// Create [`Addr`] from a value reference.
@@ -75,7 +77,10 @@ pub trait Addr: Copy {
 
 	/// Create [`Addr`] from a value reference and offset.
 	fn from_ref_offset<T>(value: &T, offset: usize) -> Self;
+}
 
+/// Trait for [`Addr`]s which do record addresses.
+pub trait ActiveAddr: Addr {
 	/// Get address of [`Addr`] as `usize`.
 	fn addr(&self) -> usize;
 }
@@ -102,7 +107,9 @@ impl Addr for TrackingAddr {
 			addr: value as *const T as usize + offset,
 		}
 	}
+}
 
+impl ActiveAddr for TrackingAddr {
 	/// Get address of [`TrackingAddr`] as `usize`.
 	#[inline]
 	fn addr(&self) -> usize {
@@ -128,17 +135,6 @@ impl Addr for NoopAddr {
 	#[inline(always)]
 	fn from_ref_offset<T>(_value: &T, _offset: usize) -> Self {
 		Self
-	}
-
-	/// Get address of [`NoopAddr`] as `usize`.
-	///
-	/// # Panics
-	///
-	/// This should never be called. Panics if it is!
-	#[inline(always)]
-	fn addr(&self) -> usize {
-		// TODO: Replace this with a compile-time error.
-		unreachable!();
 	}
 }
 

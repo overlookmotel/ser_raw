@@ -1,8 +1,10 @@
-use crate::{ser_traits::PosTracking, storage::RandomAccessStorage};
+use crate::{pos::ActiveAddr, ser_traits::PosTracking, storage::RandomAccessStorage};
 
 /// Trait for serializers which can write at arbitrary positions in output.
 pub trait Writable: PosTracking
-where Self::Storage: RandomAccessStorage
+where
+	Self::Storage: RandomAccessStorage,
+	Self::Addr: ActiveAddr,
 {
 	#[inline]
 	unsafe fn do_overwrite<T>(&mut self, addr: Self::Addr, value: &T) {

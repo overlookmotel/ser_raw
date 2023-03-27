@@ -1,10 +1,16 @@
-use crate::{pos::PosMapping, ser_traits::PosTracking, storage::Storage};
+use crate::{
+	pos::{ActiveAddr, PosMapping},
+	ser_traits::PosTracking,
+	storage::Storage,
+};
 
 /// Trait for serializers which overwrite pointers in output.
 ///
 /// Used by `CompleteSerializer` and `PtrOffsetSerializer`, provided by this
 /// crate.
-pub trait PtrWriting: PosTracking {
+pub trait PtrWriting: PosTracking
+where Self::Addr: ActiveAddr
+{
 	/// Overwrite a pointer in output.
 	///
 	/// # Safety
