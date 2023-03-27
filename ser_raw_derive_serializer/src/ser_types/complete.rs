@@ -46,9 +46,9 @@ fn get_methods() -> TokenStream {
 		}
 
 		#[inline]
-		fn write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {
+		fn overwrite_with<W: FnOnce(&mut Self)>(&mut self, write: W) {
 			// Delegate to `Complete` trait's implementation
-			ser_traits::Complete::do_write_correction(self, write);
+			ser_traits::Complete::do_overwrite_with(self, write);
 		}
 
 		#[inline]

@@ -44,7 +44,7 @@ where
 		// No need to write contents if vec is empty
 		if self.len() == 0 {
 			// Overwrite `capacity = 0` and `ptr = <dangling>` if it's not already
-			serializer.write_correction(|serializer| {
+			serializer.overwrite_with(|serializer| {
 				if self.capacity() != 0 {
 					unsafe { write_capacity_and_ptr_for_empty_vec(self, serializer) };
 				}
@@ -54,7 +54,7 @@ where
 		}
 
 		// Overwrite `capacity = len`, if it's not already
-		serializer.write_correction(|serializer| {
+		serializer.overwrite_with(|serializer| {
 			if self.capacity() != self.len() {
 				let cap_offset = VecOffsets::<T>::OFFSETS_VEC.capacity();
 				let cap_addr = S::Addr::from_ref_offset(self, cap_offset).addr();
@@ -80,7 +80,7 @@ where S: Serializer
 		// No need to write contents if string is empty
 		if self.len() == 0 {
 			// Overwrite `capacity = 0` and `ptr = <dangling>` if it's not already
-			serializer.write_correction(|serializer| {
+			serializer.overwrite_with(|serializer| {
 				if self.capacity() != 0 {
 					unsafe { write_capacity_and_ptr_for_empty_string(self, serializer) };
 				}
@@ -90,7 +90,7 @@ where S: Serializer
 		}
 
 		// Overwrite `capacity = len`, if it's not already
-		serializer.write_correction(|serializer| {
+		serializer.overwrite_with(|serializer| {
 			if self.capacity() != self.len() {
 				let cap_offset = OFFSETS_STRING.capacity();
 				let cap_addr = S::Addr::from_ref_offset(self, cap_offset).addr();

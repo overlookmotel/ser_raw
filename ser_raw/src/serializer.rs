@@ -440,7 +440,7 @@ pub trait Serializer: Sized {
 		// TODO: Would be better to take an `Addr`
 	}
 
-	/// Write a correction to storage.
+	/// Overwrite part of a serialized value with a correction.
 	///
 	/// An example of a "correction" is: Serializing a `Vec` which has
 	/// `capacity` of 2, but `len` of 1. The correction is amending the `capacity`
@@ -449,27 +449,27 @@ pub trait Serializer: Sized {
 	/// capacity.
 	///
 	/// Default implementation is a no-op, and some serializers may not need to
-	/// implement a functional version of this, if they don't need corrections.
+	/// implement a functional version of this, if they don't support overwrites.
 	///
 	/// Method takes a closure, so that [`Serialize::serialize_data`]
 	/// implementations can perform operations which may have some cost in the
 	/// closure, prior to performing writes. If the [`Serializer`] doesn't care
 	/// about corrections and uses this default no-op implementation of
-	/// `write_correction`, the closure will not be called and the cost of those
+	/// `overwrite_with`, the closure will not be called and the cost of those
 	/// operations is avoided. Hopefully the compiler will recognise this and
-	/// remove the call to `write_correction` and the code inside the closure
+	/// remove the call to `overwrite_with` and the code inside the closure
 	/// entirely, so it's completely zero cost unless it's used.
 	///
 	/// If Serializer *does* want to receive corrections, it would implement this
 	/// method as:
 	/// ```ignore
-	/// fn write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {
+	/// fn overwrite_with<W: FnOnce(&mut Self)>(&mut self, write: W) {
 	/// 	write(self);
 	/// }
 	/// ```
 	#[allow(unused_variables)]
 	#[inline(always)]
-	fn write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {}
+	fn overwrite_with<W: FnOnce(&mut Self)>(&mut self, write: W) {}
 
 	/// Finalize serialization, consume serializer, and return backing storage as
 	/// `BorrowMut<Storage>`.

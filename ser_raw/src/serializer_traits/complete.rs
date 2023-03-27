@@ -26,7 +26,7 @@ where Self::Storage: ContiguousStorage + RandomAccessStorage
 	}
 
 	#[inline]
-	fn do_write_correction<W: FnOnce(&mut Self)>(&mut self, write: W) {
+	fn do_overwrite_with<W: FnOnce(&mut Self)>(&mut self, write: W) {
 		write(self);
 	}
 

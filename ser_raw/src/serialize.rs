@@ -26,7 +26,7 @@ use crate::Serializer;
 /// `ser_raw` is structured so that [`serialize_data`] can use features which
 /// support all possible serializers, but if the serializer is a simpler type
 /// which doesn't require those features, the compiler will be able to optimize
-/// out that code. So e.g. `write_correction` can be called, and if the
+/// out that code. So e.g. [`overwrite_with`] can be called, and if the
 /// serializer isn't interested in corrections, it's a no-op. So it's zero cost,
 /// unless it's used, and the speed of the fastest serializers e.g.
 /// [`PureCopySerializer`] is unaffected by the more complex code required to
@@ -64,8 +64,7 @@ use crate::Serializer;
 /// * [`push_raw`](Serializer::push_raw)
 /// * [`push_raw_slice`](Serializer::push_raw_slice)
 ///
-/// You may also need to wrap those calls in
-/// [`write_correction`](Serializer::write_correction).
+/// You may also need to wrap those calls in [`overwrite_with`].
 ///
 /// Look at the [`Serialize` implementation for `Box` and `Vec`] for a better
 /// understanding of what these methods do.
@@ -91,6 +90,7 @@ use crate::Serializer;
 /// ```
 ///
 /// [`serialize_data`]: Serialize::serialize_data
+/// [`overwrite_with`]: Serializer::overwrite_with
 /// [`Serialize` implementation for `Box` and `Vec`]:
 /// https://docs.rs/ser_raw/0.0.1/src/ser_raw/serialize_impls/ptrs.rs.html
 /// [`PureCopySerializer`]: crate::PureCopySerializer
