@@ -22,7 +22,7 @@ fn serialize<T: Serialize<Ser>>(value: &T) -> (usize, AlignedVec) {
 }
 
 fn deserialize<T>(storage: &AlignedVec, pos: usize) -> &T {
-	unsafe { storage.read_ref(pos) }
+	unsafe { storage.read(pos) }
 }
 
 fn test_serialize<T>(input: &T, _test: Test, _test_num: usize)
@@ -45,7 +45,7 @@ fn vecs_with_zero_len_represented_correctly() {
 
 	assert_eq!(pos, 0);
 	assert_eq!(storage.pos(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
+	let parts: &[usize; 3] = unsafe { storage.read(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
 	let output: &Vec<u8> = deserialize(&storage, pos);
@@ -60,7 +60,7 @@ fn vecs_with_zero_len_represented_correctly() {
 
 	assert_eq!(pos, 0);
 	assert_eq!(storage.pos(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
+	let parts: &[usize; 3] = unsafe { storage.read(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
 	let output: &Vec<u8> = deserialize(&storage, pos);
@@ -76,7 +76,7 @@ fn vecs_with_zero_len_represented_correctly() {
 
 	assert_eq!(pos, 0);
 	assert_eq!(storage.pos(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
+	let parts: &[usize; 3] = unsafe { storage.read(pos) };
 	assert_eq!(parts, &[0, 4, 0]);
 
 	let output: &Vec<u32> = deserialize(&storage, pos);
@@ -121,7 +121,7 @@ fn strings_with_zero_len_represented_correctly() {
 
 	assert_eq!(pos, 0);
 	assert_eq!(storage.pos(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
+	let parts: &[usize; 3] = unsafe { storage.read(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
 	let output: &String = deserialize(&storage, pos);
@@ -136,7 +136,7 @@ fn strings_with_zero_len_represented_correctly() {
 
 	assert_eq!(pos, 0);
 	assert_eq!(storage.pos(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
+	let parts: &[usize; 3] = unsafe { storage.read(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
 	let output: &String = deserialize(&storage, pos);
@@ -152,7 +152,7 @@ fn strings_with_zero_len_represented_correctly() {
 
 	assert_eq!(pos, 0);
 	assert_eq!(storage.pos(), PTR_SIZE * 3);
-	let parts: &[usize; 3] = unsafe { storage.read_ref(pos) };
+	let parts: &[usize; 3] = unsafe { storage.read(pos) };
 	assert_eq!(parts, &[0, 1, 0]);
 
 	let output: &String = deserialize(&storage, pos);

@@ -404,7 +404,7 @@ impl<
 	///
 	/// * A `T` must be present at this position in the storage.
 	/// * `pos` must be correctly aligned for `T`.
-	unsafe fn read_ref<T>(&self, pos: usize) -> &T {
+	unsafe fn read<T>(&self, pos: usize) -> &T {
 		debug_assert!(pos + mem::size_of::<T>() <= self.pos);
 		debug_assert!(is_aligned_to(pos, mem::align_of::<T>()));
 

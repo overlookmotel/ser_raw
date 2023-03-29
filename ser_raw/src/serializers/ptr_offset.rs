@@ -32,8 +32,8 @@ use crate::{
 /// assert_eq!(pos, 0);
 ///
 /// const PTR_SIZE: usize = std::mem::size_of::<usize>();
-/// let offset: usize = unsafe { storage.read(pos) };
-/// let value: u8 = unsafe { storage.read(pos + offset) };
+/// let offset: usize = unsafe { *storage.read(pos) };
+/// let value: u8 = unsafe { *storage.read(pos + offset) };
 /// assert_eq!(offset, 8);
 /// assert_eq!(value, 123);
 /// ```
