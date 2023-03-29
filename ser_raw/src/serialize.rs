@@ -98,9 +98,7 @@ pub trait Serialize<Ser: Serializer> {
 	/// Serialize data owned by this value, outside value's own memory allocation.
 	///
 	/// See [`Serialize`] trait for more details.
-	#[allow(unused_variables)]
-	#[inline(always)]
-	fn serialize_data(&self, serializer: &mut Ser) {}
+	fn serialize_data(&self, serializer: &mut Ser) -> ();
 }
 
 /// Trait for implementing an equivalent of [`Serialize`] on foreign types for

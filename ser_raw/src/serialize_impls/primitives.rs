@@ -4,7 +4,10 @@ use crate::{Serialize, Serializer};
 
 macro_rules! impl_primitive {
 	($ty:ty) => {
-		impl<S: Serializer> Serialize<S> for $ty {}
+		impl<S: Serializer> Serialize<S> for $ty {
+			#[inline(always)]
+			fn serialize_data(&self, _serializer: &mut S) {}
+		}
 	};
 }
 
