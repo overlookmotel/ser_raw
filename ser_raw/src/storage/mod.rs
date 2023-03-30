@@ -7,11 +7,14 @@ use crate::util::{align_up_to, aligned_max_capacity};
 mod aligned_vec;
 pub use aligned_vec::AlignedVec;
 
+mod aligned_bytes;
+pub use aligned_bytes::AlignedBytes;
+
 /// Trait for storage used by [`Serializer`]s which ensures values added to
 /// storage maintain correct alignment in memory for their types.
 ///
-/// [`AlignedVec`] implements this trait. You could also build your own
-/// implementation of [`Storage`] with different properties.
+/// [`AlignedVec`] and [`AlignedBytes`] implement this trait. You could also
+/// build your own implementation of [`Storage`] with different properties.
 ///
 /// # Const parameters
 ///

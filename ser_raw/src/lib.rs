@@ -53,8 +53,8 @@
 //! [`Serializer`]s, based on any of the above.
 //!
 //! Serializers can also choose between different backing storage options.
-//! This crate provides only one at present - [`AlignedVec`] - but it's
-//! possible to create your own [`Storage`] implementation.
+//! This crate provides two choices - [`AlignedVec`] and [`AlignedBytes`].
+//! It's also possible to create your own [`Storage`] implementation.
 //!
 //! # Serializable types
 //!
@@ -135,6 +135,7 @@
 //! the same name.
 //!
 //! [`AlignedVec`]: storage::AlignedVec
+//! [`AlignedBytes`]: storage::AlignedBytes
 //! [`Storage`]: storage::Storage
 //! [SWC]: https://swc.rs/
 //! [napi-rs]: https://napi.rs/
