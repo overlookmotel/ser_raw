@@ -1,5 +1,3 @@
-use std::slice;
-
 use crate::{pos::PosMapping, storage::Storage, Serialize, Serializer};
 
 /// Trait for serializers which track position in output.
@@ -23,19 +21,11 @@ pub trait PosTracking: Serializer {
 	}
 
 	fn do_serialize_value<T: Serialize<Self>>(&mut self, value: &T) -> usize {
-		// Align storage, ready to write value
-		self.storage_mut().align_for::<T>();
+		// Push value to storage
+		let pos = self.push_raw(value);
 
 		// Record position mapping for this value
-		let pos = self.pos();
 		self.set_pos_mapping(PosMapping::new(value as *const T as usize, pos));
-
-		// Push value to storage.
-		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
-		// `align_after::<T>()`.
-		let slice = slice::from_ref(value);
-		unsafe { self.storage_mut().push_slice_unaligned(slice) };
-		self.storage_mut().align_after::<T>();
 
 		// Serialize value (which may use the pos mapping we set)
 		value.serialize_data(self);
@@ -46,8 +36,8 @@ pub trait PosTracking: Serializer {
 
 	// Skip recording position when no further processing for a slice
 	#[inline]
-	fn do_push_slice<T>(&mut self, slice: &[T], _ptr_addr: Self::Addr) {
-		self.push_raw_slice(slice);
+	fn do_push_slice<T>(&mut self, slice: &[T], _ptr_addr: Self::Addr) -> usize {
+		self.push_raw_slice(slice)
 	}
 
 	#[inline]
@@ -56,26 +46,23 @@ pub trait PosTracking: Serializer {
 		slice: &[T],
 		_ptr_addr: Self::Addr,
 		process: P,
-	) {
+	) -> usize {
 		// Get position mapping before processing this
 		let pos_mapping_before = *self.pos_mapping();
 
-		// Align storage, ready to write slice
-		self.storage_mut().align_for::<T>();
+		// Push slice to storage
+		let pos = self.storage_mut().push_slice(slice);
 
 		// Record position mapping for this slice
-		self.set_pos_mapping(PosMapping::new(slice.as_ptr() as usize, self.pos()));
-
-		// Push slice to storage.
-		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
-		// `align_after::<T>()`.
-		unsafe { self.storage_mut().push_slice_unaligned(slice) };
-		self.storage_mut().align_after::<T>();
+		self.set_pos_mapping(PosMapping::new(slice.as_ptr() as usize, pos));
 
 		// Call `process` function (which may use the pos mapping we set)
 		process(self);
 
 		// Reset position mapping back to as it was
 		self.set_pos_mapping(pos_mapping_before);
+
+		// Return position of value
+		pos
 	}
 }

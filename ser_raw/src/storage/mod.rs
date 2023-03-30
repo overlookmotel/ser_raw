@@ -246,30 +246,37 @@ pub trait Storage: Sized {
 
 	/// Push a value of type `T` to storage.
 	#[inline]
-	fn push<T>(&mut self, value: &T) {
-		self.push_slice(slice::from_ref(value));
+	fn push<T>(&mut self, value: &T) -> usize {
+		self.push_slice(slice::from_ref(value))
 	}
 
 	/// Push a slice of values `&T` to storage.
 	///
+	/// Returns position of the slice in storage.
+	///
 	/// If the size of the slice is known statically, prefer `push<[T; N]>` to
 	/// `push_slice<T>`, as the former is slightly more efficient.
 	#[inline]
-	fn push_slice<T>(&mut self, slice: &[T]) {
+	fn push_slice<T>(&mut self, slice: &[T]) -> usize {
 		self.align_for::<T>();
 		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
 		// `align_after::<T>()`
-		unsafe { self.push_slice_unaligned(slice) };
+		let pos = unsafe { self.push_slice_unaligned(slice) };
 		self.align_after::<T>();
+		pos
 	}
 
 	/// Push a slice of raw bytes to storage.
+	///
+	/// Returns position of the slice in storage.
 	#[inline]
-	fn push_bytes(&mut self, bytes: &[u8]) {
-		self.push_slice(bytes);
+	fn push_bytes(&mut self, bytes: &[u8]) -> usize {
+		self.push_slice(bytes)
 	}
 
 	/// Push a slice of values `&T` to storage, without ensuring alignment first.
+	///
+	/// Returns position of the slice in storage.
 	///
 	/// # Panics
 	///
@@ -294,23 +301,25 @@ pub trait Storage: Sized {
 	/// [`VALUE_ALIGNMENT`]: Storage::VALUE_ALIGNMENT
 	/// [`MAX_CAPACITY`]: Storage::MAX_CAPACITY
 	#[inline]
-	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) {
+	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) -> usize {
 		debug_assert!(is_aligned_to(self.pos(), mem::align_of::<T>()));
 
 		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
 		if mem::size_of::<T>() == 0 {
-			return;
+			return 0; // TODO: Is this correct?
 		}
 
 		// Calculating `size` can't overflow as that would imply this is a slice of
 		// `usize::MAX + 1` or more bytes, which can't be possible.
 		let size = mem::size_of::<T>() * slice.len();
 		self.reserve(size);
+		let pos = self.pos();
 
 		// `reserve()` ensures sufficient capacity.
 		// `size` is calculated correctly above.
 		// Ensuring alignment is a requirment of this method.
 		self.push_slice_unchecked(slice, size);
+		pos
 	}
 
 	/// Push a slice of values `&T` to storage, without alignment checks and
@@ -346,9 +355,11 @@ pub trait Storage: Sized {
 	///
 	/// Will also insert padding as required, to ensure the `T` can be written
 	/// with correct alignment.
+	///
+	/// Returns position of the slice in storage.
 	#[inline]
-	fn push_empty<T>(&mut self) {
-		self.push_empty_slice::<T>(1);
+	fn push_empty<T>(&mut self) -> usize {
+		self.push_empty_slice::<T>(1)
 	}
 
 	/// Advance buffer position to leave space to write a slice `&[T]`
@@ -357,18 +368,22 @@ pub trait Storage: Sized {
 	/// Will also insert padding as required, to ensure the `&[T]` can be written
 	/// with correct alignment.
 	///
+	/// Returns position of the slice in storage.
+	///
 	/// If the size of the slice is known statically, prefer
 	/// `push_empty::<[T; N]>()` to `push_empty_slice::<T>(N)`,
 	/// as the former is slightly more efficient.
 	#[inline]
-	fn push_empty_slice<T>(&mut self, len: usize) {
+	fn push_empty_slice<T>(&mut self, len: usize) -> usize {
 		self.align_for::<T>();
 
 		let size = mem::size_of::<T>() * len;
 		self.reserve(size);
+		let pos = self.pos();
 		unsafe { self.set_pos(self.pos() + size) };
 
 		self.align_after::<T>();
+		pos
 	}
 
 	/// Reserve space in storage for `additional` bytes, growing capacity if

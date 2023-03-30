@@ -22,9 +22,9 @@ fn get_methods() -> TokenStream {
 		}
 
 		#[inline]
-		fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
+		fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) -> usize {
 			// Delegate to `PtrWriting` trait's implementation
-			ser_traits::PtrWriting::do_push_slice(self, slice, ptr_addr);
+			ser_traits::PtrWriting::do_push_slice(self, slice, ptr_addr)
 		}
 
 		#[inline]
@@ -33,9 +33,9 @@ fn get_methods() -> TokenStream {
 			slice: &[T],
 			ptr_addr: Self::Addr,
 			process: P,
-		) {
+		) -> usize {
 			// Delegate to `PtrWriting` trait's implementation
-			ser_traits::PtrWriting::do_push_and_process_slice(self, slice, ptr_addr, process);
+			ser_traits::PtrWriting::do_push_and_process_slice(self, slice, ptr_addr, process)
 		}
 	}
 }

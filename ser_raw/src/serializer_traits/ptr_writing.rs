@@ -29,18 +29,15 @@ where Self::Addr: ActiveAddr
 	// Skip recording position mapping here because no further processing of the
 	// slice, but still write pointer
 	#[inline]
-	fn do_push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
-		// Align storage, ready to write slice
-		self.storage_mut().align_for::<T>();
+	fn do_push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) -> usize {
+		// Push slice to storage
+		let pos = self.push_raw_slice(slice);
 
 		// Overwrite pointer with position within output (relative to start of output)
-		unsafe { self.overwrite_ptr(self.pos_mapping().pos_for_addr(ptr_addr), self.pos()) };
+		unsafe { self.overwrite_ptr(self.pos_mapping().pos_for_addr(ptr_addr), pos) };
 
-		// Push slice to storage.
-		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
-		// `align_after::<T>()`.
-		unsafe { self.storage_mut().push_slice_unaligned(slice) };
-		self.storage_mut().align_after::<T>();
+		// Return position of value in storage
+		pos
 	}
 
 	#[inline]
@@ -49,29 +46,26 @@ where Self::Addr: ActiveAddr
 		slice: &[T],
 		ptr_addr: Self::Addr,
 		process: P,
-	) {
+	) -> usize {
 		// Get position mapping before this push
 		let pos_mapping_before = *self.pos_mapping();
 
-		// Align storage, ready to write slice
-		self.storage_mut().align_for::<T>();
+		// Push slice to storage
+		let pos = self.storage_mut().push_slice(slice);
 
 		// Overwrite pointer with position within output (relative to start of output)
-		unsafe { self.overwrite_ptr(pos_mapping_before.pos_for_addr(ptr_addr), self.pos()) };
+		unsafe { self.overwrite_ptr(pos_mapping_before.pos_for_addr(ptr_addr), pos) };
 
 		// Record position mapping for this slice
-		self.set_pos_mapping(PosMapping::new(slice.as_ptr() as usize, self.pos()));
-
-		// Push slice to storage.
-		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
-		// `align_after::<T>()`.
-		unsafe { self.storage_mut().push_slice_unaligned(slice) };
-		self.storage_mut().align_after::<T>();
+		self.set_pos_mapping(PosMapping::new(slice.as_ptr() as usize, pos));
 
 		// Call `process` function (which may use the position mapping we set)
 		process(self);
 
 		// Reset position mapping back to as it was before
 		self.set_pos_mapping(pos_mapping_before);
+
+		// Return position of value in storage
+		pos
 	}
 }

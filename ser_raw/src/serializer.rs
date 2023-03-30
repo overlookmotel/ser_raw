@@ -258,16 +258,8 @@ pub trait Serializer: Sized {
 	///
 	/// [`finalize`]: Serializer::finalize
 	fn serialize_value<T: Serialize<Self>>(&mut self, value: &T) -> usize {
-		// Align storage, ready to write value, and get position
-		self.storage_mut().align_for::<T>();
-		let pos = self.pos();
-
-		// Push value to storage.
-		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
-		// `align_after::<T>()`.
-		let slice = slice::from_ref(value);
-		unsafe { self.storage_mut().push_slice_unaligned(slice) };
-		self.storage_mut().align_after::<T>();
+		// Push value to storage
+		let pos = self.push_raw(value);
 
 		// Serialize value
 		value.serialize_data(self);
@@ -284,9 +276,11 @@ pub trait Serializer: Sized {
 	/// [`push_and_process`](Serializer::push_and_process) instead.
 	///
 	/// Some Serializers may record/overwrite the pointer address.
+	///
+	/// Returns position of the value in storage.
 	#[inline]
-	fn push<T>(&mut self, value: &T, ptr_addr: Self::Addr) {
-		self.push_slice(slice::from_ref(value), ptr_addr);
+	fn push<T>(&mut self, value: &T, ptr_addr: Self::Addr) -> usize {
+		self.push_slice(slice::from_ref(value), ptr_addr)
 	}
 
 	/// Push a slice of values to output.
@@ -297,9 +291,11 @@ pub trait Serializer: Sized {
 	/// [`push_and_process_slice`](Serializer::push_and_process_slice) instead.
 	///
 	/// Some Serializers may record/overwrite the pointer address.
+	///
+	/// Returns position of the slice in storage.
 	#[inline]
-	fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) {
-		self.push_and_process_slice(slice, ptr_addr, |_| {});
+	fn push_slice<T>(&mut self, slice: &[T], ptr_addr: Self::Addr) -> usize {
+		self.push_and_process_slice(slice, ptr_addr, |_| {})
 	}
 
 	/// Push a value to output and continue processing the value.
@@ -310,9 +306,16 @@ pub trait Serializer: Sized {
 	/// (e.g. `Box<T>`).
 	///
 	/// Some Serializers may record/overwrite the pointer address.
+	///
+	/// Returns position of the value in storage.
 	#[inline]
-	fn push_and_process<T, P: FnOnce(&mut Self)>(&mut self, t: &T, ptr_addr: Self::Addr, process: P) {
-		self.push_and_process_slice(slice::from_ref(t), ptr_addr, process);
+	fn push_and_process<T, P: FnOnce(&mut Self)>(
+		&mut self,
+		t: &T,
+		ptr_addr: Self::Addr,
+		process: P,
+	) -> usize {
+		self.push_and_process_slice(slice::from_ref(t), ptr_addr, process)
 	}
 
 	/// Push a slice of values to output and continue processing content of the
@@ -324,15 +327,18 @@ pub trait Serializer: Sized {
 	/// (e.g. `Vec<T>`).
 	///
 	/// Some Serializers may record/overwrite the pointer address.
+	///
+	/// Returns position of the slice in storage.
 	#[inline]
 	fn push_and_process_slice<T, P: FnOnce(&mut Self)>(
 		&mut self,
 		slice: &[T],
 		#[allow(unused_variables)] ptr_addr: Self::Addr,
 		process: P,
-	) {
-		self.push_raw_slice(slice);
+	) -> usize {
+		let pos = self.push_raw_slice(slice);
 		process(self);
+		pos
 	}
 
 	/// Push a value to output.
@@ -340,9 +346,11 @@ pub trait Serializer: Sized {
 	/// Unlike [`push`](Serializer::push) and
 	/// [`push_and_process`](Serializer::push_and_process), this is not for values
 	/// for which a Serializer may need to record a pointer address.
+	///
+	/// Returns position of the value in storage.
 	#[inline]
-	fn push_raw<T>(&mut self, value: &T) {
-		self.push_raw_slice(slice::from_ref(value));
+	fn push_raw<T>(&mut self, value: &T) -> usize {
+		self.push_raw_slice(slice::from_ref(value))
 	}
 
 	/// Push a slice of values to output.
@@ -351,12 +359,16 @@ pub trait Serializer: Sized {
 	/// [`push_and_process_slice`](Serializer::push_and_process_slice), this is
 	/// not for values for which a Serializer may need to record a pointer
 	/// address.
+	///
+	/// Returns position of the slice in storage.
 	#[inline]
-	fn push_raw_slice<T>(&mut self, slice: &[T]) {
-		self.storage_mut().push_slice(slice);
+	fn push_raw_slice<T>(&mut self, slice: &[T]) -> usize {
+		self.storage_mut().push_slice(slice)
 	}
 
 	/// Push raw bytes to output.
+	///
+	/// Returns position of the slice in storage.
 	///
 	/// Unlike [`push`](Serializer::push), [`push_slice`](Serializer::push_slice),
 	/// [`push_and_process`](Serializer::push_and_process) and
@@ -391,8 +403,8 @@ pub trait Serializer: Sized {
 	/// }
 	/// ```
 	#[inline]
-	fn push_raw_bytes(&mut self, bytes: &[u8]) {
-		self.storage_mut().push_bytes(bytes);
+	fn push_raw_bytes(&mut self, bytes: &[u8]) -> usize {
+		self.storage_mut().push_bytes(bytes)
 	}
 
 	/// Advance storage position to leave space to write a `T` at current position
@@ -400,9 +412,11 @@ pub trait Serializer: Sized {
 	///
 	/// Will also insert padding as required, to ensure the `T` can be written
 	/// with correct alignment.
+	///
+	/// Returns position of the value in storage.
 	#[inline]
-	fn push_empty<T>(&mut self) {
-		self.storage_mut().push_empty::<T>();
+	fn push_empty<T>(&mut self) -> usize {
+		self.storage_mut().push_empty::<T>()
 	}
 
 	/// Advance storage position to leave space to write a slice `&[T]` at current
@@ -411,12 +425,14 @@ pub trait Serializer: Sized {
 	/// Will also insert padding as required, to ensure the `&[T]` can be written
 	/// with correct alignment.
 	///
+	/// Returns position of the slice in storage.
+	///
 	/// If the size of the slice is known statically, prefer
 	/// `push_empty::<[T; N]>()` to `push_empty_slice::<T>(N)`,
 	/// as the former is slightly more efficient.
 	#[inline]
-	fn push_empty_slice<T>(&mut self, len: usize) {
-		self.storage_mut().push_empty_slice::<T>(len);
+	fn push_empty_slice<T>(&mut self, len: usize) -> usize {
+		self.storage_mut().push_empty_slice::<T>(len)
 	}
 
 	/// Overwrite a value in storage at a specific position.
