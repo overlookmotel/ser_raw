@@ -228,14 +228,22 @@ impl<
 			self.grow_for_reserve(additional);
 		}
 	}
+}
 
+impl<
+		const STORAGE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+	> AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
+{
 	/// Shrink the capacity of the storage as much as possible.
 	///
 	/// `capacity` will be be a multiple of [`MAX_VALUE_ALIGNMENT`].
 	///
 	/// [`MAX_VALUE_ALIGNMENT`]: AlignedVec::MAX_VALUE_ALIGNMENT
 	#[inline]
-	fn shrink_to_fit(&mut self) {
+	pub fn shrink_to_fit(&mut self) {
 		// Ensure capacity remains a multiple of `MAX_VALUE_ALIGNMENT`
 		let new_cap = align_up_to(self.pos, MAX_VALUE_ALIGNMENT);
 
@@ -251,15 +259,7 @@ impl<
 			self.capacity = new_cap;
 		}
 	}
-}
 
-impl<
-		const STORAGE_ALIGNMENT: usize,
-		const MAX_VALUE_ALIGNMENT: usize,
-		const VALUE_ALIGNMENT: usize,
-		const MAX_CAPACITY: usize,
-	> AlignedVec<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
-{
 	/// Extend capacity after `reserve` has found it's necessary.
 	///
 	/// Actually performing the extension is in this separate function marked

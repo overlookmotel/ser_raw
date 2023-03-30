@@ -461,9 +461,6 @@ pub trait Storage: Sized {
 		// 0 trivially satisfies requirement that `new_pos < self.capacity()`
 		unsafe { self.set_pos(0) };
 	}
-
-	/// Shrink the capacity of the storage as much as possible.
-	fn shrink_to_fit(&mut self) -> ();
 }
 
 /// Trait for [`Storage`] which supports random access read and writes.
