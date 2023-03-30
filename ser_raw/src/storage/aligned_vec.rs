@@ -271,9 +271,9 @@ impl<
 	fn grow_for_reserve(&mut self, additional: usize) {
 		debug_assert!(additional > 0);
 
-		// Where `reserve` was called by `push_slice_unaligned`, we could actually avoid
-		// the checked add. A valid slice cannot be larger than `isize::MAX`, and ditto
-		// `capacity`, so this can't overflow.
+		// Where `reserve` was called by `push` / `push_slice`, we could actually avoid
+		// the checked add. A valid value / slice cannot be larger than `isize::MAX`,
+		// and ditto `capacity`, so this can't overflow.
 		// TODO: Maybe create a specialized version of this function for that usage?
 		let mut new_cap = self
 			.pos

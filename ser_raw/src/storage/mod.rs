@@ -2,7 +2,7 @@
 
 use std::{marker::PhantomData, mem, slice};
 
-use crate::util::{align_up_to, aligned_max_capacity, is_aligned_to};
+use crate::util::{align_up_to, aligned_max_capacity};
 
 mod aligned_vec;
 pub use aligned_vec::AlignedVec;
@@ -253,16 +253,40 @@ pub trait Storage: Sized {
 	/// Push a slice of values `&T` to storage.
 	///
 	/// Returns position of the slice in storage.
+	/// If `T` is a zero-size type, returns 0.
 	///
 	/// If the size of the slice is known statically, prefer `push<[T; N]>` to
 	/// `push_slice<T>`, as the former is slightly more efficient.
 	#[inline]
 	fn push_slice<T>(&mut self, slice: &[T]) -> usize {
+		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
+		if mem::size_of::<T>() == 0 {
+			return 0; // TODO: Is this correct?
+		}
+
+		// Align storage for `T`
 		self.align_for::<T>();
-		// `push_slice_unaligned`'s requirements are satisfied by `align_for::<T>()` and
-		// `align_after::<T>()`
-		let pos = unsafe { self.push_slice_unaligned(slice) };
+
+		// Reserve space for slice.
+		// Calculating `size` can't overflow as that would imply this is a slice of
+		// `usize::MAX + 1` or more bytes, which can't be possible.
+		let size = mem::size_of::<T>() * slice.len();
+		self.reserve(size);
+
+		// Get position value is being written at.
+		// NB This is after `reserve()`, as `reserve` is allowed to alter `pos`.
+		let pos = self.pos();
+
+		// Write slice to storage.
+		// `reserve()` ensures sufficient capacity.
+		// `size` is calculated correctly above.
+		// `align_for::<T>()` ensures position is aligned.
+		unsafe { self.push_slice_unchecked(slice, size) };
+
+		// Align position, ready for next push
 		self.align_after::<T>();
+
+		// Return position of slice in storage
 		pos
 	}
 
@@ -272,54 +296,6 @@ pub trait Storage: Sized {
 	#[inline]
 	fn push_bytes(&mut self, bytes: &[u8]) -> usize {
 		self.push_slice(bytes)
-	}
-
-	/// Push a slice of values `&T` to storage, without ensuring alignment first.
-	///
-	/// Returns position of the slice in storage.
-	///
-	/// # Panics
-	///
-	/// Panics if would require growing storage beyond [`MAX_CAPACITY`].
-	///
-	/// # Safety
-	///
-	/// This method does **not** ensure 2 invariants relating to alignment:
-	///
-	/// * [`pos()`] must be aligned for the type before push.
-	/// * [`pos()`] must be aligned to [`VALUE_ALIGNMENT`] after push.
-	///
-	/// Caller must uphold these invariants. It is sufficient to:
-	///
-	/// * call [`align_for::<T>()`](Storage::align_for) before and
-	/// * call [`align_after::<T>()`](Storage::align_after) after.
-	///
-	/// [`Storage`] implementations must ensure that alignment requirements can be
-	/// satisfied by the above.
-	///
-	/// [`pos()`]: Storage::pos
-	/// [`VALUE_ALIGNMENT`]: Storage::VALUE_ALIGNMENT
-	/// [`MAX_CAPACITY`]: Storage::MAX_CAPACITY
-	#[inline]
-	unsafe fn push_slice_unaligned<T>(&mut self, slice: &[T]) -> usize {
-		debug_assert!(is_aligned_to(self.pos(), mem::align_of::<T>()));
-
-		// Do nothing if ZST. This function will be compiled down to a no-op for ZSTs.
-		if mem::size_of::<T>() == 0 {
-			return 0; // TODO: Is this correct?
-		}
-
-		// Calculating `size` can't overflow as that would imply this is a slice of
-		// `usize::MAX + 1` or more bytes, which can't be possible.
-		let size = mem::size_of::<T>() * slice.len();
-		self.reserve(size);
-		let pos = self.pos();
-
-		// `reserve()` ensures sufficient capacity.
-		// `size` is calculated correctly above.
-		// Ensuring alignment is a requirment of this method.
-		self.push_slice_unchecked(slice, size);
-		pos
 	}
 
 	/// Push a slice of values `&T` to storage, without alignment checks and
@@ -398,7 +374,7 @@ pub trait Storage: Sized {
 	/// Align position in storage to alignment of `T`.
 	///
 	/// Should be called before calling
-	/// [`push_slice_unaligned`](Storage::push_slice_unaligned).
+	/// [`push_slice_unchecked`](Storage::push_slice_unchecked).
 	#[inline(always)] // Because this is generally a no-op
 	fn align_for<T>(&mut self) {
 		// Ensure (at compile time) that `T`'s alignment does not exceed
@@ -419,7 +395,7 @@ pub trait Storage: Sized {
 	}
 
 	/// Align position in storage after pushing a `T` or slice `&[T]` with
-	/// [`push_slice_unaligned`](Storage::push_slice_unaligned).
+	/// [`push_slice_unchecked`](Storage::push_slice_unchecked).
 	#[inline(always)] // Because this is generally a no-op
 	fn align_after<T>(&mut self) {
 		// Align buffer position to `VALUE_ALIGNMENT`, ready for the next value.
@@ -432,7 +408,7 @@ pub trait Storage: Sized {
 	}
 
 	/// Align position in storage after pushing values of any type with
-	/// [`push_slice_unaligned`](Storage::push_slice_unaligned).
+	/// [`push_slice_unchecked`](Storage::push_slice_unchecked).
 	///
 	/// [`align_after<T>()`](Storage::align_after) is often a better choice as it
 	/// can often be compiled down to a no-op.
