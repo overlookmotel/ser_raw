@@ -570,6 +570,10 @@ pub trait ContiguousStorage: Storage {
 	fn as_mut_ptr(&mut self) -> *mut u8;
 }
 
+/// Marker trait for [`Storage`] types whose backing memory has a stable memory
+/// address and does not move.
+pub trait PinnedStorage {}
+
 /// Type for static assertion that types being serialized do not have a higher
 /// alignment requirement than the alignment of the output buffer
 pub(crate) struct AlignmentCheck<T, S: Storage> {

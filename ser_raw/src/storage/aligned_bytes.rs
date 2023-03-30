@@ -4,7 +4,7 @@ use std::{
 	ptr::{self, NonNull},
 };
 
-use super::{ContiguousStorage, RandomAccessStorage, Storage};
+use super::{ContiguousStorage, PinnedStorage, RandomAccessStorage, Storage};
 use crate::util::{aligned_max_capacity, is_aligned_to};
 
 const PTR_SIZE: usize = mem::size_of::<usize>();
@@ -392,6 +392,17 @@ impl<
 	fn as_mut_ptr(&mut self) -> *mut u8 {
 		self.ptr.as_ptr()
 	}
+}
+
+/// `AlignedBytes` memory is fixed and does not move.
+impl<
+		const STORAGE_ALIGNMENT: usize,
+		const MAX_VALUE_ALIGNMENT: usize,
+		const VALUE_ALIGNMENT: usize,
+		const MAX_CAPACITY: usize,
+	> PinnedStorage
+	for AlignedBytes<STORAGE_ALIGNMENT, MAX_VALUE_ALIGNMENT, VALUE_ALIGNMENT, MAX_CAPACITY>
+{
 }
 
 impl<
