@@ -34,17 +34,17 @@ const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNME
 ///
 /// let mut storage: AlignedVec = AlignedVec::with_capacity(8);
 ///
-/// // Storage is aligned to [`STORAGE_ALIGNMENT`] (default 16)
+/// // Storage is aligned to `STORAGE_ALIGNMENT` (default 16)
 /// assert!(storage.as_ptr() as usize % 16 == 0);
 ///
-/// // Initial capacity is rounded up to multiple of [`MAX_VALUE_ALIGNMENT`] (default 16)
+/// // Initial capacity is rounded up to multiple of `MAX_VALUE_ALIGNMENT` (default 16)
 /// assert_eq!(storage.pos(), 0);
 /// assert_eq!(storage.capacity(), 16);
 ///
 /// let value: u32 = 100;
 /// storage.push(&value);
 ///
-/// // `pos` is rounded up to multiple of [`VALUE_ALIGNMENT`] (default 8)
+/// // `pos` is rounded up to multiple of `VALUE_ALIGNMENT` (default 8)
 /// assert_eq!(storage.pos(), 8);
 /// assert_eq!(storage.capacity(), 16);
 ///
@@ -55,10 +55,6 @@ const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNME
 /// assert_eq!(storage.pos(), 24);
 /// assert_eq!(storage.capacity(), 32);
 /// ```
-///
-/// [`STORAGE_ALIGNMENT`]: AlignedVec::STORAGE_ALIGNMENT
-/// [`MAX_VALUE_ALIGNMENT`]: AlignedVec::MAX_VALUE_ALIGNMENT
-/// [`VALUE_ALIGNMENT`]: AlignedVec::VALUE_ALIGNMENT
 pub struct AlignedVec<
 	const STORAGE_ALIGNMENT: usize = DEFAULT_STORAGE_ALIGNMENT,
 	const MAX_VALUE_ALIGNMENT: usize = STORAGE_ALIGNMENT,

@@ -29,17 +29,17 @@ const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNME
 ///
 /// let mut storage: AlignedBytes = AlignedBytes::with_capacity(8);
 ///
-/// // Storage is aligned to [`STORAGE_ALIGNMENT`] (default 16)
+/// // Storage is aligned to `STORAGE_ALIGNMENT` (default 16)
 /// assert!(storage.as_ptr() as usize % 16 == 0);
 ///
-/// // Capacity is rounded up to multiple of [`MAX_VALUE_ALIGNMENT`] (default 16)
+/// // Capacity is rounded up to multiple of `MAX_VALUE_ALIGNMENT` (default 16)
 /// assert_eq!(storage.pos(), 0);
 /// assert_eq!(storage.capacity(), 16);
 ///
 /// let value: u32 = 100;
 /// storage.push(&value);
 ///
-/// // `pos` is rounded up to multiple of [`VALUE_ALIGNMENT`] (default 8)
+/// // `pos` is rounded up to multiple of `VALUE_ALIGNMENT` (default 8)
 /// assert_eq!(storage.pos(), 8);
 /// assert_eq!(storage.capacity(), 16);
 ///
@@ -53,10 +53,6 @@ const DEFAULT_MAX_CAPACITY: usize = aligned_max_capacity(DEFAULT_STORAGE_ALIGNME
 /// // This would panic
 /// // storage.push(&0u8);
 /// ```
-///
-/// [`STORAGE_ALIGNMENT`]: AlignedBytes::STORAGE_ALIGNMENT
-/// [`MAX_VALUE_ALIGNMENT`]: AlignedBytes::MAX_VALUE_ALIGNMENT
-/// [`VALUE_ALIGNMENT`]: AlignedBytes::VALUE_ALIGNMENT
 pub struct AlignedBytes<
 	const STORAGE_ALIGNMENT: usize = DEFAULT_STORAGE_ALIGNMENT,
 	const MAX_VALUE_ALIGNMENT: usize = STORAGE_ALIGNMENT,
