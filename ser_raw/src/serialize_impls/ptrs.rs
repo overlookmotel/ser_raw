@@ -250,7 +250,7 @@ unsafe fn overwrite_capacity_and_ptr_for_empty_vec<T, Ser: Serializer>(
 /// `OFFSETS_STRING.capacity()` and `STRING_PTR_OFFSET` can both be statically
 /// evaluated.
 /// So compiler should remove all but one branch and reduce this whole function
-/// down to e.g. `serializer.write(s as *const String as usize, &[0, 8])`.
+/// down to e.g. `serializer.write(s as *const String as usize, &[0, 1])`.
 #[inline]
 unsafe fn overwrite_capacity_and_ptr_for_empty_string<Ser: Serializer>(
 	s: &String,
