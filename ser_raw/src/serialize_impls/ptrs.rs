@@ -222,7 +222,7 @@ unsafe fn overwrite_capacity_and_ptr_for_empty_vec<T, Ser: Serializer>(
 	serializer: &mut Ser,
 ) {
 	// We know `mem::align_of::<T>()` is correct value for a dangling ptr or
-	// calculating `VecOffsets::<T>::PTR_INDEX` would have errored
+	// calculating `VecOffsets::<T>::PTR_INDEX` would have panicked
 	let dangle = mem::align_of::<T>();
 	let cap_offset = VecOffsets::<T>::OFFSETS_VEC.capacity();
 	let ptr_offset = VecOffsets::<T>::PTR_OFFSET;
@@ -257,7 +257,7 @@ unsafe fn overwrite_capacity_and_ptr_for_empty_string<Ser: Serializer>(
 	serializer: &mut Ser,
 ) {
 	// We know 1 is correct value for a dangling ptr or calculating
-	// `STRING_PTR_INDEX` would have errored
+	// `STRING_PTR_INDEX` would have panicked
 	let dangle = 1usize;
 	let cap_offset = OFFSETS_STRING.capacity();
 
